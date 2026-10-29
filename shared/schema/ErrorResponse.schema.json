@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "detail": {
+      "title": "Detail",
+      "type": "string"
+    },
+    "upstream": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Upstream service name, if any",
+      "title": "Upstream"
+    },
+    "upstream_status": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Upstream HTTP status code, or 'timeout' / 'unreachable', when an upstream service caused the error",
+      "title": "Upstream Status"
+    }
+  },
+  "required": [
+    "detail"
+  ],
+  "title": "ErrorResponse",
+  "type": "object"
+}

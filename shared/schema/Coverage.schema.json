@@ -1,0 +1,195 @@
+{
+  "$defs": {
+    "CoverageEpoch": {
+      "additionalProperties": false,
+      "description": "One SPHEREx spectral image covering the position, as listed by IRSA TAP.",
+      "properties": {
+        "obs_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Parsed from the file name when possible",
+          "title": "Obs Id"
+        },
+        "planeid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Planeid"
+        },
+        "detector": {
+          "anyOf": [
+            {
+              "maximum": 6,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detector"
+        },
+        "bandpass": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Bandpass"
+        },
+        "time_utc": {
+          "description": "Exposure start (time_bounds_lower)",
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "time_end_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Time End Utc"
+        },
+        "wavelength_um_range": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "From energy_bounds_lower/upper",
+          "title": "Wavelength Um Range"
+        },
+        "archive_url": {
+          "title": "Archive Url",
+          "type": "string"
+        },
+        "cutout_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cutout Url"
+        }
+      },
+      "required": [
+        "obs_id",
+        "planeid",
+        "bandpass",
+        "time_utc",
+        "mjd",
+        "time_end_utc",
+        "archive_url",
+        "cutout_url"
+      ],
+      "title": "CoverageEpoch",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "center": {
+      "$ref": "#/$defs/SkyPosition"
+    },
+    "radius_deg": {
+      "title": "Radius Deg",
+      "type": "number"
+    },
+    "searched": {
+      "description": "Service and tables queried",
+      "title": "Searched",
+      "type": "string"
+    },
+    "n_epochs": {
+      "title": "N Epochs",
+      "type": "integer"
+    },
+    "truncated": {
+      "description": "True when the result hit the row limit",
+      "title": "Truncated",
+      "type": "boolean"
+    },
+    "epochs": {
+      "items": {
+        "$ref": "#/$defs/CoverageEpoch"
+      },
+      "title": "Epochs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "center",
+    "radius_deg",
+    "searched",
+    "n_epochs",
+    "truncated",
+    "epochs"
+  ],
+  "title": "Coverage",
+  "type": "object"
+}

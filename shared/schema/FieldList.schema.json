@@ -1,0 +1,196 @@
+{
+  "$defs": {
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "DateRange": {
+      "additionalProperties": false,
+      "properties": {
+        "start_utc": {
+          "title": "Start Utc",
+          "type": "string"
+        },
+        "end_utc": {
+          "title": "End Utc",
+          "type": "string"
+        },
+        "start_mjd": {
+          "title": "Start Mjd",
+          "type": "number"
+        },
+        "end_mjd": {
+          "title": "End Mjd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_utc",
+        "end_utc",
+        "start_mjd",
+        "end_mjd"
+      ],
+      "title": "DateRange",
+      "type": "object"
+    },
+    "FieldSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "blurb": {
+          "title": "Blurb",
+          "type": "string"
+        },
+        "center": {
+          "$ref": "#/$defs/SkyPosition"
+        },
+        "ecliptic_lat_deg": {
+          "title": "Ecliptic Lat Deg",
+          "type": "number"
+        },
+        "size_deg": {
+          "$ref": "#/$defs/SizeDeg"
+        },
+        "thumbnail_url": {
+          "title": "Thumbnail Url",
+          "type": "string"
+        },
+        "epoch_count": {
+          "title": "Epoch Count",
+          "type": "integer"
+        },
+        "date_range": {
+          "$ref": "#/$defs/DateRange"
+        },
+        "candidate_count": {
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "candidate_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/Classification"
+          },
+          "title": "Candidate Counts",
+          "type": "object"
+        },
+        "data_release": {
+          "title": "Data Release",
+          "type": "string"
+        },
+        "origin": {
+          "default": "showcase",
+          "enum": [
+            "showcase",
+            "run"
+          ],
+          "title": "Origin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_id",
+        "name",
+        "blurb",
+        "center",
+        "ecliptic_lat_deg",
+        "size_deg",
+        "thumbnail_url",
+        "epoch_count",
+        "date_range",
+        "candidate_count",
+        "candidate_counts",
+        "data_release"
+      ],
+      "title": "FieldSummary",
+      "type": "object"
+    },
+    "SizeDeg": {
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "SizeDeg",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "fields": {
+      "items": {
+        "$ref": "#/$defs/FieldSummary"
+      },
+      "title": "Fields",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "fields"
+  ],
+  "title": "FieldList",
+  "type": "object"
+}

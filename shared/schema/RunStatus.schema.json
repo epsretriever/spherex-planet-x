@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "RunRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "size_deg": {
+          "default": 0.3,
+          "exclusiveMinimum": 0,
+          "maximum": 0.5,
+          "title": "Size Deg",
+          "type": "number"
+        },
+        "time_min_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Min Utc"
+        },
+        "time_max_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Max Utc"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "RunRequest",
+      "type": "object"
+    },
+    "RunStatusValue": {
+      "enum": [
+        "queued",
+        "discovering",
+        "fetching",
+        "detecting",
+        "linking",
+        "identifying",
+        "rendering",
+        "done",
+        "failed"
+      ],
+      "title": "RunStatusValue",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatusValue"
+    },
+    "progress": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Progress",
+      "type": "number"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Message"
+    },
+    "request": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RunRequest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "field_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Set when done; read it with GET /api/fields/{field_id}",
+      "title": "Field Id"
+    },
+    "created_utc": {
+      "title": "Created Utc",
+      "type": "string"
+    },
+    "updated_utc": {
+      "title": "Updated Utc",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "run_id",
+    "status",
+    "progress",
+    "created_utc",
+    "updated_utc"
+  ],
+  "title": "RunStatus",
+  "type": "object"
+}
