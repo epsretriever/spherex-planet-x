@@ -54,11 +54,3 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
     </div>
   );
 }
-
-export function LoadingBlock({ label, height = 240 }: { label: string; height?: number }) {
-  return (
-    <div className={`skeleton ${styles.loading}`} style={{ minHeight: height }} role="status">
-      <span className="visually-hidden">{label}</span>
-    </div>
-  );
-}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LoadingBlock } from "@/components/DataState";
+import { FieldPageSkeleton } from "@/components/Skeletons";
 import { FieldView } from "./FieldView";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function FieldPage() {
   return (
     <div className="container">
-      <Suspense fallback={<LoadingBlock label="Loading this patch of sky" height={480} />}>
+      <Suspense fallback={<FieldPageSkeleton />}>
         <FieldView />
       </Suspense>
     </div>

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { candidateHref } from "@/components/CandidateCard";
-import { EmptyState, ErrorState, LoadingBlock } from "@/components/DataState";
+import { EmptyState, ErrorState } from "@/components/DataState";
+import { StudySkeleton } from "@/components/Skeletons";
 import { M50Chart } from "@/components/M50Chart";
 import { Panel } from "@/components/report/Panel";
 import { RecoveryGrid } from "@/components/RecoveryGrid";
@@ -20,7 +21,7 @@ export function InjectionView() {
     return getInjectionStudy(id, signal);
   });
 
-  if (state.status === "loading") return <LoadingBlock label="Loading the injection test" height={420} />;
+  if (state.status === "loading") return <StudySkeleton />;
   if (state.status === "error") {
     if (state.error.reason === "not_found" && !studyParam) {
       return (

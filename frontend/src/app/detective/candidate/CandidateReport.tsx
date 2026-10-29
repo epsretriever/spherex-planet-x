@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { candidateHref } from "@/components/CandidateCard";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
-import { ErrorState, LoadingBlock } from "@/components/DataState";
+import { ErrorState } from "@/components/DataState";
+import { ReportSkeleton } from "@/components/Skeletons";
 import { ErrorSourcesPanel } from "@/components/report/ErrorSourcesPanel";
 import { ExplanationPanel } from "@/components/report/ExplanationPanel";
 import { FieldContext } from "@/components/report/FieldContext";
@@ -43,8 +44,8 @@ export function CandidateReport() {
   if (state.status === "loading") {
     return (
       <>
-        <div className={`skeleton ${styles.titleSkeleton}`} />
-        <LoadingBlock label="Loading the evidence report" height={480} />
+        <Crumbs />
+        <ReportSkeleton />
       </>
     );
   }

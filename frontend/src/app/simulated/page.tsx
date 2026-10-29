@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LoadingBlock } from "@/components/DataState";
+import { StudySkeleton } from "@/components/Skeletons";
 import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { InjectionView } from "./InjectionView";
 
@@ -20,7 +20,7 @@ export default function SimulatedPage() {
           pipeline without telling it where they were. Here is how many it found, by how bright and how fast they were.
         </p>
       </header>
-      <Suspense fallback={<LoadingBlock label="Loading the injection test" height={420} />}>
+      <Suspense fallback={<StudySkeleton />}>
         <InjectionView />
       </Suspense>
     </div>

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { BlinkViewer } from "@/components/BlinkViewer";
-import { ErrorState, LoadingBlock } from "@/components/DataState";
+import { ErrorState } from "@/components/DataState";
+import { FieldPageSkeleton } from "@/components/Skeletons";
 import { Term } from "@/components/Term";
 import { getField } from "@/lib/api";
 import { formatUtcDate } from "@/lib/format";
@@ -24,8 +25,8 @@ export function FieldView() {
   if (state.status === "loading") {
     return (
       <>
-        <div className={`skeleton ${styles.titleSkeleton}`} />
-        <LoadingBlock label="Loading this patch of sky" height={480} />
+        <Crumbs />
+        <FieldPageSkeleton />
       </>
     );
   }
