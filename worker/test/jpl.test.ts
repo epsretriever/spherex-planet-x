@@ -22,12 +22,23 @@ describe("SBIdent request formatting", () => {
     expect(timeToSbident("2025-06-02T00:05:20.481")).toBe("2025-06-02_00:05:20");
   });
 
-  it("builds a geocentric two-pass query", () => {
-    const u = new URL(sbidentUrl("2025-06-02T00:05:20Z", 10, -1));
+  it("queries from SPHEREx's position, never the geocenter SBIdent rejects", () => {
+    const u = new URL(sbidentUrl("2025-06-02T00:05:20Z", 10, -1, [6657.254, -2238.913, -211.369]));
     expect(u.origin + u.pathname).toBe("https://ssd-api.jpl.nasa.gov/sb_ident.api");
-    expect(u.searchParams.get("mpc-code")).toBe("500");
+    expect(u.searchParams.get("xobs")).toBe("6657.254,-2238.913,-211.369");
+    expect(u.searchParams.has("mpc-code")).toBe(false);
     expect(u.searchParams.get("two-pass")).toBe("true");
     expect(u.searchParams.get("fov-ra-hwidth")).toBe("0.05");
+  });
+
+  it("falls back to a surface point when no spacecraft position is known", () => {
+    for (const xobs of [undefined, null, [0, 0, 0] as const]) {
+      const u = new URL(sbidentUrl("2025-06-02T00:05:20Z", 10, -1, xobs));
+      expect(u.searchParams.get("lat")).toBe("0");
+      expect(u.searchParams.get("lon")).toBe("0");
+      expect(u.searchParams.has("xobs")).toBe(false);
+      expect(u.searchParams.has("mpc-code")).toBe(false);
+    }
   });
 });
 

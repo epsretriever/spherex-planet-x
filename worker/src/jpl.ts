@@ -46,9 +46,32 @@ export function timeToSbident(iso: string): string {
   )}:${pad(d.getUTCSeconds())}`;
 }
 
-export function sbidentUrl(timeUtc: string, raDeg: number, decDeg: number, hwidthDeg = SBIDENT_HWIDTH_DEG): string {
+/** Geocentric observer position in km (ICRF), e.g. SPHEREx's position from the FITS headers. */
+export type ObserverKm = readonly [number, number, number];
+
+/** True when an observer position is usable (finite and not the placeholder origin). */
+export function isUsableObserver(xobs: ObserverKm | null | undefined): xobs is ObserverKm {
+  return Array.isArray(xobs) && xobs.length === 3 && xobs.every(Number.isFinite) && xobs.some((v) => v !== 0);
+}
+
+/**
+ * SBIdent query URL. SBIdent rejects the geocenter (`mpc-code=500`), so the observer is
+ * SPHEREx's own geocentric position via `xobs` (km, ICRF). If no spacecraft position is
+ * available, the sub-satellite-independent fallback is a point on Earth's surface at
+ * lat 0, lon 0 (at most ~6,400 km from SPHEREx; under ~10 arcsec at 1 au).
+ */
+export function sbidentUrl(
+  timeUtc: string,
+  raDeg: number,
+  decDeg: number,
+  xobs?: ObserverKm | null,
+  hwidthDeg = SBIDENT_HWIDTH_DEG,
+): string {
+  const observer: Record<string, string> = isUsableObserver(xobs)
+    ? { xobs: xobs.map((v) => v.toFixed(3)).join(",") }
+    : { lat: "0", lon: "0", alt: "0" };
   const q = new URLSearchParams({
-    "mpc-code": "500",
+    ...observer,
     "obs-time": timeToSbident(timeUtc),
     "fov-ra-center": raToSbident(raDeg),
     "fov-dec-center": decToSbident(decDeg),
@@ -126,8 +149,14 @@ export function parseSbident(body: unknown): SbidentObject[] {
   return out;
 }
 
-export async function sbidentQuery(deps: Deps, timeUtc: string, raDeg: number, decDeg: number) {
-  const url = sbidentUrl(timeUtc, raDeg, decDeg);
+export async function sbidentQuery(
+  deps: Deps,
+  timeUtc: string,
+  raDeg: number,
+  decDeg: number,
+  xobs?: ObserverKm | null,
+) {
+  const url = sbidentUrl(timeUtc, raDeg, decDeg, xobs);
   const res = await fetchUpstream<unknown>(deps, SBIDENT, url);
   return { url, cached: res.cached, objects: parseSbident(res.data) };
 }

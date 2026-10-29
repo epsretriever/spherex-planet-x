@@ -1,8 +1,37 @@
-# spherex-planet-x
+# SPHEREx Planet X Explorer
 
 NASA Space Apps Challenge 2026 · Challenge: Planet X and SPHEREx
 
 A public web tool that lets anyone explore how the infrared sky changes over time using real data from NASA's SPHEREx mission.
+
+**Try it live: https://spherex-planet-x.bodhishanbhag.workers.dev**
+
+| Page | What you can do |
+|---|---|
+| [Explore](https://spherex-planet-x.bodhishanbhag.workers.dev/explore/) | Pick a patch of sky and blink, swipe or step between real SPHEREx images to see what moved |
+| [Detective](https://spherex-planet-x.bodhishanbhag.workers.dev/detective/) | Browse flagged moving objects and open an evidence report for each one |
+| [Simulated](https://spherex-planet-x.bodhishanbhag.workers.dev/simulated/) | See how well the pipeline recovers fake objects hidden in real images |
+| [About](https://spherex-planet-x.bodhishanbhag.workers.dev/about/) | How it works, data sources and a glossary |
+| [`/api/health`](https://spherex-planet-x.bodhishanbhag.workers.dev/api/health) | Live status of the NASA IRSA, JPL SBIdent, JPL Horizons and SPHEREx archive connections |
+
+## How it works
+
+```
+ NASA SPHEREx images (public S3 archive)
+        │  pipeline/  (Python, run offline)
+        │  find sources → reject stars → link moving tracks → score → render WebP
+        ▼
+ frontend/public/data/   real field + candidate JSON and images, committed
+        │
+        ▼
+ Cloudflare Worker  (worker/, TypeScript + Hono)  ──►  live calls to NASA IRSA TAP,
+   serves /api/*  and the website (frontend/out)       JPL SBIdent and JPL Horizons
+        │                                               (known-asteroid check, cached 24 h)
+        ▼
+ Website (frontend/, Next.js static export)
+```
+
+Pixel processing is too heavy to run inside a Worker, so it happens ahead of time in `pipeline/`. Everything that depends on today's catalogs, like whether a moving dot is a known asteroid, is checked live by the Worker on each request.
 
 ## The idea
 
@@ -43,7 +72,10 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 |---|---|
 | `worker/` | Cloudflare Worker (Hono): `/api/*`, live IRSA and JPL queries |
 | `pipeline/` | Python package `spherex_px`: offline SPHEREx data access, detection, linking, scoring; writes `frontend/public/data/` |
-| `frontend/` | Next.js app |
+| `frontend/` | Next.js website (static export served by the Worker) |
+| `frontend/public/data/` | Real showcase data built by the pipeline |
+| `scripts/build.mjs` | Root build used by Cloudflare: builds the site, type-checks the Worker |
+| `wrangler.toml` | Cloudflare Worker configuration |
 | `shared/schema/` | JSON Schema for every API response, exported from the backend models |
 | `shared/fixtures/` | Recorded API responses for real SPHEREx fields |
 | `docs/api-contract.md` | Backend ↔ frontend JSON contract |
@@ -59,9 +91,10 @@ npm ci
 npm run build      # frontend static export into frontend/out + Worker type-check
 npx wrangler dev   # site + API on http://localhost:8787
 npm test           # Worker tests (vitest)
+npm test --workspace frontend   # frontend unit tests
 ```
 
-Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
+Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`, and posts a preview link on every pull request. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
 
 ## Data credits
 

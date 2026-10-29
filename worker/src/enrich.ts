@@ -68,6 +68,9 @@ export function notCheckedKnownObject(reason: string, prev?: KnownObject): Known
   };
 }
 
+/** Observer used for the SBIdent search: SPHEREx's own position, read from each image's FITS header. */
+const SBIDENT_OBSERVER = "SPHEREx (spacecraft position from the FITS headers, sent to JPL SBIdent as xobs)";
+
 export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Promise<Enrichment> {
   const dets = cand.detections;
   const now = deps.now().toISOString();
@@ -82,7 +85,7 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
   let allCached = true;
   const sb = await mapLimit(dets, MAX_PARALLEL, async (d) => {
     try {
-      const r = await sbidentQuery(deps, d.time_utc, d.ra_deg, d.dec_deg);
+      const r = await sbidentQuery(deps, d.time_utc, d.ra_deg, d.dec_deg, d.spacecraft_geocentric_km);
       allCached &&= r.cached;
       return r.objects;
     } catch (err) {
@@ -140,7 +143,7 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
         predicted_vmag: null,
         per_epoch: [],
         nearest: null,
-        observer: "geocenter (MPC code 500)",
+        observer: SBIDENT_OBSERVER,
       },
     };
   }
@@ -218,8 +221,8 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
         refined.length > 0
           ? "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
           : horizonsOk
-            ? "geocenter (MPC code 500)"
-            : "geocenter (MPC code 500); JPL Horizons refinement unavailable",
+            ? SBIDENT_OBSERVER
+            : `${SBIDENT_OBSERVER}; JPL Horizons refinement unavailable`,
     },
   };
 }
