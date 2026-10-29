@@ -50,6 +50,19 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 | `docs/backend-plan.md` | Backend architecture and science approach |
 | `docs/frontend-plan.md` | Frontend screens, flows and design system |
 
+## Development
+
+Requires Node.js 20 or newer.
+
+```bash
+npm ci
+npm run build      # frontend static export into frontend/out + Worker type-check
+npx wrangler dev   # site + API on http://localhost:8787
+npm test           # Worker tests (vitest)
+```
+
+Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
+
 ## Data credits
 
 SPHEREx data: NASA / JPL-Caltech / IPAC, via the NASA/IPAC Infrared Science Archive.

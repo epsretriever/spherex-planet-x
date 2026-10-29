@@ -1,0 +1,23 @@
+{
+  "name": "spherex-planet-x",
+  "private": true,
+  "description": "Explore how the infrared sky changes over time with NASA SPHEREx data",
+  "license": "MIT",
+  "workspaces": [
+    "frontend",
+    "worker"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "npm run test --workspace worker",
+    "typecheck": "npm run typecheck --workspace worker"
+  },
+  "devDependencies": {
+    "wrangler": "^4.155.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
