@@ -56,6 +56,32 @@ def _publish(args: argparse.Namespace) -> int:
     return 0
 
 
+def _rank_pairs(args: argparse.Namespace) -> int:
+    """Recompute blink pairs for already-built fields from their epochs and movers."""
+    from pathlib import Path
+
+    from . import schemas as S
+    from .build import DEFAULT_OUT, blink_pairs_for
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    for path in sorted((out / "fields").glob("*.json")):
+        detail = S.FieldDetail.model_validate_json(path.read_text())
+        detail.blink_pairs = blink_pairs_for(
+            detail.epochs,
+            detail.movers,
+            detail.wcs.width_px,
+            detail.wcs.height_px,
+            detail.wcs.cdelt_arcsec,
+        )
+        path.write_text(detail.model_dump_json(indent=2) + "\n")
+        best = detail.blink_pairs[0]
+        print(
+            f"{detail.field_id}: {len(detail.blink_pairs)} pairs; default {best.epoch_id_a}->"
+            f"{best.epoch_id_b} {best.time_separation_hours:.1f} h, shift {best.displacement_arcsec}"
+        )
+    return 0
+
+
 def _index(args: argparse.Namespace) -> int:
     from .data.index import CoverageIndex
 
@@ -84,6 +110,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("publish", help="rebuild fields.json and candidates.json")
     p.add_argument("--out")
     p.set_defaults(func=_publish)
+    rp = sub.add_parser("rank-pairs", help="recompute blink pairs for built fields")
+    rp.add_argument("--out")
+    rp.set_defaults(func=_rank_pairs)
     ix = sub.add_parser("index", help="index exposure headers for week segments")
     ix.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
     ix.set_defaults(func=_index)

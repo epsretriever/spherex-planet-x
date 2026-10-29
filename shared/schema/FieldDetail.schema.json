@@ -27,6 +27,25 @@
         "label_plain": {
           "title": "Label Plain",
           "type": "string"
+        },
+        "displacement_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How far a mover detected in both images shifts between them; null when none is",
+          "title": "Displacement Arcsec"
+        },
+        "default": {
+          "type": "boolean",
+          "default": false,
+          "description": "The pair the Explorer opens with; exactly one per field",
+          "title": "Default"
         }
       },
       "required": [

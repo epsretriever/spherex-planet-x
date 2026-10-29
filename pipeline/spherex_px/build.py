@@ -48,6 +48,7 @@ from .science.link import (
 from .science.vetting import TrackMeasurements, flux_ratio, vet
 from .settings import BACKEND_ROOT
 from .version import pipeline_version
+from .pairs import EpochInfo, TrackPoint, build_pairs
 
 log = logging.getLogger(__name__)
 
@@ -228,6 +229,7 @@ class FieldBuilder:
             cid = f"{spec.field_id}-c{n:02d}"
             candidates.append(self._candidate(cid, tr, epochs, stretch))
 
+        movers = [self._mover(c) for c in candidates]
         detail = S.FieldDetail(
             pipeline_version=self.version,
             field_id=spec.field_id,
@@ -244,8 +246,8 @@ class FieldBuilder:
             wcs=self.grid.contract(),
             stretch=stretch,
             epochs=epoch_models,
-            blink_pairs=self._blink_pairs(epoch_models),
-            movers=[self._mover(c) for c in candidates],
+            blink_pairs=self._blink_pairs(epoch_models, movers),
+            movers=movers,
         )
         return detail, candidates
 
@@ -310,52 +312,10 @@ class FieldBuilder:
             source=src,
         )
 
-    def _blink_pairs(self, epochs: list[S.Epoch]) -> list[S.BlinkPair]:
-        pairs: list[S.BlinkPair] = []
-        seen = set()
-
-        def add(a: S.Epoch, b: S.Epoch) -> None:
-            if (a.epoch_id, b.epoch_id) in seen or a.epoch_id == b.epoch_id:
-                return
-            seen.add((a.epoch_id, b.epoch_id))
-            la, lb = a.wavelength_um_center, b.wavelength_um_center
-            frac = abs(la - lb) / ((la + lb) / 2)
-            tol = lambda_match_tolerance(a.detector, la, b.detector, lb)
-            matched = frac < tol
-            dt = abs(b.mjd - a.mjd) * 24
-            when = f"{dt:.1f} hours apart" if dt < 48 else f"{dt / 24:.1f} days apart"
-            label = (
-                f"Same wavelength ({la:.2f} and {lb:.2f} um), {when}"
-                if matched
-                else f"Different wavelengths ({la:.2f} and {lb:.2f} um), {when}: brightness changes are expected"
-            )
-            pairs.append(
-                S.BlinkPair(
-                    epoch_id_a=a.epoch_id,
-                    epoch_id_b=b.epoch_id,
-                    time_separation_hours=round(dt, 3),
-                    lambda_matched=matched,
-                    delta_lambda_frac=round(frac, 5),
-                    label_plain=label,
-                )
-            )
-
-        for a, b in zip(epochs, epochs[1:], strict=False):
-            add(a, b)
-        # for each epoch, the closest-wavelength epoch at least an hour away
-        for a in epochs:
-            others = [
-                b for b in epochs if abs(b.mjd - a.mjd) * 24 >= 1.0 and b.detector == a.detector
-            ]
-            if not others:
-                continue
-            b = min(others, key=lambda b: abs(b.wavelength_um_center - a.wavelength_um_center))
-            if a.mjd < b.mjd:
-                add(a, b)
-            else:
-                add(b, a)
-        pairs.sort(key=lambda p: (p.epoch_id_a, p.epoch_id_b))
-        return pairs
+    def _blink_pairs(self, epochs: list[S.Epoch], movers: list[S.Mover]) -> list[S.BlinkPair]:
+        return blink_pairs_for(
+            epochs, movers, self.grid.width_px, self.grid.height_px, self.grid.cdelt_arcsec
+        )
 
     def _measurements(self, tr: Track, epochs: list[Epoch]) -> TrackMeasurements:
         data = [e.data for e in epochs]
@@ -721,3 +681,24 @@ def build_field(
 
 def _unused(*_):  # keep linters quiet about helpers used only in some builds
     return angular_sep_arcsec
+
+
+def blink_pairs_for(
+    epochs: list[S.Epoch],
+    movers: list[S.Mover],
+    width_px: int,
+    height_px: int,
+    cdelt_arcsec: float,
+) -> list[S.BlinkPair]:
+    """Ranked blink pairs for a field (see pairs.py). Only mover positions inside the image count."""
+
+    def inside(p: S.TrackPoint) -> bool:
+        return 0.5 <= p.x_grid <= width_px + 0.5 and 0.5 <= p.y_grid <= height_px + 0.5
+
+    pairs = build_pairs(
+        [EpochInfo(e.epoch_id, e.mjd, e.detector, e.wavelength_um_center) for e in epochs],
+        [[TrackPoint(p.epoch_id, p.ra_deg, p.dec_deg) for p in m.track if inside(p)] for m in movers],
+        field_width_arcsec=min(width_px, height_px) * cdelt_arcsec,
+        tolerance=lambda_match_tolerance,
+    )
+    return [S.BlinkPair(**vars(p)) for p in pairs]

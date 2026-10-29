@@ -196,6 +196,11 @@ class BlinkPair(Model):
     lambda_matched: bool
     delta_lambda_frac: float = Field(description="|lambda_a - lambda_b| / mean at field center")
     label_plain: str
+    displacement_arcsec: float | None = Field(
+        default=None,
+        description="How far a mover detected in both images shifts between them; null when none is",
+    )
+    default: bool = Field(default=False, description="The pair the Explorer opens with; exactly one per field")
 
 
 class TrackPoint(Model):

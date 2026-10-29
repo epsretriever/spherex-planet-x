@@ -129,6 +129,10 @@ export interface BlinkPair {
   lambda_matched: boolean;
   delta_lambda_frac: number;
   label_plain: string;
+  /** How far a mover seen in both images shifts between them (arcsec); null when none is. */
+  displacement_arcsec?: number | null;
+  /** The pair the viewer opens with. The backend sends pairs best first and marks one default. */
+  default?: boolean;
 }
 
 export interface TrackPoint {

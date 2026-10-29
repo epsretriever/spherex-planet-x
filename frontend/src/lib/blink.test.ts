@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { testEpoch, testPair, testSource } from "@/test/factories";
-import { buildSequences, canRender, hasSource } from "./blink";
+import { buildSequences, canRender, formatGap, hasSource } from "./blink";
 
 describe("hasSource", () => {
   it("requires a file and an observation ID", () => {
@@ -47,8 +47,27 @@ describe("buildSequences", () => {
     expect(buildSequences([], [])).toEqual([]);
   });
 
+  it("keeps the backend's ranking and opens on its default pair", () => {
+    const ranked = [
+      { ...testPair("a", "b", false), displacement_arcsec: 120 },
+      { ...testPair("a", "c", false), displacement_arcsec: 480, default: true },
+      { ...testPair("b", "c", true) },
+    ];
+    const seqs = buildSequences(epochs, ranked);
+    expect(seqs.map((s) => s.key)).toEqual(["pair:a:c", "pair:a:b", "pair:b:c", "all"]);
+    expect(seqs[0]!.displacementArcsec).toBe(480);
+    expect(seqs[0]!.label).toMatch(/2.0 days apart · moves 480″$/);
+    expect(seqs[2]!.displacementArcsec).toBeNull();
+  });
+
+  it("formats the gap between images", () => {
+    expect(formatGap(0.25)).toBe("15 minutes apart");
+    expect(formatGap(13.17)).toBe("13 hours apart");
+    expect(formatGap(50.6)).toBe("2.1 days apart");
+  });
+
   it("adds times to the label when both dates fall on the same day", () => {
     const same = [testEpoch("a", 60000.1), testEpoch("b", 60000.3)];
-    expect(buildSequences(same, [testPair("a", "b", true)])[0]!.label).toMatch(/UTC$/);
+    expect(buildSequences(same, [testPair("a", "b", true)])[0]!.label).toMatch(/UTC · 5 hours apart$/);
   });
 });
