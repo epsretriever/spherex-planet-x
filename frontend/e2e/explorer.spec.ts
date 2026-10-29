@@ -77,3 +77,10 @@ test("API failure shows a friendly error, not data", async ({ page }) => {
   await expect(page.getByRole("alert").filter({ hasText: "sky data" })).toContainText("We can't reach the sky data right now");
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
 });
+
+test("an unpublished field list reads as empty, not broken", async ({ page }) => {
+  await page.unrouteAll();
+  await installMockApi(page, { failWith: 404 });
+  await page.goto("/explore/");
+  await expect(page.getByRole("heading", { name: "No patches of sky yet" })).toBeVisible();
+});
