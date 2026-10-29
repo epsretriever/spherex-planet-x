@@ -8,6 +8,7 @@ import styles from "./TopBar.module.css";
 const NAV = [
   { href: "/explore/", label: "Explore", match: "/explore" },
   { href: "/detective/", label: "Detective", match: "/detective" },
+  { href: "/simulated/", label: "Simulated", match: "/simulated" },
   { href: "/about/", label: "About", match: "/about" },
 ];
 
