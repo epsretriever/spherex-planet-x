@@ -12,7 +12,14 @@ export const SBIDENT = "JPL SBIdent";
 export const HORIZONS = "JPL Horizons";
 
 /** Half-width of the SBIdent field of view around each detection (deg). */
-export const SBIDENT_HWIDTH_DEG = 0.05;
+export const SBIDENT_HWIDTH_DEG = 0.1;
+/**
+ * SBIdent can take well over 15 s even for the fast first pass, so it gets a longer timeout.
+ * We use only the first (fast, approximate) pass: JPL Horizons then computes precise positions
+ * for the few objects that come close, so the slow numerically integrated second pass adds
+ * nothing but latency.
+ */
+export const SBIDENT_TIMEOUT_MS = 28_000;
 
 const pad = (n: number, w = 2) => String(n).padStart(w, "0");
 
@@ -77,8 +84,7 @@ export function sbidentUrl(
     "fov-dec-center": decToSbident(decDeg),
     "fov-ra-hwidth": String(hwidthDeg),
     "fov-dec-hwidth": String(hwidthDeg),
-    "two-pass": "true",
-    "suppress-first-pass": "true",
+    "two-pass": "false",
   });
   return `${JPL_SBIDENT}?${q.toString()}`;
 }
@@ -157,7 +163,7 @@ export async function sbidentQuery(
   xobs?: ObserverKm | null,
 ) {
   const url = sbidentUrl(timeUtc, raDeg, decDeg, xobs);
-  const res = await fetchUpstream<unknown>(deps, SBIDENT, url);
+  const res = await fetchUpstream<unknown>(deps, SBIDENT, url, { timeoutMs: SBIDENT_TIMEOUT_MS });
   return { url, cached: res.cached, objects: parseSbident(res.data) };
 }
 

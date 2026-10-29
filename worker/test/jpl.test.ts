@@ -27,8 +27,8 @@ describe("SBIdent request formatting", () => {
     expect(u.origin + u.pathname).toBe("https://ssd-api.jpl.nasa.gov/sb_ident.api");
     expect(u.searchParams.get("xobs")).toBe("6657.254,-2238.913,-211.369");
     expect(u.searchParams.has("mpc-code")).toBe(false);
-    expect(u.searchParams.get("two-pass")).toBe("true");
-    expect(u.searchParams.get("fov-ra-hwidth")).toBe("0.05");
+    expect(u.searchParams.get("two-pass")).toBe("false");
+    expect(u.searchParams.get("fov-ra-hwidth")).toBe("0.1");
   });
 
   it("falls back to a surface point when no spacecraft position is known", () => {
