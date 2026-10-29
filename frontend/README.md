@@ -26,6 +26,7 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 | `npm start` | Serves `out/` locally on port 4173, the way the Worker does |
 | `npm run check` | Lint, typecheck and unit tests |
 | `npm run test:e2e` | Playwright tests against `out/` at desktop and phone widths (run `npm run build` first) |
+| `node scripts/make-share-images.mjs` | Re-renders `public/og.png` and `src/app/apple-icon.png` after a brand change |
 
 ## How it fits together
 
@@ -37,6 +38,11 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
   - `/simulated/?study={study_id}`: injection-recovery results (optional parameter)
 - **Fixture mode** (`NEXT_PUBLIC_USE_FIXTURES=true`) reads `/data/` instead of `/api/`. Lookup order: `fields.json`; `fields/{field_id}.json`, then `field_detail.json`; `candidates.json` (filtered in the browser); `candidates/{candidate_id}.json`, then `candidate_detail.json`; `injection/{study_id}.json`, then `injection_study.json`. Root-relative image URLs resolve under `/data/` too (for example `/static/x.webp` → `/data/static/x.webp`).
 - **The contract** is `docs/api-contract.md`, with JSON Schema in `shared/schema/`. `src/lib/contract.ts` mirrors it by hand. Fix that file when the contract changes.
+
+## Deployment settings
+
+- `NEXT_PUBLIC_SITE_URL` (build variable): the deployed origin, for example `https://…workers.dev`. Social previews need absolute image URLs, so without it the share image is left out of the page metadata.
+- The 404 page is exported as `out/404.html`. To serve it for unknown URLs, the Worker's `wrangler.toml` needs `not_found_handling = "404-page"`. With `"single-page-application"`, unknown URLs get the landing page with status 200. Every route here has its own `index.html`, so SPA fallback isn't needed.
 
 ## Rules the UI enforces
 

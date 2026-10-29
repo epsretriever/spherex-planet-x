@@ -10,6 +10,7 @@ const PAGES: [string, string][] = [
   ["about", "/about/"],
   ["detective", "/detective/"],
   ["simulated", "/simulated/"],
+  ["404", "/no-such-page/"],
   ["report-known", "/detective/candidate/?id=syn-known"],
   ["report-unmatched", "/detective/candidate/?id=syn-unmatched"],
 ];
