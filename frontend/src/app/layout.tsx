@@ -8,9 +8,30 @@ import { TopBar } from "@/components/TopBar";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import styles from "./layout.module.css";
 
+// Social previews need absolute URLs. Set NEXT_PUBLIC_SITE_URL (for example in the
+// Cloudflare build variables) to the deployed origin; without it the share image is left out
+// rather than pointing at the wrong host.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const shareImage = { url: "/og.png", width: 1200, height: 630, alt: `${SITE_NAME}: ${SITE_TAGLINE}` };
+
 export const metadata: Metadata = {
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
   description: SITE_TAGLINE,
+  applicationName: SITE_NAME,
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_TAGLINE,
+    ...(siteUrl ? { images: [shareImage] } : {}),
+  },
+  twitter: {
+    card: siteUrl ? "summary_large_image" : "summary",
+    title: SITE_NAME,
+    description: SITE_TAGLINE,
+    ...(siteUrl ? { images: [shareImage.url] } : {}),
+  },
 };
 
 export const viewport: Viewport = {

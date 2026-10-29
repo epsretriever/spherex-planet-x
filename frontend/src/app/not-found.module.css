@@ -1,0 +1,77 @@
+.page {
+  max-width: 720px;
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
+}
+
+.title {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  letter-spacing: -0.02em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+/* A dot seen once, then nowhere: the frame it moved out of. */
+.art {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin-bottom: var(--space-8);
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+}
+
+.dot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+
+.was {
+  left: 34px;
+  top: 82px;
+  background: var(--ir-3);
+  opacity: 0.85;
+}
+
+.trail {
+  position: absolute;
+  left: 60px;
+  top: 76px;
+  width: 92px;
+  height: 0;
+  border-top: 2px dashed var(--track);
+  transform: rotate(-28deg);
+  transform-origin: left center;
+  opacity: 0.8;
+}
+
+.gone {
+  left: 150px;
+  top: 22px;
+  border: 2px dashed var(--ir-6);
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gone {
+    animation: blink 1.6s steps(1, end) infinite;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.15;
+  }
+}

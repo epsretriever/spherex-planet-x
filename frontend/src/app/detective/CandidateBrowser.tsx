@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CandidateCard } from "@/components/CandidateCard";
-import { EmptyState, ErrorState, LoadingBlock } from "@/components/DataState";
+import { EmptyState, ErrorState } from "@/components/DataState";
+import { CardListSkeleton } from "@/components/Skeletons";
 import { getCandidates } from "@/lib/api";
 import type { CandidateSummary, Classification } from "@/lib/contract";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER, isClassification } from "@/lib/labels";
@@ -127,7 +128,7 @@ export function CandidateBrowser() {
       </section>
 
       <section aria-live="polite" aria-busy={state.status === "loading"} className={styles.results}>
-        {state.status === "loading" && <LoadingBlock label="Loading candidates" height={320} />}
+        {state.status === "loading" && <CardListSkeleton label="Loading candidates" />}
         {state.status === "error" &&
           (state.error.reason === "not_found" ? (
             // The Worker answers 404 until the pipeline publishes a candidate list.

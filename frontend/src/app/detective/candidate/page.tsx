@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LoadingBlock } from "@/components/DataState";
+import { ReportSkeleton } from "@/components/Skeletons";
 import { CandidateReport } from "./CandidateReport";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function CandidatePage() {
   return (
     <div className="container">
-      <Suspense fallback={<LoadingBlock label="Loading the evidence report" height={480} />}>
+      <Suspense fallback={<ReportSkeleton />}>
         <CandidateReport />
       </Suspense>
     </div>

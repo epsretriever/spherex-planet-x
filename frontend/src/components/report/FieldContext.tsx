@@ -7,7 +7,8 @@ import type { CandidateDetail, FieldDetail } from "@/lib/contract";
 import { projectionMatches, skyToGrid } from "@/lib/grid";
 import { useData } from "@/lib/useData";
 import { BlinkViewer, type PredictedMarker } from "../BlinkViewer";
-import { ErrorState, LoadingBlock } from "../DataState";
+import { ErrorState } from "../DataState";
+import { ViewerSkeleton } from "../Skeletons";
 import styles from "./report.module.css";
 
 /** Zoom that fits the track with some margin, as a power of two (the viewer zooms in 2× steps). */
@@ -70,7 +71,7 @@ export function FieldContext({ candidate }: { candidate: CandidateDetail }) {
   const state = useData(`field:${candidate.field_id}`, (signal) => getField(candidate.field_id, signal));
   const ctx = useContext(candidate, state.status === "ok" ? state.data : null);
 
-  if (state.status === "loading") return <LoadingBlock label="Loading the sky images" height={360} />;
+  if (state.status === "loading") return <ViewerSkeleton />;
   if (state.status === "error") return <ErrorState compact reason={state.error.reason} message={state.error.message} onRetry={state.retry} />;
   if (!ctx || ctx.epochs.length === 0) return null;
 

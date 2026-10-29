@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LoadingBlock } from "@/components/DataState";
+import { CardListSkeleton } from "@/components/Skeletons";
 import { CandidateBrowser } from "./CandidateBrowser";
 
 export const metadata: Metadata = {
@@ -18,7 +18,7 @@ export default function DetectivePage() {
           unexplained ones are where the detective work starts.
         </p>
       </header>
-      <Suspense fallback={<LoadingBlock label="Loading candidates" />}>
+      <Suspense fallback={<CardListSkeleton label="Loading candidates" />}>
         <CandidateBrowser />
       </Suspense>
     </div>

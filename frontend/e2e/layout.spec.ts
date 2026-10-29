@@ -12,6 +12,7 @@ const PAGES = [
   "/detective/candidate/?id=syn-injected",
   "/about/",
   "/simulated/",
+  "/no-such-page/",
 ];
 
 for (const path of PAGES) {
