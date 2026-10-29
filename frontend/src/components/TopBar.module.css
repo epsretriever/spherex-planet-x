@@ -1,0 +1,136 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(8 6 13 / 0.86);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+}
+
+.spectrum {
+  height: 1px;
+  background: var(--ir-gradient);
+  opacity: 0.7;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  min-height: 56px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--text);
+}
+
+/* A source caught in two positions: the app in one glyph. */
+.mark {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+}
+
+.mark::before,
+.mark span {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.mark::before {
+  left: 3px;
+  top: 9px;
+  background: var(--ir-3);
+  opacity: 0.7;
+}
+
+.mark span {
+  right: 3px;
+  top: 4px;
+  background: var(--ir-6);
+  box-shadow: 0 0 8px var(--ir-5);
+}
+
+.navWrap {
+  min-width: 0;
+}
+
+.nav {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.link:hover {
+  color: var(--text);
+}
+
+.link[aria-current="page"] {
+  color: var(--text);
+}
+
+.link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+@media (max-width: 559px) {
+  .navWrap {
+    flex-basis: 100%;
+    margin: 0 calc(var(--space-2) * -1);
+  }
+
+  .nav {
+    justify-content: space-between;
+  }
+
+  .link {
+    padding: 0 var(--space-2);
+  }
+
+  .inner {
+    padding-top: var(--space-1);
+  }
+}
