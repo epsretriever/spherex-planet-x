@@ -14,12 +14,15 @@ export const HORIZONS = "JPL Horizons";
 /** Half-width of the SBIdent field of view around each detection (deg). */
 export const SBIDENT_HWIDTH_DEG = 0.1;
 /**
- * SBIdent can take well over 15 s even for the fast first pass, so it gets a longer timeout.
+ * SBIdent can take well over 15 s even for the fast first pass, so it gets a longer timeout,
+ * but short enough that a lookup started after a response (waitUntil, which Cloudflare stops
+ * about 30 s after the response) can still store its result. Lookups that run out of time are
+ * finished by the cron, which has no such limit.
  * We use only the first (fast, approximate) pass: JPL Horizons then computes precise positions
  * for the few objects that come close, so the slow numerically integrated second pass adds
  * nothing but latency.
  */
-export const SBIDENT_TIMEOUT_MS = 28_000;
+export const SBIDENT_TIMEOUT_MS = 20_000;
 
 const pad = (n: number, w = 2) => String(n).padStart(w, "0");
 
