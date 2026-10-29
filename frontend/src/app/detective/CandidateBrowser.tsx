@@ -128,7 +128,15 @@ export function CandidateBrowser() {
 
       <section aria-live="polite" aria-busy={state.status === "loading"} className={styles.results}>
         {state.status === "loading" && <LoadingBlock label="Loading candidates" height={320} />}
-        {state.status === "error" && <ErrorState reason={state.error.reason} message={state.error.message} onRetry={state.retry} />}
+        {state.status === "error" &&
+          (state.error.reason === "not_found" ? (
+            // The Worker answers 404 until the pipeline publishes a candidate list.
+            <EmptyState title="No candidates published yet">
+              <p>Once our pipeline finishes analyzing a patch of sky, every moving object it flags will appear here.</p>
+            </EmptyState>
+          ) : (
+            <ErrorState reason={state.error.reason} message={state.error.message} onRetry={state.retry} />
+          ))}
         {state.status === "ok" &&
           (sorted.length === 0 ? (
             <EmptyState title="No candidates match">

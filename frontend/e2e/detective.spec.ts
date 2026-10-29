@@ -64,3 +64,10 @@ test("unknown candidate shows not found", async ({ page }) => {
   await page.goto("/detective/candidate/?id=does-not-exist");
   await expect(page.getByRole("alert").filter({ hasText: "couldn't find" })).toBeVisible();
 });
+
+test("an unpublished candidate list reads as empty, not broken", async ({ page }) => {
+  await page.unrouteAll();
+  await installMockApi(page, { failWith: 404 });
+  await page.goto("/detective/");
+  await expect(page.getByRole("heading", { name: "No candidates published yet" })).toBeVisible();
+});
