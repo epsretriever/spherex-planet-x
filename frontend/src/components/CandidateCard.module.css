@@ -1,0 +1,122 @@
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4);
+  transition:
+    border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+@media (min-width: 640px) {
+  .card {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+}
+
+.card:hover,
+.card:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: var(--glow);
+}
+
+.card[data-classification="injected"] {
+  background:
+    repeating-linear-gradient(135deg, rgb(240 107 216 / 0.05) 0 10px, transparent 10px 20px),
+    var(--surface);
+}
+
+.thumb {
+  position: relative;
+  align-self: start;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.crosshair {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--track) 80%, transparent);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--text);
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+
+.stats dt {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
