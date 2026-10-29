@@ -12,6 +12,7 @@
           "type": "string"
         },
         "reachable": {
+          "description": "True only when the upstream answered a minimal valid request with HTTP 200 and the expected body",
           "title": "Reachable",
           "type": "boolean"
         },
@@ -50,12 +51,24 @@
           ],
           "default": null,
           "title": "Detail"
+        },
+        "probed_utc": {
+          "description": "When this result was measured",
+          "title": "Probed Utc",
+          "type": "string"
+        },
+        "cached": {
+          "description": "Result reused from a probe in the last 10 minutes",
+          "title": "Cached",
+          "type": "boolean"
         }
       },
       "required": [
         "name",
         "url",
-        "reachable"
+        "reachable",
+        "probed_utc",
+        "cached"
       ],
       "title": "UpstreamStatus",
       "type": "object"
@@ -73,6 +86,18 @@
       "description": "Pipeline package version plus the git commit of the code that built the data",
       "title": "Pipeline Version",
       "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "build_run_id of the static data being served",
+      "title": "Build Run Id"
     },
     "status": {
       "enum": [
@@ -104,6 +129,7 @@
   },
   "required": [
     "pipeline_version",
+    "build_run_id",
     "status",
     "checked_utc",
     "fields_loaded",

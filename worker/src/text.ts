@@ -56,7 +56,7 @@ function motionParts(c: CandidateDetail): Part[] {
   if (m.distance_au_estimate) {
     const d = m.distance_au_estimate;
     parts.push({
-      text: `SPHEREx's own orbital parallax puts it roughly ${fmt(d.best)} AU away (range ${fmt(d.hi)} to ${fmt(d.lo)} AU).`,
+      text: `SPHEREx's own orbital parallax puts it roughly ${fmt(d.best)} AU away (range ${fmt(d.lo)} to ${fmt(d.hi)} AU).`,
       fields: ["motion.distance_au_estimate.best", "motion.distance_au_estimate.lo", "motion.distance_au_estimate.hi"],
     });
   }

@@ -563,13 +563,19 @@ class InjectionStudy(Envelope):
 class UpstreamStatus(Model):
     name: str
     url: str
-    reachable: bool
+    reachable: bool = Field(
+        description="True only when the upstream answered a minimal valid request with HTTP 200 "
+        "and the expected body"
+    )
     http_status: int | None = None
     latency_ms: float | None = None
     detail: str | None = None
+    probed_utc: str = Field(description="When this result was measured")
+    cached: bool = Field(description="Result reused from a probe in the last 10 minutes")
 
 
 class Health(Envelope):
+    build_run_id: str | None = Field(description="build_run_id of the static data being served")
     status: Literal["ok", "degraded"]
     checked_utc: str
     fields_loaded: int

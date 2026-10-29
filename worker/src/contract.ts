@@ -89,6 +89,7 @@ export interface FieldSummary {
 }
 
 export interface FieldList extends Envelope {
+  build_run_id?: string | null;
   generated_utc: string;
   fields: FieldSummary[];
 }
@@ -241,6 +242,7 @@ export interface CandidateSummary {
 }
 
 export interface CandidateList extends Envelope {
+  build_run_id?: string | null;
   generated_utc: string;
   total: number;
   candidates: CandidateSummary[];
@@ -253,9 +255,13 @@ export interface UpstreamStatusEntry {
   http_status: number | null;
   latency_ms: number | null;
   detail: string | null;
+  /** When this result was measured; results are reused for up to 10 minutes. */
+  probed_utc: string;
+  cached: boolean;
 }
 
 export interface Health extends Envelope {
+  build_run_id: string | null;
   status: "ok" | "degraded";
   checked_utc: string;
   fields_loaded: number;
