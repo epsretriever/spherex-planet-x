@@ -23,6 +23,8 @@ The product pitch this plan builds toward:
 
 ## 1. Fixes from the audit (do these first)
 
+**Status (Oct 29):** B1, B2, B3, B4, B9, F1, F2 and the 404 fix (F6) are done on `main`. Still open: **B5, B6, B7, B8, B10** and **F3, F4, F5**.
+
 ### Backend
 
 | # | Flaw | Evidence | Fix |
@@ -36,6 +38,7 @@ The product pitch this plan builds toward:
 | B7 | Only 3 fields and 2 candidates; the Simulated page has no data. | `frontend/public/data/` has no `injection/`. | Section 2 (survey) and section 5 (detection limits). |
 | B8 | Static data is stamped with a WIP commit (`0.1.0+git.2e0e433`). | `/api/health` `pipeline_version`. | Pipeline runs in CI stamp the real commit and run ID. |
 | B9 | Subrequest budget is implicit. | Earlier crash from >50 subrequests. | Add a `SubrequestBudget` passed through `Deps`; every upstream call spends from it; the cron enrichment splits work across invocations. Unit-test the worst case. |
+| B10 | Images show a bright white wedge where the detector has no data. | Report for `aquarius-b-c01`, epochs on Jun 2–3 (e.g. stamps #1–#4, field image at Jun 3 08:03). The display-only "fill flagged pixels from neighbours" step also fills pixels outside the detector footprint, smearing values into an empty area. | Fill only flagged pixels **inside** coverage (`np.isfinite(lam_grid)` / detector footprint); render uncovered pixels as a flat neutral background (or transparent in WebP), and show "outside SPHEREx's view" in the viewer legend. Rebuild the three fields from S3 and keep `rank-pairs` output. |
 
 ### Frontend
 
@@ -46,6 +49,8 @@ The product pitch this plan builds toward:
 | F3 | Simulated page is empty. | Becomes the detection-limits page (section 5). |
 | F4 | No visual QA on real data at phone width. | Add Playwright screenshot tests at 360, 768 and 1280 px for every page on **real** data (not mocks), plus a Lighthouse CI check: performance, accessibility and best practices ≥ 90 on Home, Explore field and a report. |
 | F5 | Text says "Not yet checked against JPL" even after a match on some views. | All copy comes from the API's `summary_plain`/`label_plain`; remove any frontend-side status wording. |
+| F6 | Unknown URLs showed the home page. | Done: `not_found_handling = "404-page"`. |
+| F7 | Detective cards and report titles all read "Unexplained", which doesn't identify the object. | Title each card and report with the object's identity: JPL designation when matched, otherwise "Object A in Aquarius" (from the field name) with the ID as secondary text. |
 
 ## 2. Feature A: discovery engine that finds, links and follows objects
 
@@ -136,7 +141,7 @@ Each line is one PR. Do them in order within a column; the two columns run in pa
 
 | Order | Backend session | Frontend session |
 |---|---|---|
-| 1 | **Fixes:** B1+B2+B3 (KV + Cron enrichment), B6, B9, B4 pair ranking + rebuilt data, B8 | **Fixes:** F1 (instant report + JPL status chip), F2, F5; F4 Playwright real-data screenshots + Lighthouse CI |
+| 1 | **Fixes:** B10 image rebuild, B6, B8 (B1–B4, B9 done) | **Fixes:** F5, F7; F4 Playwright real-data screenshots + Lighthouse CI (F1, F2, F6 done) |
 | 2 | Contract v1.1: `objects`, `survey`, AI endpoints, `requests`, `votes` (types, Pydantic, fixtures). D1 schema + migrations. | App-wide polish pass from the screenshot audit; navigation for new sections (Objects, Sky map, Help train the AI) with fixtures. |
 | 3 | Injection–recovery at scale on the existing tiles → real `injection/` data (section 5) | **Simulated → Detection limits page**: recovery heatmaps, m₅₀ by distance, plain-language summary |
 | 4 | Workers AI: analyst write-up, Ask-about-this-object, natural-language search, all with grounding checks and tests (section 6) | AI panels: write-up with cited numbers, chat with citations, natural-language search bar with editable filter chips |
@@ -164,8 +169,8 @@ Declared in `wrangler.toml`; Wrangler creates KV and D1 automatically on deploy 
 
 | Binding | Type | Used for |
 |---|---|---|
-| `ENRICHMENT` | KV namespace `spherex-planet-x-enrichment` | JPL results, AI output cache |
+| `ENRICHMENT` | KV namespace (created automatically on first deploy; live) | JPL results, AI output cache |
 | `DB` | D1 database `spherex-planet-x` | votes, sky requests, tracked-object index |
 | `AI` | Workers AI | analyst write-ups, chat, search |
-| `[triggers] crons` | Cron Trigger `0 */6 * * *` | background JPL enrichment, digest |
+| `[triggers] crons` | Cron Trigger `*/30 * * * *` (live) | background JPL enrichment, digest |
 | Turnstile site + secret key | Turnstile widget | vote and request forms (secret via `wrangler secret put TURNSTILE_SECRET`) |
