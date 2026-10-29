@@ -36,9 +36,17 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 | Bodhi | NASA data research, image analysis, scientific validation |
 | TBD | AI/ML, candidate ranking, backend, integration |
 
-## Status
+## Repository layout
 
-Planning. Per Space Apps rules, building starts at kickoff on November 14, 2026.
+| Path | Contents |
+|---|---|
+| `backend/` | Python package `spherex_px`: data access, science pipeline, FastAPI service |
+| `frontend/` | Next.js app |
+| `shared/schema/` | JSON Schema for every API response, exported from the backend models |
+| `shared/fixtures/` | Recorded API responses for real SPHEREx fields |
+| `docs/api-contract.md` | Backend ↔ frontend JSON contract |
+| `docs/backend-plan.md` | Backend architecture and science approach |
+| `docs/frontend-plan.md` | Frontend screens, flows and design system |
 
 ## Data credits
 

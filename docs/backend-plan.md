@@ -2,11 +2,9 @@
 
 NASA Space Apps Challenge 2026 · Planet X and SPHEREx · Backend owners: Bodhi (data, image analysis, scientific validation) and the AI/ML + backend + integration teammate.
 
-> **Status: planning only.** Space Apps asks teams not to build the solution before kickoff (Nov 14, 2026, 9:00 AM Pacific). Until then we only do research, read the official challenge statement, and test data access (section 8). No pipeline code goes into this repo before kickoff. The code snippets below show which endpoints we'll call and how. They are not an implementation.
-
-> **Verification note.** Endpoint names, table and column names, and parameter formats below come from IRSA's and JPL's published docs and tutorials, as found during research. The machine that drafted this plan couldn't reach `irsa.ipac.caltech.edu` or `ssd-api.jpl.nasa.gov`, so nothing has been run against the live services yet. Anything marked **[verify]** has to be confirmed by the data-access tests in section 8 before kickoff.
-
----
+> **Data access status (verified Oct 29, 2026).** The SPHEREx Level 2 files are on IRSA's public AWS Open Data bucket (`nasa-irsa-spherex`), and the backend reads them there with HTTP byte-range requests (section 3.0). File layout, header keywords, flag bits, the PSF grid and the wavelength lookup table below were checked against real files. IRSA's own services (`irsa.ipac.caltech.edu`) and JPL's (`ssd-api.jpl.nasa.gov`, `ssd.jpl.nasa.gov`) are blocked by the current cloud environment's network policy, so the IRSA TAP/SIA and JPL clients are implemented but have only been tested against recorded responses. Items still marked **[verify]** depend on those services.
+>
+> The JSON contract with the frontend is in [docs/api-contract.md](api-contract.md). It replaces the draft schema that was in section 5.
 
 ## 1. Goals and non-goals
 
@@ -59,20 +57,28 @@ NASA Space Apps Challenge 2026 · Planet X and SPHEREx · Backend owners: Bodhi 
             11. Serve       FastAPI: PNG/WebP cutouts, blink sequences, JSON candidate reports
 ```
 
-### Module layout (to create **after kickoff**)
+### Module layout
+
+All code lives in `backend/spherex_px/` (the frontend works in `frontend/`).
 
 | Module | Responsibility |
 |---|---|
-| `backend/data/irsa.py` | TAP/SIA queries, cutout URL building, retries, on-disk cache keyed by (obs id, center, size) |
-| `backend/data/fitsio.py` | Read MEF cutout: IMAGE, FLAGS, VARIANCE, ZODI, PSF, WCS-WAVE; per-pixel wavelength map |
-| `backend/science/align.py` | WCS handling, common grid (`reproject` for display only; detections stay in native pixels + WCS) |
-| `backend/science/detect.py` | Background (`photutils.background.Background2D`), detection (`DAOStarFinder` or segmentation), photometry |
-| `backend/science/link.py` | Static-source rejection, tracklet building, motion fitting |
-| `backend/science/known.py` | JPL SBIdent + Horizons calls, caching, matching |
-| `backend/science/score.py` | Rule-based vetting and scores |
-| `backend/science/inject.py` | Injection-recovery harness |
-| `backend/explain.py` | Grounded explanation generation + numeric consistency check |
-| `backend/api/` | FastAPI app, background job runner, PNG rendering |
+| `schemas.py`, `contract.py` | API contract (Pydantic models), JSON Schema export, fixture validation |
+| `data/s3.py` | Public SPHEREx bucket: listing, byte-range reads, on-disk cache |
+| `data/l2file.py` | Level 2 file layout from headers; row-strip cutouts of IMAGE, FLAGS, VARIANCE, ZODI; one PSF plane; WCS-WAVE |
+| `data/index.py` | Coverage index built from exposure headers (pointing footprints and times) |
+| `data/spectral.py` | Per-pixel wavelength from WCS-WAVE; the 102-channel calibration table |
+| `data/flags.py` | FLAGS bit definitions (from the file header) |
+| `data/irsa.py` | IRSA TAP discovery and cutout-service client (used when IRSA is reachable) |
+| `data/jpl.py` | JPL SBIdent and Horizons clients with caching |
+| `science/grid.py` | Common tangent-plane grid and reprojection (for display; measurements stay in native pixels + WCS) |
+| `science/detect.py` | Background, source detection, photometry, PSF-shape test |
+| `science/link.py` | Static-source rejection, tracklet building, motion fitting |
+| `science/vetting.py` | Rule-based checks, scores, error sources, classification |
+| `science/explain.py` | Grounded explanation + numeric consistency check |
+| `science/inject.py` | Injection-recovery harness |
+| `build.py`, `render.py` | Build a field (showcase or run) into products; WebP rendering |
+| `api/` | FastAPI app, run queue |
 
 **Runtime model:** a field run takes minutes (dozens of cutouts), so `POST /runs` starts a background job and the frontend polls for status. Plain FastAPI `BackgroundTasks` plus a process pool is enough. For the demo, **precompute 3–5 showcase fields** and serve them from cache, so judging never depends on IRSA latency.
 
@@ -80,7 +86,23 @@ NASA Space Apps Challenge 2026 · Planet X and SPHEREx · Backend owners: Bodhi 
 
 ## 3. Data endpoints
 
-### 3.1 IRSA: discover observations (TAP, primary)
+### 3.0 Public SPHEREx bucket on AWS (verified, used now)
+
+IRSA mirrors the SPHEREx Quick Release Level 2 files to the AWS Open Data bucket `nasa-irsa-spherex` (region us-east-1, anonymous HTTPS):
+
+```
+https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/<week>/<l2b-version>/<detector>/level2_<obsid>D<detector>_spx_<l2b-version>.fits
+e.g. qr2/level2/2025W23_1C/l2b-v20-2025-251/3/level2_2025W23_1C_0001_1D3_spx_l2b-v20-2025-251.fits
+```
+
+- QR2 spans weeks 2025W17 to 2026W29 (129 week segments). QR3 starts at 2026W30. Each week segment holds about 1,600 files per detector.
+- Files are **uncompressed**, 71.6 MB multi-extension FITS. Measured layout (byte offsets are stable): PRIMARY, IMAGE (2040×2040 float32, MJy/sr), FLAGS (int32), VARIANCE, ZODI, PSF (101×101×121, 10× oversampled at 0.615″/px, 11×11 zones), WCS-WAVE (bintable: X[9], Y[14], VALUES[2,9,14]).
+- **We never download whole files.** A cutout reads only the rows it covers from each image extension (one byte range per extension), plus one PSF plane and the WCS-WAVE table. A 0.3° cutout transfers about 1.4 MB per image extension, roughly 6 MB per exposure in total.
+- The IMAGE header has everything we need for discovery and science: `OBSID`, `DETECTOR`, `MJD-BEG/AVG/END`, `DATE-AVG`, `XPOSURE`, the celestial WCS (`RA---TAN-SIP` with SIP distortion), the 0-based pixel WCS `A`, the spectral WCS `W` (`WAVE-TAB` lookup into WCS-WAVE), the spacecraft geocentric position and velocity (`X_SC`, `Y_SC`, `Z_SC`, `VX_SC`…, km and km/s), the pixel solid angle (`OMEGA_MEDIAN`, ≈ 37.9 arcsec² ≈ (6.15″)²), the median PSF FWHM (`PSF_FWHM`, ≈ 5.2″) and DQA outcomes (`L2DQAFLG`).
+- Discovery without IRSA TAP: `data/index.py` builds a coverage index from exposure headers (one header read ≈ 23 KB). The survey is Sun-synchronous, so a sky position is only observed when the Sun is about 90° away in ecliptic longitude. That lets us scan only the matching week segments.
+- The 102-channel definitions (`qr2/spectral_channels/.../spectral_channels_spx_cal-sch-v1-2026-106.fits.gz`) give each channel's wavelength, range, resolving power R (≈ 37–43 for D1–D4, ≈ 130 for D6) and bandwidth. We use them for `band_index` and the λ-matching tolerance.
+
+### 3.1 IRSA: discover observations (TAP, used when reachable)
 
 - Endpoint: `https://irsa.ipac.caltech.edu/TAP` (pyvo `TAPService`, sync queries).
 - Tables: `spherex.plane` (one row per spectral image: footprint `poly`, `time_bounds_lower/upper`, `energy_bandpassname` such as `SPHEREx-D1`…`SPHEREx-D6`) joined to `spherex.artifact` (file `uri`) on `planeid`. IRSA's own SPHEREx cutout and PSF tutorials use this pattern **[verify column names; check time units: CAOM convention is MJD]**.
@@ -145,7 +167,7 @@ Through IRSA TAP: AllWISE (`allwise_p3as_psd`) and 2MASS (`fp_psc`) cone searche
 
 ### 3.7 Network allowlist for dev environments
 
-`irsa.ipac.caltech.edu`, `ssd-api.jpl.nasa.gov`, `ssd.jpl.nasa.gov`, and optionally `caltech-ipac.github.io` (tutorials) and `vo.imcce.fr` (SkyBoT). The cloud sandbox used to draft this plan blocked all of them. Laptops at the hackathon should be fine, but check before kickoff.
+`irsa.ipac.caltech.edu`, `ssd-api.jpl.nasa.gov`, `ssd.jpl.nasa.gov`, and optionally `caltech-ipac.github.io` (tutorials) and `vo.imcce.fr` (SkyBoT). The current cloud environment blocks all of them; they need to be added under Allowed domains in the environment's network settings. `nasa-irsa-spherex.s3.us-east-1.amazonaws.com` (section 3.0) is already reachable.
 
 ---
 
@@ -183,147 +205,20 @@ Linking models:
 
 ---
 
-## 5. Candidate report: JSON contract
+## 5. JSON contract
 
-Version the schema (`schema_version`) and freeze v1.0 by hour 6 so the frontend can build against mock data. Units are spelled out in field names. Times are UTC ISO-8601 plus MJD. Fluxes are in µJy, with MJy/sr native image values converted using the pixel solid angle.
+The contract is in **[docs/api-contract.md](api-contract.md)**. The models are in `backend/spherex_px/schemas.py`, JSON Schema in `shared/schema/`, and recorded examples in `shared/fixtures/`. In short:
 
-### 5.1 Field run report (`GET /api/runs/{run_id}/report`)
+- Public endpoints read precomputed showcase fields: `GET /api/fields`, `/api/fields/{field_id}`, `/api/candidates`, `/api/candidates/{candidate_id}`, `/api/injection/{study_id}`, `/api/health`. The "analyze any position" feature adds `/api/coverage`, `POST /api/runs` and `GET /api/runs/{run_id}`, and a finished run yields the same field and candidate shapes.
+- Classification: `known_object | unmatched | likely_artifact | unconfirmed_pair | injected`, owned by the backend.
+- Scores: `motion_consistency`, `snr`, `artifact_likelihood`, `overall`, `quality_level`, `method: rule_based_v1`. This is a ranking score, never a probability.
+- Every image, epoch, detection and stamp carries `source` provenance.
 
-```json
-{
-  "schema_version": "1.0",
-  "run_id": "run_2026-11-14T19-02-11Z_a1b2",
-  "pipeline_version": "0.3.0+git.abc1234",
-  "created_utc": "2026-11-14T19:05:42Z",
-  "data_release": "QR2",
-  "field": { "ra_deg": 150.1, "dec_deg": 2.2, "radius_deg": 0.05, "cutout_size_deg": 0.1 },
-  "epochs": [
-    {
-      "epoch_id": "e03",
-      "obs_id": "2025W23_1B_0412_2",
-      "planeid": "string-from-irsa",
-      "mjd_mid": 60835.21734,
-      "time_start_utc": "2025-06-05T05:12:58Z",
-      "time_end_utc": "2025-06-05T05:14:50Z",
-      "bandpass": "SPHEREx-D2",
-      "wavelength_um_center": 1.43,
-      "bandwidth_um_center": 0.035,
-      "wavelength_um_range": [1.41, 1.45],
-      "cutout_source_url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/...fits?center=150.1,2.2&size=0.1",
-      "image_url": "/api/runs/run_.../epochs/e03.png",
-      "flagged_pixel_fraction": 0.031,
-      "n_detections": 212
-    }
-  ],
-  "summary": {
-    "n_epochs": 14, "time_baseline_days": 183.4,
-    "n_detections_total": 2950, "n_unmatched_detections": 41,
-    "n_candidates": 3, "n_known_matches": 2
-  },
-  "candidates": [ "…see 5.2…" ],
-  "provenance": {
-    "irsa_queries": [ { "service": "TAP", "query": "SELECT …", "time_utc": "…", "n_rows": 413 } ],
-    "jpl_queries":  [ { "service": "sb_ident", "url": "…", "time_utc": "…", "n_objects": 5 } ],
-    "parameters": { "detect_threshold_sigma": 5.0, "match_radius_px": 1.5, "lambda_match_tol_frac": 0.01 }
-  },
-  "disclaimer": "Unmatched candidates may be artifacts, measurement errors, or objects missing from catalogs. This is not a discovery claim."
-}
-```
-
-### 5.2 Candidate (`GET /api/runs/{run_id}/candidates/{candidate_id}`)
-
-Shown as JSON with comments (`jsonc`) for readability. The served JSON has no comments.
-
-```jsonc
-{
-  "candidate_id": "c002",
-  "classification": "known_object",          // known_object | unmatched | likely_artifact | unconfirmed_pair | injected (only in injection runs)
-  "detections": [
-    {
-      "epoch_id": "e03", "mjd": 60835.21734,
-      "ra_deg": 150.10312, "dec_deg": 2.19876,
-      "pos_err_arcsec": 0.9,
-      "x_pix": 31.4, "y_pix": 27.9,
-      "flux_ujy": 412.0, "flux_err_ujy": 38.0, "snr": 10.8,
-      "wavelength_um": 1.432, "bandwidth_um": 0.035,
-      "flag_bits": 0, "flag_names": [],
-      "flagged_pixels_in_aperture": 0,
-      "psf_fit_reduced_chi2": 1.12,
-      "stamp_url": "/api/runs/run_.../stamps/c002_e03.png"
-    }
-  ],
-  "motion": {
-    "model": "linear",                        // linear | parallax | none
-    "n_detections": 4,
-    "time_span_hours": 6.2,
-    "rate_arcsec_per_hr": 31.7,
-    "position_angle_deg": 112.4,
-    "ra_rate_arcsec_per_hr": 29.3, "dec_rate_arcsec_per_hr": -12.1,
-    "fit_residual_rms_arcsec": 0.8,
-    "fit_chi2": 3.1, "fit_dof": 4,
-    "distance_au_estimate": null              // { "best": 41.0, "lo": 33.0, "hi": 52.0 } for the parallax model
-  },
-  "known_object": {
-    "checked": true,
-    "matched": true,
-    "designation": "(12345) Example",
-    "predicted_vmag": 17.9,
-    "per_epoch": [
-      { "epoch_id": "e03", "predicted_ra_deg": 150.10301, "predicted_dec_deg": 2.19870, "separation_arcsec": 0.45 }
-    ],
-    "observer": "geocenter+horizons_spacecraft_correction",
-    "source": "JPL SBIdent + Horizons"
-  },
-  "scores": {
-    "motion_consistency": 0.93,
-    "snr": 0.88,
-    "artifact_likelihood": 0.04,
-    "overall": 0.86,
-    "method": "rule_based_v1"
-  },
-  "vetting": [
-    { "check": "min_detections",          "value": 4,    "threshold": 3,    "passed": true },
-    { "check": "per_detection_snr_min",   "value": 7.2,  "threshold": 5.0,  "passed": true },
-    { "check": "motion_fit_pvalue",       "value": 0.54, "threshold": 0.01, "passed": true },
-    { "check": "flagged_aperture_pixels", "value": 0,    "threshold": 0,    "passed": true },
-    { "check": "not_in_static_catalog",   "value": true, "threshold": true, "passed": true },
-    { "check": "psf_like_shape",          "value": 1.12, "threshold": 2.0,  "passed": true },
-    { "check": "flux_consistent_across_lambda", "value": 0.31, "threshold": 0.5, "passed": true }
-  ],
-  "explanation": {
-    "text": "Detected in 4 exposures over 6.2 hours, moving 31.7″/hr toward PA 112°. Positions agree with JPL's prediction for (12345) Example to within 0.45″ …",
-    "generator": "template_v1",               // template_v1 | llm (name/version) + "numeric_check": "passed"
-    "grounded_fields": ["motion.n_detections", "motion.time_span_hours", "motion.rate_arcsec_per_hr", "known_object.per_epoch[0].separation_arcsec"],
-    "numeric_check": "passed"
-  }
-}
-```
-
-### 5.3 Grounded explanations
+### 5.1 Grounded explanations
 - The explainer gets **only the candidate JSON**: no images, no web, no free recall.
-- Default is a deterministic template (`template_v1`) that fills sentences from fields, which is good enough to demo. An LLM rewrite is optional and must keep every number from the JSON.
-- **Numeric check:** extract every number from the generated text and confirm it matches a value in `grounded_fields` (after rounding). If any check fails, fall back to the template. The UI shows which fields each sentence came from.
-- Forbidden content: claims of discovery, objects or observations not in the report, and distances unless `motion.distance_au_estimate` exists.
-
-### 5.4 API surface (FastAPI)
-
-| Method & path | Returns |
-|---|---|
-| `GET /api/health` | service + upstream reachability |
-| `GET /api/coverage?ra=&dec=&radius=` | list of epochs (no pixels fetched): times, bands, λ ranges |
-| `POST /api/runs` `{ra, dec, radius_deg, time_min?, time_max?, bands?}` | `{run_id}` (202) |
-| `GET /api/runs/{run_id}` | status: `queued \| fetching \| detecting \| linking \| identifying \| done \| failed` + progress |
-| `GET /api/runs/{run_id}/report` | full report (5.1) |
-| `GET /api/runs/{run_id}/candidates/{cid}` | single candidate (5.2) |
-| `GET /api/runs/{run_id}/epochs/{epoch_id}.png?stretch=asinh&grid=common` | aligned cutout image (`.webp` also) |
-| `GET /api/runs/{run_id}/blink?pairs=lambda_matched` | ordered frame list for Explorer blink, with λ-match labels |
-| `GET /api/runs/{run_id}/stamps/{cid}_{epoch_id}.png` | small stamp around a detection |
-| `GET /api/showcase` | precomputed demo fields |
-| `GET /api/injection/{study_id}` | injection-recovery results (section 7) |
-
-Images: asinh stretch with fixed percentiles per field so blinking doesn't flicker. Masked pixels are drawn in a neutral color. Every image response carries a WCS sidecar (`.json`) so the frontend can overlay markers.
-
----
+- The default is a deterministic template (`template_v1`) that fills sentences from fields. An LLM rewrite is optional and must keep every number from the JSON.
+- **Numeric check:** extract every number from the text and confirm it matches a value at one of the `grounded_fields` paths (after rounding). Any failure falls back to the template.
+- Forbidden: discovery claims, objects or observations not in the report, and distances unless `motion.distance_au_estimate` exists.
 
 ## 6. Scoring and vetting
 
@@ -334,13 +229,33 @@ Images: asinh stretch with fixed percentiles per field so blinking doesn't flick
 Noise comes from VARIANCE plus a background-residual term. Score = min over detections of a logistic in S/N centred at 5. A combined S/N is reported too, but the weakest detection drives the score.
 
 ### 6.3 Artifact likelihood (uses SPHEREx FLAGS)
-The FLAGS extension is a per-pixel bitmap. Documented bits include TRANSIENT (bit 0), OVERFLOW (bit 1, coincident with SUR_ERROR), SUR_ERROR (bit 2), PHANTOM (bit 4, ghosts), and DICHROIC (bit 7). Bit 21 reportedly marks clean pixels. NONFUNC, HOT, COLD, and SOURCE also exist. **[verify every bit position from the FITS header or the Explanatory Supplement flag table; one source calls it Table 9, another Table 10]**. Treat SOURCE as informational, not bad. Inputs:
-- any bad-bit pixels inside the photometry aperture of any detection (hard fail for TRANSIENT, SUR_ERROR, NONFUNC, HOT; soft penalty for PHANTOM or DICHROIC);
+The FLAGS extension is a per-pixel int32 bitmap. Its header defines the bits (verified on QR2 files; `data/flags.py` reads them from each file's header rather than hard-coding them):
+
+| Bit | Name | Meaning (header comment) | Our use |
+|---|---|---|---|
+| 0 | TRANSIENT | Transient detected during SUR | hard fail |
+| 1 | OVERFLOW | Overflow detected during SUR | hard fail |
+| 2 | SUR_ERROR | Error in onboard processing | hard fail |
+| 4 | PHANTOM | Phantom pixel | soft penalty |
+| 5 | REFERENCE | Reference pixel | hard fail |
+| 6 | NONFUNC | Permanently unusable | hard fail |
+| 7 | DICHROIC | Low efficiency due to dichroic | soft penalty |
+| 9 | MISSING_DATA | Onboard data lost | hard fail |
+| 10 | HOT | Hot pixel | hard fail |
+| 11 | COLD | Anomalously low signal | hard fail |
+| 12 | FULLSAMPLE | Full sample history available | ignore |
+| 14 | PHANMISS | Phantom correction not applied | soft penalty |
+| 15 | NONLINEAR | Nonlinearity correction unreliable | soft penalty |
+| 17 | PERSIST | Persistent charge above threshold | soft penalty |
+| 19 | OUTLIER | Flagged by Detect Outliers | soft penalty (moving objects can trigger it, so it is not a hard fail) |
+| 21 | SOURCE | Pixel mapped to a known source | informational (static-source hint) |
+
+Other inputs:
 - distance to the cutout edge and to bright stars (ghosts and diffraction);
-- PSF-shape fit against the frame's PSF at that position (cosmic rays are too sharp; blends are too broad);
-- flux consistency across detections, given each detection's λ (asteroids have smooth reflected/thermal SEDs, so a wild jump suggests an artifact);
-- detected in only one exposure → `likely_artifact`, or not a candidate at all.
-Known caveat: early releases under-flagged some bad pixels (fixed in later processing, but not retroactively), so we never rely on flags alone.
+- a PSF-shape test against the exposure's own PSF at that position (cosmic rays are too sharp; blends are too broad);
+- flux consistency across detections, given each detection's λ (a wild jump suggests an artifact);
+- detected in only one exposure → not a candidate.
+Known caveat: early releases under-flagged some bad pixels, so we never rely on flags alone.
 
 ### 6.4 Overall score and ML policy
 - `overall = motion × snr × (1 − artifact)`, with thresholds tuned on injection results. Tuning on synthetic labels is the only "training" we do, and we say so.
@@ -370,9 +285,11 @@ Known caveat: early releases under-flagged some bad pixels (fixed in later proce
 
 ---
 
-## 8. Pre-kickoff data-access test plan (run before Nov 14)
+## 8. Data-access test plan
 
-Scope: **only data-access checks.** Use throwaway notebooks or scripts outside this repo, or in a git-ignored `scratch/` folder. Record the answers in `docs/data-access-findings.md` (findings only, no pipeline code). Owner: Bodhi, with the backend teammate pairing on T8–T10.
+Owner: Bodhi, with the backend teammate pairing on T8–T10. Record results in `docs/data-access-findings.md`.
+
+Already verified through the AWS bucket (Oct 29, 2026): the T4 HDU list, T5 WCS-WAVE structure, T6 flag table, and spacecraft position keywords for T9. Tests that need `irsa.ipac.caltech.edu`, `ssd-api.jpl.nasa.gov` or `ssd.jpl.nasa.gov` are still open until those hosts are allowed in the environment's network settings.
 
 | # | Test | Pass criterion / what to record |
 |---|---|---|
@@ -388,33 +305,26 @@ Scope: **only data-access checks.** Use throwaway notebooks or scripts outside t
 | T9 | Horizons: does it have SPHEREx? Get its ID and geocentric state at T8's time; re-query SBIdent with `xobs` | ID; position difference geocenter vs spacecraft for the asteroid (expect several arcsec) |
 | T10 | Visual sanity: in T8's cutouts, is the known asteroid visible at the predicted position (by eye, DS9 or a quick imshow)? | yes/no + offset in px. Confirms time stamps and WCS line up |
 | T11 | Throughput: 20 cutouts sequential, then 4-way parallel | median/95th-percentile latency, error codes (503?), polite concurrency limit |
-| T12 | Pick showcase fields: 3–5 positions with (a) a known main-belt asteroid crossing within one visit and (b) a known TNO or dwarf planet seen in ≥ 2 surveys | list of (ra, dec, times, target) for kickoff |
+| T12 | Pick showcase fields: 3–5 positions with (a) a known main-belt asteroid crossing within one visit and (b) a known TNO or dwarf planet seen in ≥ 2 surveys | list of (ra, dec, times, target) in `backend/spherex_px/config/showcase.toml` |
 
-Exit criterion: T1, T2, T4, T5, T8 pass, so we know we can discover, fetch, read wavelength, and identify. If T5 fails (WCS-WAVE missing from cutouts), the fallback is to fetch the full-image WCS-WAVE header once per observation and apply the cutout's pixel offset.
+Exit criterion: T1, T2, T4, T5, T8 pass, so we know we can discover, fetch, read wavelength, and identify. The S3 byte-range path (section 3.0) already gives discovery, fetching and wavelength without IRSA's services. Identification (T8, T9) still needs JPL access.
 
 ---
 
-## 9. 48-hour build schedule
+## 9. Build order
 
-Hour 0 = kickoff (Sat Nov 14, 9:00 AM Pacific). Names: **B** = Bodhi, **T** = AI/ML + backend teammate, **A** = Armaan (frontend; listed where integration is needed).
+The original 48-hour schedule is kept as a **build order**, not a deadline. Each slice ships as its own pull request with tests. **B** = Bodhi, **T** = AI/ML + backend teammate, **A** = Armaan (frontend; listed where integration is needed).
 
-| Hours | Backend work | Owner | Deliverable / checkpoint |
+| # | Slice | Owner | Deliverable / checkpoint |
 |---|---|---|---|
-| 0–1 | Read the final official challenge statement together; adjust scope; set up repo skeleton, env, lint | all | scope confirmed |
-| 1–3 | Freeze JSON schema v1.0 + write mock report and candidate files for the frontend | T (+A) | `mock_report.json` served by a stub FastAPI |
-| 1–6 | IRSA TAP discovery + cutout fetch + disk cache (from T1–T4 findings) | B | `/api/coverage` live on showcase fields |
-| 3–8 | MEF reader: ZODI subtraction, mask from FLAGS, λ map from WCS-WAVE; PNG/WebP renderer with stable stretch | T | `/epochs/{id}.png` live; Explorer blink works on real data |
-| 6–12 | Per-epoch detection + photometry; static matching across epochs + AllWISE/2MASS | B | unmatched-detection list per field |
-| 8–12 | Job runner, `/runs` endpoints, status/progress | T | end-to-end run on mock science |
-| 12–18 | Linear tracklet linking + motion fit; SBIdent + Horizons module with caching | B (link), T (JPL) | known asteroid recovered and identified in a showcase field ✅ **key milestone** |
-| 18–24 | Sleep in shifts; buffer | — | |
-| 24–30 | Scoring + vetting table; real reports replace mocks; frontend integration pass | T (+A) | Detective mode shows real candidates |
-| 24–32 | λ-matched differencing (visual layer) + parallax-constrained linking | B | TNO showcase field linked across surveys (stretch goal) |
-| 30–38 | Injection-recovery harness + study on showcase/control fields; plots | B (science), T (harness) | completeness heatmap, m₅₀, FP rate |
-| 32–38 | Grounded explanations (template + numeric check; optional LLM) | T | explanation in every candidate |
-| 38–42 | Precompute showcase fields; cache all results; failure modes (IRSA down → cached) | T | demo works offline |
-| 42–45 | Code freeze; validation review of every showcase claim against measurements; README results + limitations | B | science sign-off |
-| 45–48 | Submission materials, demo video, buffer | all | submitted |
+| 1 | API contract: `docs/api-contract.md`, Pydantic models, JSON Schema, fixture validation | T (+A) | frontend builds against the schema |
+| 2 | Data access: S3 byte-range cutouts, L2 file reader (ZODI, FLAGS, VARIANCE, λ map, PSF), coverage index; IRSA TAP and JPL clients | B | real cutouts for showcase fields |
+| 3 | Science: common grid, per-epoch detection + photometry, static rejection, tracklet linking + motion fit, known-object matching | B (science), T (JPL) | known asteroid recovered in a showcase field ✅ **key milestone** (identification needs JPL access) |
+| 4 | Vetting, scores, error sources, grounded explanations | T | evidence report fields filled from measurements |
+| 5 | FastAPI app, WebP rendering, showcase builder, recorded fixtures | T (+A) | Explorer and Detective modes on real data |
+| 6 | Injection-recovery study | B (science), T (harness) | completeness heatmap, m₅₀, FP rate |
+| 7 | Runs ("analyze any position"), λ-matched differencing, parallax-constrained linking | B | TNO showcase field linked across surveys (stretch) |
+| 8 | Validation review of every showcase claim against measurements; README results + limitations | B | science sign-off |
 
 Cut list if behind (in order): parallax linking → λ-matched differencing → optional ML → LLM explanations (keep templates). **Never cut:** known-object cross-check, flags-based vetting, injection-recovery numbers, disclaimer.
 
