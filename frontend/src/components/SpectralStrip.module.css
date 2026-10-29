@@ -1,0 +1,83 @@
+.figure {
+  margin: 0;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  height: 120px;
+}
+
+@media (min-width: 768px) {
+  .strip {
+    height: 168px;
+  }
+}
+
+.detector {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(17, 1fr);
+  gap: 1px;
+  padding-bottom: 20px;
+}
+
+.channel {
+  border-radius: 1px;
+  transform-origin: bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .channel {
+    animation:
+      rise 900ms var(--ease-out) both,
+      scan 5.1s ease-in-out infinite;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: scaleY(0.05);
+    opacity: 0;
+  }
+}
+
+/* A slow brightening sweep, like a source drifting across the filter. */
+@keyframes scan {
+  0%,
+  100% {
+    filter: brightness(0.85);
+  }
+  8% {
+    filter: brightness(1.6) saturate(1.2);
+  }
+  20% {
+    filter: brightness(0.85);
+  }
+}
+
+.det {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-strong);
+  padding-top: 3px;
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.caption span:nth-child(2) {
+  text-align: center;
+}

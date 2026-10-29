@@ -1,0 +1,61 @@
+.page {
+  max-width: 760px;
+}
+
+.page section {
+  margin-top: var(--space-8);
+}
+
+.page section p,
+.page li {
+  color: var(--text-muted);
+}
+
+.lede {
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+}
+
+.method {
+  counter-reset: step;
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.method li {
+  counter-increment: step;
+  position: relative;
+  padding: var(--space-4) var(--space-4) var(--space-4) 56px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.method li::before {
+  content: counter(step);
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.method h2 {
+  font-size: var(--text-md);
+  margin-bottom: var(--space-1);
+  color: var(--text);
+}
+
+.method p {
+  margin: 0;
+}
