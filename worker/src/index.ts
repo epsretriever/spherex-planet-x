@@ -3,7 +3,7 @@ import { type Env, defaultDeps } from "./env";
 import { refreshStale } from "./scheduled";
 
 // Requests outside /api/* never reach this Worker: wrangler.toml routes them to static assets
-// (frontend/out) with single-page-application fallback.
+// (frontend/out); unknown paths get the site's 404 page.
 const app = createApp();
 
 export default {
