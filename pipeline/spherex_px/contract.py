@@ -11,6 +11,7 @@ from .schemas import (
     CandidateList,
     FieldDetail,
     FieldList,
+    Health,
     InjectionStudy,
 )
 
@@ -25,6 +26,7 @@ FIXTURE_MODELS = {
     "candidates.json": CandidateList,
     "candidate_detail.json": CandidateDetail,
     "injection_study.json": InjectionStudy,
+    "health.json": Health,
 }
 
 

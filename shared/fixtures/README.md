@@ -1,13 +1,16 @@
 # Fixtures
 
-Recorded backend responses for real SPHEREx fields, one file per endpoint shape:
+Real API responses for real SPHEREx data, one file per response shape. They are recorded by `scripts/record-fixtures.mjs` and never edited by hand.
 
 | File | Endpoint | Model |
 |---|---|---|
 | `fields.json` | `GET /api/fields` | `FieldList` |
-| `field_detail.json` | `GET /api/fields/{field_id}` | `FieldDetail` |
-| `candidates.json` | `GET /api/candidates` | `CandidateList` |
-| `candidate_detail.json` | `GET /api/candidates/{candidate_id}` | `CandidateDetail` |
-| `injection_study.json` | `GET /api/injection/{study_id}` | `InjectionStudy` |
+| `field_detail.json` | `GET /api/fields/{field_id}` (the field with the most movers) | `FieldDetail` |
+| `candidates.json` | `GET /api/candidates?include_injected=true` | `CandidateList` |
+| `candidate_detail.json` | `GET /api/candidates/{candidate_id}` (the candidate with the most detections) | `CandidateDetail` |
+| `health.json` | `GET /api/health` | `Health` |
+| `injection_study.json` | `GET /api/injection/{study_id}`, once a study is published | `InjectionStudy` |
 
-They are written by `spherex-px record-fixtures` from the showcase build the API serves, and images they reference are copied to `static/`. Nothing here is written by hand. Run `spherex-px validate-fixtures` (or the backend tests) after changing the contract.
+`manifest.json` says where and when each file was recorded. A recording from a local `npx wrangler dev` without JPL access shows `known_object.checked: false` and JPL as unreachable in health. A recording from production (`--base https://spherex-planet-x.bodhishanbhag.workers.dev`, or the weekly `Record API fixtures` Action) has the live JPL results.
+
+Validate with `spherex-px validate-fixtures` after any contract change.

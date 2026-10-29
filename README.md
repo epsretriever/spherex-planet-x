@@ -97,6 +97,20 @@ npm test --workspace frontend   # frontend unit tests
 
 Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`, and posts a preview link on every pull request. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
 
+### Pipeline (static data)
+
+The Python pipeline in `pipeline/` reads real SPHEREx Level 2 cutouts from the public `nasa-irsa-spherex` S3 bucket and writes `frontend/public/data/`.
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -e "pipeline[dev]"
+spherex-px build          # rebuild every showcase field (pipeline/spherex_px/config/showcase.toml)
+spherex-px rank-pairs     # re-rank blink pairs for built fields
+(cd pipeline && pytest)
+```
+
+Commit pipeline code before building: the data is stamped with the commit of the code that made it (`pipeline_version`) plus a `build_run_id`, and builds from uncommitted pipeline code are refused. `node scripts/record-fixtures.mjs [--base URL]` records real API responses into `shared/fixtures/`.
+
 ## Data credits
 
 SPHEREx data: NASA / JPL-Caltech / IPAC, via the NASA/IPAC Infrared Science Archive.

@@ -1,0 +1,42 @@
+# Re-record shared/fixtures/ from the production Worker, so the frontend and the contract tests
+# use real responses that include live JPL known-object results. Opens a pull request when
+# anything changed.
+name: Record API fixtures
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1" # weekly, Monday 06:17 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Record from production
+        run: node scripts/record-fixtures.mjs --base https://spherex-planet-x.bodhishanbhag.workers.dev
+      - name: Validate against the contract
+        run: |
+          pip install -e "pipeline[dev]"
+          spherex-px validate-fixtures
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: bot/record-fixtures
+          commit-message: "Re-record API fixtures from production"
+          title: "Re-record API fixtures from production"
+          body: |
+            Recorded by `.github/workflows/fixtures.yml` with `scripts/record-fixtures.mjs` from
+            https://spherex-planet-x.bodhishanbhag.workers.dev and validated against the contract
+            models. See `shared/fixtures/manifest.json` for the source of each file.
+          add-paths: shared/fixtures/
