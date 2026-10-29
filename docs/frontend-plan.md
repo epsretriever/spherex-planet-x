@@ -1,7 +1,9 @@
 # Frontend plan
 
 Owner: Armaan (frontend, UI/UX, product design)
-Code: `frontend/` (the backend works in `backend/` and `shared/`).
+Code: `frontend/` (the backend works in `worker/`, `pipeline/` and `shared/`). Setup and scripts: `frontend/README.md`.
+
+Deployment: one Cloudflare Worker, `spherex-planet-x`, serves both the TypeScript API (`/api/*`) and this site. Cloudflare runs `npm ci && npm run build` at the repository root, which builds the frontend's static export into `frontend/out`, then `npx wrangler deploy`.
 API contract source of truth: `docs/api-contract.md` and the example JSON in `shared/fixtures/`, both maintained by the backend. Section 4 of this plan summarizes the rules the frontend depends on; if the two ever disagree, `docs/api-contract.md` wins and this plan gets fixed.
 
 ## 0. Principles
@@ -13,7 +15,7 @@ These decide every trade-off below.
 3. **Every pixel is traceable.** Each image shows, or is one tap away from, its source file, observation date and wavelength. The frontend refuses to render an image that has no `source` block.
 4. **Honest about uncertainty.** We never say "discovered," "new planet" or "Planet X found." An unmatched candidate is shown as *Unexplained*, with artifact and catalog-gap explanations listed next to it. Injected objects are always labeled **SIMULATED**. The frontend never upgrades a classification.
 5. **Works at phone width.** Design at 360 px first, then scale up. The blink viewer has to work with one thumb.
-6. **Never blocked on the backend.** The app has a `USE_FIXTURES` switch. With it on, the app reads the backend's shared fixtures from `shared/fixtures/` instead of calling the API. The frontend never invents observation data: if the fixtures are missing, it shows an empty state, not placeholder sky images.
+6. **Never blocked on the backend, never fake.** The app only fetches relative `/api/*` URLs. With `NEXT_PUBLIC_USE_FIXTURES=true` it reads the static JSON the pipeline publishes to `frontend/public/data/` instead. If the API errors, the page shows a clear, friendly error state with a retry button. If nothing is published yet, it shows an empty state. It never shows invented observation data.
 
 ## 1. Screens
 
@@ -21,13 +23,15 @@ These decide every trade-off below.
 |---|---|---|---|
 | `/` | **Landing**: one-line hook, "Explore the sky" and "Be a detective" entry points, short integrity note | — | P0 |
 | `/explore` | **Field picker**: curated sky patches as cards with thumbnails, plus an optional Aladin Lite all-sky map with field footprints | Explorer | P0 (cards), P1 (map) |
-| `/explore/[fieldId]` | **Blink viewer**: real observations (epochs) of the same patch, with blink, swipe and step controls, a date timeline and "what moved" highlights | Explorer | P0 |
+| `/explore/field/?id={field_id}` | **Blink viewer**: real observations (epochs) of the same patch, with blink, swipe and step controls, a date timeline and "what moved" highlights | Explorer | P0 |
 | `/detective` | **Candidate list**: flagged moving sources from the pipeline, sortable and filterable by classification and score | Detective | P0 |
-| `/detective/[candidateId]` | **Evidence report**: stamp blink, per-epoch positions, motion, scores, known-object match, error sources, grounded explanation | Detective | P0 |
-| `/detective/[candidateId]#spectrum` | **Spectrum panel** (section of the report): flux across SPHEREx's 102 bands | Detective | Stretch |
-| `/simulated` | **Injection demo**: injected moving objects recovered (or not) by the pipeline, with the recovery-grid chart | Detective | P1 |
+| `/detective/candidate/?id={candidate_id}` | **Evidence report**: stamp blink, per-epoch positions, motion, scores, known-object match, error sources, grounded explanation | Detective | P0 |
+| `/detective/candidate/?id=…#spectrum` | **Spectrum panel** (section of the report): flux across SPHEREx's 102 bands | Detective | Stretch |
+| `/simulated/?study={study_id}` | **Injection demo**: injected moving objects recovered (or not) by the pipeline, with the recovery-grid chart | Detective | P1 |
 | `/analyze` | **Analyze a position** (optional): submit RA/Dec, follow the run's progress, then open the resulting field and candidates | Detective | Stretch |
 | `/about` | **Method and credits**: how it works in five steps, data sources, team, scientific-integrity statement | — | P0 (short), P1 (full) |
+
+Dynamic pages use query parameters rather than path segments, so the static export builds without any data present and new fields or candidates work without a rebuild.
 
 Global elements: top bar with mode switch (Explorer / Detective), a "Source" drawer on every image (file, IRSA observation ID, plane ID, date and time, wavelength, data release, IRSA link), and a footer with data credits.
 
@@ -96,32 +100,33 @@ Injection demo flow: `/simulated` opens with a **SIMULATED** banner. It shows th
 
 ### Color
 
-Dark theme by default (space imagery reads best on dark), with a light theme for `/about` and printing. Status colors are chosen to be colorblind-safe and are always paired with an icon and a text label, never color alone.
+Visual direction: **thermal infrared**. Violet-black surfaces like the sky between sources, an ember accent for actions, and an inferno-style spectral ramp (short to long wavelength) used for the top-bar rule, the hero's 102-channel diagram, wavelength labels, the spectrum plot and the recovery grid. Dark only. Status colors are chosen to be colorblind-safe and are always paired with an icon and a text label, never color alone. The tokens live in `frontend/src/app/globals.css`.
 
-| Token | Dark | Use |
+| Token | Value | Use |
 |---|---|---|
-| `--bg` | `#0B0E14` | Page background |
-| `--surface` | `#141924` | Cards, sheets |
-| `--surface-2` | `#1D2433` | Raised elements, table header |
-| `--border` | `#2A3346` | Dividers |
-| `--text` | `#E8ECF4` | Primary text (contrast ≥ 12:1 on `--bg`) |
-| `--text-muted` | `#9AA4B8` | Secondary text (≥ 4.5:1) |
-| `--accent` | `#6CB4FF` | Links, primary buttons, focus ring |
-| `--status-known` | `#4FA3FF` + check icon | `known_object` |
-| `--status-unexplained` | `#F2B84B` + question icon | `unmatched` |
-| `--status-artifact` | `#8A93A6` + warning icon | `likely_artifact` |
-| `--status-pair` | `#B9A2FF` + link icon | `unconfirmed_pair` |
-| `--status-simulated` | `#E36BD8` + hatched fill + "SIMULATED" text | `injected` |
-| `--track` | `#7CF0C8` | Motion arrows and track overlays on images |
-| `--predicted` | `#E8ECF4`, dashed | Predicted known-object positions |
+| `--bg` | `#08060D` | Page background |
+| `--surface` / `--surface-2` / `--surface-3` | `#120E1A` / `#1B1526` / `#251D33` | Cards, raised elements, table headers |
+| `--border` / `--border-strong` | `#2D2440` / `#43375C` | Dividers |
+| `--text` | `#F3EEF9` | Primary text |
+| `--text-muted` | `#AA9FBD` | Secondary text (≥ 4.5:1 on surfaces) |
+| `--accent` | `#FF8A4C` | Links, primary buttons, focus ring |
+| `--ir-0` … `--ir-7` | `#1B0C41` → `#F7D13D` | Spectral ramp |
+| `--status-known` | `#5AA9FF` + ✓ | `known_object` |
+| `--status-unexplained` | `#FFD166` + ? | `unmatched` |
+| `--status-artifact` | `#9A92AB` + ! | `likely_artifact` |
+| `--status-pair` | `#C3A6FF` + ↔ | `unconfirmed_pair` |
+| `--status-simulated` | `#F06BD8` + hatched fill + "SIMULATED" | `injected` |
+| `--track` | `#7CF0C8` | Motion tracks and measured-position rings |
+| `--predicted` | `#F3EEF9`, dashed | Predicted known-object positions |
 
 Overlay colors must stay visible on both dark sky and bright stars: 2 px stroke with a 1 px dark halo.
 
 ### Type
 
-- **UI and body:** Inter (variable, self-hosted), 16 px base, 1.5 line height.
-- **Numbers and data:** JetBrains Mono with tabular figures for coordinates, dates and measurements.
-- **Display:** Inter at 600–700 weight for headings. Scale: 12 / 14 / 16 / 20 / 24 / 32 / 40.
+- **Display:** Space Grotesk for headings and the brand. Scale: 12 / 14 / 16 / 20 / 24 / 32 / 40, with a fluid hero size.
+- **UI and body:** Inter, 16 px base, 1.5 line height.
+- **Numbers and data:** JetBrains Mono with tabular figures for coordinates, dates, wavelengths and measurements.
+- All three are self-hosted through Fontsource.
 
 ### Spacing, shape, motion
 
@@ -216,18 +221,27 @@ Epochs and detections carry `wavelength_um_center`, `bandwidth_um` and `waveleng
     epoch_id: string;
     time_utc: string;
     mjd: number;
-    image_url: string;     // WebP, common grid, fixed asinh stretch per field
+    image: { url: string; width_px: number; height_px: number; source: Source }; // WebP, common grid, fixed asinh stretch per field
     wavelength_um_center: number;
     bandwidth_um: number;
     wavelength_um_range: [number, number];
     source: Source;
   }>;
-  blink_pairs: Array<{ epoch_ids: [string, string]; lambda_matched: boolean }>;
+  blink_pairs: Array<{
+    epoch_id_a: string;
+    epoch_id_b: string;
+    time_separation_hours: number;
+    lambda_matched: boolean;
+    delta_lambda_frac: number;
+    label_plain: string;
+  }>;
   movers: Array<{
     candidate_id: string;
     classification: Classification;
     label_plain: string;
-    track: Array<{ epoch_id: string; x_grid: number; y_grid: number }>;
+    quality_level: QualityLevel;
+    rate_arcsec_per_hr: number | null;
+    track: Array<{ epoch_id: string; time_utc: string; mjd: number; ra_deg: number; dec_deg: number; x_grid: number; y_grid: number }>;
   }>;
 }
 ```
@@ -336,14 +350,15 @@ The recovery grid is magnitude × rate. Each cell has injected and recovered cou
 
 ## 5. Tech choices (frontend)
 
-- **Next.js (App Router) + TypeScript** in `frontend/`. Pages fetch on the server and pass typed data to client components.
+- **Next.js (App Router) + TypeScript** in `frontend/`, built as a **static export**: `output: "export"`, `trailingSlash: true`, unoptimized images. No API routes, middleware or request-time server code. Data is fetched in the browser.
+- **Local development:** `npm run dev` proxies `/api/*` and `/static/*` to `npx wrangler dev` on port 8787.
 - **Styling:** CSS variables for the tokens above plus CSS Modules.
 - **Fonts:** Inter and JetBrains Mono, self-hosted through Fontsource so builds don't depend on a font CDN.
 - **Blink viewer:** stacked `<img>` elements on a fixed-size stage, with opacity for blink and a clip for swipe. This is simpler and more reliable than a full sky viewer for small aligned cutouts.
 - **Sky map:** Aladin Lite v3 on `/explore` only (P1), showing a survey background with our field footprints. Lazy-loaded so it never slows the blink viewer. If it fights us, the card picker is enough.
 - **Charts:** lightweight SVG for the motion plot, spectrum and recovery grid.
-- **Data layer:** `frontend/src/lib/api.ts` with typed fetchers and the `USE_FIXTURES` switch. With fixtures on, it reads `shared/fixtures/*.json`. With it off, it calls `API_BASE_URL`.
-- **Tests:** Vitest + Testing Library for components and data logic, Playwright for the demo path at phone and desktop widths.
+- **Data layer:** `frontend/src/lib/api.ts` with typed fetchers. By default it calls relative `/api/*` URLs. With `NEXT_PUBLIC_USE_FIXTURES=true` it reads `/data/fields.json`, `/data/fields/{id}.json`, `/data/candidates.json`, `/data/candidates/{id}.json` and `/data/injection/{id}.json`, the same files the Worker serves the API from. It falls back to the single-file names used in `shared/fixtures/`.
+- **Tests:** Vitest + Testing Library for components and data logic. Playwright runs against the static export at 1280 px and 360 px, including a layout test that fails if anything is wider than the viewport. Until real data is published, Playwright answers `/api/*` inside the test browser with clearly labeled synthetic responses that the app never serves.
 
 ## 6. Build order
 
@@ -361,6 +376,8 @@ The schedule from planning, kept as a build order. Each step ends in a working, 
 | 8 | Optional: `/analyze` run flow, Aladin Lite field map | `POST /api/runs` |
 | 9 | 3-minute video: script → screen capture of the demo path (phone + desktop) → edit. Final copy check for "discovery" language | — |
 
+Status: steps 1–7 are built (frontend PRs #4, #5 and #7, merged in that order). Step 8 (`/analyze` and the Aladin Lite map) is still open, and step 9 needs real data.
+
 Cut order if time runs short: Aladin map → `/analyze` → spectrum → injection controls (keep a static recovery grid) → candidate filters. Never cut: blink viewer, evidence report, provenance, SIMULATED labels.
 
 ### Demo script draft (3 minutes)
@@ -377,7 +394,7 @@ Cut order if time runs short: Aladin map → `/analyze` → spectrum → injecti
 - [ ] Design tokens contrast-checked.
 - [ ] Copy deck: plain-language strings for Explorer, glossary entries, integrity statement, badge labels.
 - [ ] Aladin Lite v3 research: embedding in Next.js (client-only), overlaying footprints and markers, mobile performance.
-- [ ] Switch fixtures to `shared/fixtures/` as soon as the backend's files land, and re-check `frontend/src/lib/contract.ts` against `docs/api-contract.md`.
+- [ ] Run the demo path against the first real data in `frontend/public/data/`, and re-check `frontend/src/lib/contract.ts` against `docs/api-contract.md`.
 - [ ] Draft the demo video script and shot list.
 
 ## 8. Open questions
