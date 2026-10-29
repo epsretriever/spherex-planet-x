@@ -11,3 +11,8 @@ run_worker_first = ["/api/*"]
 
 [observability]
 enabled = true
+
+# Required by `npx wrangler preview`, which Workers Builds runs for pull-request preview
+# deployments. Empty on purpose: assets, compatibility settings and bindings stay at the
+# top level and apply to previews too.
+[previews]
