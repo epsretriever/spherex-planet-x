@@ -19,10 +19,12 @@ export function FieldGrid({ limit }: { limit?: number }) {
       </ul>
     );
   }
-  if (state.status === "error") {
+  // A missing list means nothing has been published yet, not a broken link.
+  if (state.status === "error" && state.error.reason !== "not_found") {
     return <ErrorState reason={state.error.reason} message={state.error.message} onRetry={state.retry} />;
   }
-  const fields = limit ? state.data.fields.slice(0, limit) : state.data.fields;
+  const all = state.status === "ok" ? state.data.fields : [];
+  const fields = limit ? all.slice(0, limit) : all;
   if (!fields.length) {
     return (
       <EmptyState title="No patches of sky yet">
