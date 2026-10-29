@@ -59,6 +59,20 @@ DETECT = DetectParams(threshold_snr=4.5)
 LINK = LinkParams()
 
 
+DISPLAY_NOTE = (
+    "Zodiacal light model (ZODI) and residual background subtracted; pixels SPHEREx flags as "
+    "unusable are filled from their neighbors for display only (measurements use the masked "
+    "data); fixed asinh stretch shared by all images of the field"
+)
+
+
+def display_image(prep) -> np.ndarray:
+    """Science image with flagged pixels interpolated from neighbors, for rendering only."""
+    from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
+
+    return interpolate_replace_nans(prep.sci, Gaussian2DKernel(1.0)).astype(np.float32)
+
+
 def utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -197,7 +211,9 @@ class FieldBuilder:
         )
 
         field_dir = self.out / "fields" / spec.field_id
-        images = [self.grid.reproject(e.data.prep.sci, e.data.prep.cutout.wcs) for e in epochs]
+        images = [
+            self.grid.reproject(display_image(e.data.prep), e.data.prep.cutout.wcs) for e in epochs
+        ]
         stretch = choose_stretch(images)
         epoch_models = []
         for e, img in zip(epochs, images, strict=True):
@@ -262,11 +278,7 @@ class FieldBuilder:
         lam_grid = self.grid.reproject(c.wavelength_um, c.wcs)
         bad_grid = self.grid.reproject(e.data.prep.bad.astype(np.float32), c.wcs)
         covered = np.isfinite(lam_grid)
-        src = self.source(
-            e,
-            "Zodiacal light model (ZODI) and residual background subtracted; "
-            "reprojected to the field grid; fixed asinh stretch",
-        )
+        src = self.source(e, DISPLAY_NOTE + "; reprojected to the field grid")
         return S.Epoch(
             epoch_id=e.epoch_id,
             obs_id=e.key.obs_id,
@@ -405,9 +417,7 @@ class FieldBuilder:
                 data[i].prep.sci, c.wcs, float(d.ra[j]), float(d.dec[j]), stretch, stamp_path
             )
             src = self.source(
-                e,
-                "64 x 64 px stamp at 6.15 arcsec/px centered on the detection; zodi and "
-                "background subtracted; field stretch",
+                e, DISPLAY_NOTE + "; 64 x 64 px stamp at 6.15 arcsec/px centered on the detection"
             )
             h = c.header
             lam, bw = float(d.wavelength_um[j]), float(d.bandwidth_um[j])
@@ -448,7 +458,7 @@ class FieldBuilder:
         best = max(range(len(dets)), key=lambda k: dets[k].snr)
         bi, bj = order[best]
         self._stamp(
-            data[bi].prep.sci,
+            display_image(data[bi].prep),
             data[bi].prep.cutout.wcs,
             float(data[bi].det.ra[bj]),
             float(data[bi].det.dec[bj]),

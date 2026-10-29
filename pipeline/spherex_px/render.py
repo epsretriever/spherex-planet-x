@@ -26,8 +26,7 @@ def to_uint8(data: np.ndarray, stretch: Stretch) -> np.ndarray:
     x = np.clip(x, 0, 1)
     a = stretch.softening
     y = np.arcsinh(x / a) / np.arcsinh(1 / a)
-    out = (y * 255).round().astype(np.uint8)
-    out[~np.isfinite(data)] = NAN_GRAY
+    out = np.where(np.isfinite(y), np.round(y * 255), NAN_GRAY).astype(np.uint8)
     return out
 
 
