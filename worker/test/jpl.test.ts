@@ -122,3 +122,21 @@ describe("geometry", () => {
     expect(separationArcsec(10, 10, 10, 10)).toBe(0);
   });
 });
+
+describe("SBIdent sampling per visit", () => {
+  it("queries one exposure per visit and caps the total", async () => {
+    const { sbidentSample, MAX_SBIDENT_QUERIES } = await import("../src/enrich");
+    const h = 1 / 24;
+    // 4 visits of 4 exposures each, 2 minutes apart, visits ~10 hours apart (like real SPHEREx data).
+    const dets = [0, 10, 20, 30].flatMap((v) => [0, 1, 2, 3].map((k) => ({ mjd: 60829 + v * h + (k * 2) / 1440 })));
+    const s = sbidentSample(dets);
+    expect(s).toHaveLength(4);
+    expect(new Set(s.map((d) => Math.round((d.mjd - 60829) / h / 10)))).toEqual(new Set([0, 1, 2, 3]));
+    // Many visits are capped, keeping the first and last.
+    const many = Array.from({ length: 20 }, (_, i) => ({ mjd: 60829 + i * 5 * h }));
+    const c = sbidentSample(many);
+    expect(c).toHaveLength(MAX_SBIDENT_QUERIES);
+    expect(c[0]).toBe(many[0]);
+    expect(c.at(-1)).toBe(many.at(-1));
+  });
+});

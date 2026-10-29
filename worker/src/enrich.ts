@@ -25,6 +25,29 @@ export const MATCH_RADIUS_ARCSEC = 15;
 const PREFILTER_ARCSEC = 120;
 const MAX_HORIZONS_OBJECTS = 3;
 const MAX_PARALLEL = 6;
+/**
+ * SBIdent queries per candidate. A Worker on the free plan may make only 50 subrequests per
+ * request (fetches and Cache API calls both count), so instead of one query per exposure we
+ * query once per SPHEREx visit: exposures minutes apart see the same objects. Horizons then
+ * checks every detection.
+ */
+export const MAX_SBIDENT_QUERIES = 6;
+/** Exposures closer together than this belong to the same visit. */
+const VISIT_GAP_HOURS = 1;
+
+/** One representative detection per visit (the middle exposure), at most `max`, spread evenly. */
+export function sbidentSample<T extends { mjd: number }>(dets: T[], max = MAX_SBIDENT_QUERIES): T[] {
+  const sorted = [...dets].sort((a, b) => a.mjd - b.mjd);
+  const visits: T[][] = [];
+  for (const d of sorted) {
+    const last = visits.at(-1);
+    if (last && (d.mjd - last.at(-1)!.mjd) * 24 < VISIT_GAP_HOURS) last.push(d);
+    else visits.push([d]);
+  }
+  const reps = visits.map((v) => v[Math.floor(v.length / 2)]!);
+  if (reps.length <= max) return reps;
+  return Array.from({ length: max }, (_, i) => reps[Math.round((i * (reps.length - 1)) / (max - 1))]!);
+}
 
 export interface Enrichment {
   known_object: KnownObject;
@@ -81,9 +104,10 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
     return { matched: false, known_object: notCheckedKnownObject("No detections to check.") };
   }
 
-  // 1. SBIdent for every epoch.
+  // 1. SBIdent once per visit (see MAX_SBIDENT_QUERIES).
   let allCached = true;
-  const sb = await mapLimit(dets, MAX_PARALLEL, async (d) => {
+  const sample = sbidentSample(dets);
+  const sb = await mapLimit(sample, MAX_PARALLEL, async (d) => {
     try {
       const r = await sbidentQuery(deps, d.time_utc, d.ra_deg, d.dec_deg, d.spacecraft_geocentric_km);
       allCached &&= r.cached;
@@ -100,7 +124,7 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
       matched: false,
       known_object: {
         ...notCheckedKnownObject(
-          `JPL SBIdent did not answer for ${failures.length} of ${dets.length} epochs (${String(f.upstreamStatus)}).`,
+          `JPL SBIdent did not answer for ${failures.length} of ${sample.length} visits (${String(f.upstreamStatus)}).`,
         ),
         query_utc: now,
         enrichment: "live",
@@ -112,7 +136,7 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
   // 2. Rank objects by how many epochs they appear near the detection (geocentric positions).
   const stats = new Map<string, { count: number; seps: number[]; vmag: number | null }>();
   perEpoch.forEach((objs, i) => {
-    const d = dets[i]!;
+    const d = sample[i]!;
     for (const o of objs) {
       const sep = separationArcsec(d.ra_deg, d.dec_deg, o.ra_deg, o.dec_deg);
       const s = stats.get(o.name) ?? { count: 0, seps: [], vmag: o.vmag };

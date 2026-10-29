@@ -24,7 +24,12 @@ export async function fetchUpstream<T = unknown>(
   const as = opts.as ?? "json";
   const key = new Request(url, { method: "GET" });
   if (deps.cache) {
-    const hit = await deps.cache.match(key);
+    let hit: Response | undefined;
+    try {
+      hit = await deps.cache.match(key);
+    } catch {
+      hit = undefined; // a cache failure must never fail the request
+    }
     if (hit) return { data: (await parse(hit, as, name)) as T, cached: true, status: hit.status };
   }
   let res: Response;
@@ -35,6 +40,7 @@ export async function fetchUpstream<T = unknown>(
     });
   } catch (err) {
     const timeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+    // Anything else, including the Workers subrequest limit, means we could not reach it.
     throw new UpstreamError(name, timeout ? "timeout" : "unreachable");
   }
   if (!res.ok) throw new UpstreamError(name, res.status);
@@ -48,7 +54,11 @@ export async function fetchUpstream<T = unknown>(
         "Cache-Control": `public, max-age=${opts.ttlSeconds ?? UPSTREAM_CACHE_TTL_S}`,
       },
     });
-    await deps.cache.put(key, stored);
+    try {
+      await deps.cache.put(key, stored);
+    } catch {
+      // Caching is best-effort.
+    }
   }
   return { data, cached: false, status: res.status };
 }
