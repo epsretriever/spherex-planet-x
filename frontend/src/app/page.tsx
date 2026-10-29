@@ -118,6 +118,9 @@ export default function LandingPage() {
             any known object, it could be an image glitch, a measurement error, or a real object that no catalog lists yet. We
             show the evidence and say which explanations we can and can&apos;t rule out.
           </p>
+          <p>
+            <Link href="/simulated/">See how we test ourselves with planted, SIMULATED objects →</Link>
+          </p>
         </section>
       </div>
     </>

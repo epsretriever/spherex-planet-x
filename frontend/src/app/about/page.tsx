@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ClassificationBadge } from "@/components/ClassificationBadge";
+import { GLOSSARY } from "@/components/Term";
+import { CLASSIFICATIONS, CLASSIFICATION_ORDER } from "@/lib/labels";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -31,6 +35,7 @@ const METHOD = [
 export default function AboutPage() {
   return (
     <div className={`container ${styles.page}`}>
+      <p className="eyebrow">Method</p>
       <h1>How it works</h1>
       <p className={styles.lede}>
         SPHEREx is a NASA space telescope that maps the entire sky in 102 infrared colors, from 0.75 to 5 microns. It
@@ -57,6 +62,30 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section aria-labelledby="labels">
+        <h2 id="labels">What the labels mean</h2>
+        <p>Our pipeline sorts every moving source into one of five groups. We show its label exactly as the pipeline assigned it.</p>
+        <dl className={styles.labels}>
+          {CLASSIFICATION_ORDER.map((c) => (
+            <div key={c}>
+              <dt>
+                <ClassificationBadge value={c} />
+              </dt>
+              <dd>{CLASSIFICATIONS[c].plain}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section aria-labelledby="testing">
+        <h2 id="testing">How we test ourselves</h2>
+        <p>
+          We plant fake moving objects, of known brightness and speed, into real images and check how many the pipeline finds. We
+          also run it on patches with nothing planted to count false alarms. These planted objects are always labeled SIMULATED.{" "}
+          <Link href="/simulated/">See the results →</Link>
+        </p>
+      </section>
+
       <section aria-labelledby="integrity">
         <h2 id="integrity">Scientific integrity</h2>
         <p>
@@ -65,6 +94,18 @@ export default function AboutPage() {
           not a promised result. Every image links back to the archive file it came from, and every number in an
           explanation comes from our measurements.
         </p>
+      </section>
+
+      <section aria-labelledby="glossary">
+        <h2 id="glossary">Glossary</h2>
+        <dl className={styles.glossary}>
+          {Object.entries(GLOSSARY).map(([term, text]) => (
+            <div key={term}>
+              <dt>{term === "snr" ? "S/N" : term === "mjd" ? "MJD" : term === "µjy" ? "µJy" : term}</dt>
+              <dd>{text}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section aria-labelledby="credits">
