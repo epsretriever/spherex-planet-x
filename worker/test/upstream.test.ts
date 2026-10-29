@@ -6,7 +6,14 @@ import { USER_AGENT } from "../src/version";
 import { MemoryCache } from "./helpers";
 
 function deps(handler: (url: string, init?: RequestInit) => Promise<Response>): Deps & { cache: MemoryCache } {
-  return { fetch: handler as typeof fetch, cache: new MemoryCache(), now: () => new Date() };
+  return {
+    fetch: handler as typeof fetch,
+    cache: new MemoryCache(),
+    kv: null,
+    budget: { remaining: 40 },
+    waitUntil: () => undefined,
+    now: () => new Date(),
+  };
 }
 
 describe("fetchUpstream", () => {
@@ -54,5 +61,22 @@ describe("fetchUpstream", () => {
     const err = await fetchUpstream(d, "JPL SBIdent", "https://example.test/d").catch((e) => e);
     expect(err.status).toBe(502);
     expect(err.upstreamStatus).toBe("invalid_response");
+  });
+
+  it("stops calling upstreams once the invocation's budget is spent", async () => {
+    let n = 0;
+    const d = deps(async () => {
+      n++;
+      return new Response("{}", { headers: { "content-type": "application/json" } });
+    });
+    d.budget.remaining = 1;
+    await fetchUpstream(d, "JPL SBIdent", "https://example.test/a");
+    await expect(fetchUpstream(d, "JPL SBIdent", "https://example.test/b")).rejects.toMatchObject({
+      upstreamStatus: "budget",
+    });
+    expect(n).toBe(1);
+    // Cache hits are free.
+    await fetchUpstream(d, "JPL SBIdent", "https://example.test/a");
+    expect(n).toBe(1);
   });
 });

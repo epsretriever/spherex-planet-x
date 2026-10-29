@@ -1,5 +1,5 @@
 import { createApp } from "../src/app";
-import type { CacheLike, Deps, Env } from "../src/env";
+import { type CacheLike, type Deps, type Env, type KvLike, SUBREQUEST_BUDGET } from "../src/env";
 
 /**
  * Fake ASSETS binding. Like the real binding with single-page-application not-found handling,
@@ -35,11 +35,26 @@ export class MemoryCache implements CacheLike {
   }
 }
 
+export class MemoryKv implements KvLike {
+  store = new Map<string, { value: string; ttl?: number }>();
+  async get(key: string) {
+    const v = this.store.get(key);
+    return v ? JSON.parse(v.value) : null;
+  }
+  async put(key: string, value: string, options?: { expirationTtl?: number }) {
+    this.store.set(key, { value, ttl: options?.expirationTtl });
+  }
+}
+
 export type FetchHandler = (url: URL, init?: RequestInit) => Response | Promise<Response>;
 
-export function makeClient(opts: { files?: Record<string, unknown>; upstream?: FetchHandler; cache?: MemoryCache } = {}) {
+export function makeClient(
+  opts: { files?: Record<string, unknown>; upstream?: FetchHandler; cache?: MemoryCache; kv?: MemoryKv | null } = {},
+) {
   const calls: string[] = [];
   const cache = opts.cache ?? new MemoryCache();
+  const kv = opts.kv === undefined ? new MemoryKv() : opts.kv;
+  const background: Promise<unknown>[] = [];
   const deps: Deps = {
     fetch: (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(input instanceof Request ? input.url : String(input));
@@ -48,12 +63,20 @@ export function makeClient(opts: { files?: Record<string, unknown>; upstream?: F
       return opts.upstream(url, init);
     }) as typeof fetch,
     cache,
+    kv,
+    budget: { remaining: SUBREQUEST_BUDGET },
+    waitUntil: (work) => void background.push(work),
     now: () => new Date("2026-10-29T12:00:00Z"),
   };
-  const app = createApp(() => deps);
+  // A fresh budget per request, like a real invocation.
+  const app = createApp(() => ({ ...deps, budget: { remaining: SUBREQUEST_BUDGET } }));
   const env: Env = { ASSETS: fakeAssets(opts.files ?? {}) };
   const get = (path: string, init?: RequestInit) => app.request(path, init, env);
-  return { app, env, get, calls, cache };
+  /** Wait for work started with waitUntil (background JPL lookups). */
+  const settle = async () => {
+    while (background.length) await Promise.allSettled(background.splice(0));
+  };
+  return { app, env, get, calls, cache, kv, deps, settle };
 }
 
 export const json = (res: Response): Promise<any> => res.json();

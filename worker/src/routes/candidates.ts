@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
 import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type CandidateSummary, type Classification } from "../contract";
-import { type Enrichment, cachedEnrichment, enrichKnownObject, storeEnrichment } from "../enrich";
+import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
+import { readRecord, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain } from "../text";
 
 export const candidates = new Hono<AppEnv>();
@@ -24,12 +25,23 @@ candidates.get("/", async (c) => {
 
   const list = await requireStaticJson<CandidateList>(c.env, "candidates.json", "candidate list");
   const deps = c.get("deps");
-  // Fold in enrichment results that are already cached (no upstream calls from the list view).
+  // Fold in stored JPL results (no upstream calls from the list view).
+  let warming = false;
   const enriched = await Promise.all(
     list.candidates.map(async (s): Promise<CandidateSummary> => {
       if (s.classification === "injected") return s;
-      const e = await cachedEnrichment(deps.cache, { candidate_id: s.candidate_id, pipeline_version: list.pipeline_version });
-      return e ? applyToSummary(s, e) : s;
+      const ref = { candidate_id: s.candidate_id, pipeline_version: list.pipeline_version };
+      const rec = await readRecord(deps, ref);
+      if (!rec && !warming) {
+        // Start one background lookup so the list fills in even before the cron runs.
+        warming = true;
+        deps.waitUntil(
+          requireStaticJson<CandidateDetail>(c.env, `candidates/${s.candidate_id}.json`, "candidate")
+            .then((cand) => refreshRecord(deps, cand))
+            .catch((err) => console.error(`background JPL lookup for ${s.candidate_id}:`, err)),
+        );
+      }
+      return rec ? applyToSummary(s, rec.enrichment) : s;
     }),
   );
   const filtered = enriched.filter(
@@ -54,15 +66,22 @@ candidates.get("/:candidateId", async (c) => {
     c.header("Cache-Control", "public, max-age=300");
     return c.json(applyKnownObject(cand, cand.known_object, false, now));
   }
-  let e: Enrichment | null = await cachedEnrichment(deps.cache, cand);
-  if (e) {
-    e = { ...e, known_object: { ...e.known_object, enrichment: "cached" } };
-  } else {
-    e = await enrichKnownObject(deps, cand);
-    await storeEnrichment(deps.cache, cand, e);
+  const rec = await readRecord(deps, cand);
+  if (rec) {
+    const e: Enrichment = { ...rec.enrichment, known_object: { ...rec.enrichment.known_object, enrichment: "cached" } };
+    c.header("Cache-Control", rec.status === "checked" ? "public, max-age=300" : "no-store");
+    return c.json(applyKnownObject(cand, e.known_object, e.matched, now));
   }
-  c.header("Cache-Control", e.known_object.checked ? "public, max-age=300" : "no-store");
-  return c.json(applyKnownObject(cand, e.known_object, e.matched, now));
+  // Nothing stored yet: answer now and look JPL up in the background. The client polls.
+  deps.waitUntil(
+    refreshRecord(deps, cand).catch((err) => console.error(`background JPL lookup for ${id}:`, err)),
+  );
+  const pending = {
+    ...notCheckedKnownObject("Checking JPL's catalog of known asteroids and comets now. This takes up to a minute the first time.", cand.known_object),
+    enrichment: "pending" as const,
+  };
+  c.header("Cache-Control", "no-store");
+  return c.json(applyKnownObject(cand, pending, false, now));
 });
 
 function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {

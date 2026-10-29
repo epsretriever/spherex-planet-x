@@ -181,6 +181,7 @@ export function summaryPlain(c: CandidateDetail): string {
   const k = c.known_object;
   let tail: string;
   if (c.classification === "injected") tail = "This is a simulated object inserted into real SPHEREx images.";
+  else if (!k.checked && k.enrichment === "pending") tail = "JPL's catalog of known asteroids and comets is being checked now.";
   else if (!k.checked) tail = "Not yet checked against JPL's catalog of known asteroids and comets.";
   else if (k.matched && k.designation) tail = `It matches the known ${isComet(k.designation) ? "comet" : "asteroid"} ${k.designation}.`;
   else if (c.classification === "likely_artifact") tail = "It failed a quality check and is most likely an artifact.";

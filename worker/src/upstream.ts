@@ -32,6 +32,10 @@ export async function fetchUpstream<T = unknown>(
     }
     if (hit) return { data: (await parse(hit, as, name)) as T, cached: true, status: hit.status };
   }
+  if (deps.budget.remaining <= 0) {
+    throw new UpstreamError(name, "budget", `${name} skipped: this request already made its allowed number of upstream calls`);
+  }
+  deps.budget.remaining -= 1;
   let res: Response;
   try {
     res = await deps.fetch(url, {

@@ -16,3 +16,12 @@ enabled = true
 # deployments. Empty on purpose: assets, compatibility settings and bindings stay at the
 # top level and apply to previews too.
 [previews]
+
+# JPL known-object results, stored globally so visitors never wait on JPL (worker/src/store.ts).
+# No id: `wrangler deploy` creates the namespace on first deploy.
+[[kv_namespaces]]
+binding = "ENRICHMENT"
+
+# Refresh stale and failed JPL results every 30 minutes (worker/src/scheduled.ts).
+[triggers]
+crons = ["*/30 * * * *"]

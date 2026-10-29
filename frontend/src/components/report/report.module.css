@@ -533,6 +533,34 @@
   margin: 0;
 }
 
+.pulse {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
+
 .sourcesList {
   display: grid;
   gap: var(--space-2);

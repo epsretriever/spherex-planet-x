@@ -32,13 +32,47 @@ import styles from "./CandidateReport.module.css";
 const DISCLAIMER =
   "Unmatched candidates may be artifacts, measurement errors, or objects missing from catalogs. This is not a discovery claim.";
 
+/** While JPL is being checked, fetch the report again this often, up to this many times. */
+const PENDING_POLL_MS = 6000;
+const PENDING_POLL_MAX = 20;
+
 export function CandidateReport() {
   const id = useSearchParams().get("id");
   const state = useData(id ? `candidate:${id}` : null, (signal) => getCandidate(id!, signal));
+  const [fresh, setFresh] = useState<CandidateDetail | null>(null);
+  const shown = fresh && fresh.candidate_id === id ? fresh : state.status === "ok" ? state.data : null;
 
   useEffect(() => {
-    if (state.status === "ok") document.title = `${state.data.candidate_id} · ${SITE_NAME}`;
-  }, [state]);
+    if (shown) document.title = `${shown.candidate_id} · ${SITE_NAME}`;
+  }, [shown]);
+
+  // The Worker answers at once and checks JPL in the background; poll until the result lands.
+  const pending = shown?.known_object.enrichment === "pending";
+  useEffect(() => {
+    if (!pending || !id) return;
+    const ctrl = new AbortController();
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (tries > PENDING_POLL_MAX) {
+        clearInterval(timer);
+        return;
+      }
+      getCandidate(id, ctrl.signal).then(
+        (next) => {
+          if (next.known_object.enrichment !== "pending") {
+            clearInterval(timer);
+            setFresh(next);
+          }
+        },
+        () => undefined,
+      );
+    }, PENDING_POLL_MS);
+    return () => {
+      clearInterval(timer);
+      ctrl.abort();
+    };
+  }, [pending, id]);
 
   if (!id) return <ErrorState reason="not_found" />;
   if (state.status === "loading") {
@@ -57,7 +91,7 @@ export function CandidateReport() {
       </>
     );
   }
-  return <Report c={state.data} />;
+  return <Report c={shown ?? state.data} />;
 }
 
 function Crumbs() {

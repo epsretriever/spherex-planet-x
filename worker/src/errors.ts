@@ -1,6 +1,6 @@
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-export type UpstreamStatus = number | "timeout" | "unreachable" | "invalid_response";
+export type UpstreamStatus = number | "timeout" | "unreachable" | "invalid_response" | "budget";
 
 /** Contract ErrorResponse: {detail, upstream, upstream_status}. */
 export class ApiError extends Error {

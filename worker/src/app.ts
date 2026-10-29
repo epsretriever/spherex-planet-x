@@ -10,12 +10,18 @@ import { injection, runs } from "./routes/static-docs";
 
 export type AppEnv = { Bindings: Env; Variables: { deps: Deps } };
 
-export function createApp(makeDeps: () => Deps = defaultDeps) {
+export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "waitUntil">) => Deps = defaultDeps) {
   const app = new Hono<AppEnv>();
 
   app.use("/api/*", cors({ origin: "*", allowMethods: ["GET", "POST", "OPTIONS"] }));
   app.use("/api/*", async (c, next) => {
-    c.set("deps", makeDeps());
+    let ctx: Pick<ExecutionContext, "waitUntil"> | undefined;
+    try {
+      ctx = c.executionCtx;
+    } catch {
+      ctx = undefined; // no ExecutionContext (unit tests)
+    }
+    c.set("deps", makeDeps(c.env, ctx));
     await next();
   });
 

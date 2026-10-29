@@ -260,6 +260,11 @@ export interface KnownObject {
   nearest?: { designation: string; separation_arcsec: number } | null;
   observer?: string | null;
   query_utc?: string | null;
+  /**
+   * Where this result came from. "pending": the Worker is asking JPL right now; fetch the
+   * report again in a few seconds for the result.
+   */
+  enrichment?: "static" | "live" | "cached" | "pending";
 }
 
 export interface Scores {

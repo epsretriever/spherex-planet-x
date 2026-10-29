@@ -162,7 +162,7 @@ export interface KnownObject {
   nearest: { designation: string; separation_arcsec: number } | null;
   observer: string | null;
   query_utc: string | null;
-  enrichment: "static" | "live" | "cached";
+  enrichment: "static" | "live" | "cached" | "pending";
 }
 
 export interface Scores {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MATCH_RADIUS_ARCSEC } from "../src/enrich";
 import { candidate, horizonsBody, list, sbidentBody } from "./factory";
-import { type FetchHandler, MemoryCache, json, makeClient } from "./helpers";
+import { refreshStale } from "../src/scheduled";
+import { type FetchHandler, MemoryKv, json, makeClient } from "./helpers";
 
 const injected = candidate({
   candidate_id: "test-inj-1",
@@ -17,6 +18,7 @@ const files = {
   "/data/candidates.json": list([base, injected, artifact]),
   [`/data/candidates/${base.candidate_id}.json`]: base,
   [`/data/candidates/${injected.candidate_id}.json`]: injected,
+  [`/data/candidates/${artifact.candidate_id}.json`]: artifact,
 };
 
 /** JPL answers: SBIdent always lists one object at the detection; Horizons agrees. */
@@ -45,6 +47,16 @@ function jpl(offsetArcsec: number, name = "99999 Testobject (2001 AA1)"): FetchH
   };
 }
 
+type Client = ReturnType<typeof makeClient>;
+
+/** First request answers "pending" and starts the JPL lookup; the next one reads the stored result. */
+async function lookUp(client: Client, id = base.candidate_id) {
+  const first = await json(await client.get(`/api/candidates/${id}`));
+  await client.settle();
+  const res = await client.get(`/api/candidates/${id}`);
+  return { first, res, c: await json(res) };
+}
+
 describe("GET /api/candidates", () => {
   it("hides injected candidates unless asked", async () => {
     const { get } = makeClient({ files });
@@ -70,11 +82,12 @@ describe("GET /api/candidates", () => {
     expect((await get("/api/candidates?min_score=2")).status).toBe(400);
   });
 
-  it("uses cached enrichment in the list without calling JPL", async () => {
-    const cache = new MemoryCache();
-    const first = makeClient({ files, cache, upstream: jpl(2) });
-    await first.get(`/api/candidates/${base.candidate_id}`);
-    const second = makeClient({ files, cache });
+  it("uses stored enrichment in the list without calling JPL", async () => {
+    const kv = new MemoryKv();
+    const first = makeClient({ files, kv, upstream: jpl(2) });
+    await lookUp(first);
+    await lookUp(first, artifact.candidate_id);
+    const second = makeClient({ files, kv });
     const body = await json(await second.get("/api/candidates"));
     expect(body.candidates[0]).toMatchObject({
       classification: "known_object",
@@ -85,12 +98,35 @@ describe("GET /api/candidates", () => {
     });
     expect(second.calls).toHaveLength(0);
   });
+
+  it("starts one background lookup when a listed candidate has no stored result", async () => {
+    const client = makeClient({ files, upstream: jpl(2) });
+    const body = await json(await client.get("/api/candidates"));
+    expect(body.candidates[0].known_object_checked).toBe(false);
+    await client.settle();
+    const again = await json(await client.get("/api/candidates"));
+    expect(again.candidates[0]).toMatchObject({ classification: "known_object", known_object_checked: true });
+  });
 });
 
 describe("GET /api/candidates/:id enrichment", () => {
+  it("answers at once with a pending check, then serves the stored JPL result", async () => {
+    const client = makeClient({ files, upstream: jpl(2) });
+    const res = await client.get(`/api/candidates/${base.candidate_id}`);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const p = await json(res);
+    expect(p.known_object).toMatchObject({ checked: false, enrichment: "pending" });
+    expect(p.summary_plain).toContain("being checked now");
+    await client.settle();
+    expect(client.calls.length).toBeGreaterThan(0);
+    const c = await json(await client.get(`/api/candidates/${base.candidate_id}`));
+    expect(c.known_object).toMatchObject({ checked: true, enrichment: "cached" });
+  });
+
   it("labels a candidate known_object when JPL predicts it at every epoch", async () => {
-    const { get, calls } = makeClient({ files, upstream: jpl(2) });
-    const c = await json(await get(`/api/candidates/${base.candidate_id}`));
+    const client = makeClient({ files, upstream: jpl(2) });
+    const { c } = await lookUp(client);
+    const calls = client.calls;
     expect(c.classification).toBe("known_object");
     expect(c.label_plain).toBe("Known asteroid");
     expect(c.known_object).toMatchObject({
@@ -99,7 +135,7 @@ describe("GET /api/candidates/:id enrichment", () => {
       catalogs_checked: ["JPL SBIdent", "JPL Horizons"],
       search_radius_arcsec: MATCH_RADIUS_ARCSEC,
       designation: "99999 Testobject (2001 AA1)",
-      enrichment: "live",
+      enrichment: "cached",
     });
     expect(c.known_object.per_epoch).toHaveLength(3);
     expect(c.known_object.per_epoch[0].separation_arcsec).toBeCloseTo(2, 0);
@@ -113,8 +149,7 @@ describe("GET /api/candidates/:id enrichment", () => {
   });
 
   it("keeps an unmatched candidate unmatched and reports the nearest object", async () => {
-    const { get } = makeClient({ files, upstream: jpl(60) });
-    const c = await json(await get(`/api/candidates/${base.candidate_id}`));
+    const { c } = await lookUp(makeClient({ files, upstream: jpl(60) }));
     expect(c.classification).toBe("unmatched");
     expect(c.known_object.checked).toBe(true);
     expect(c.known_object.matched).toBe(false);
@@ -125,24 +160,25 @@ describe("GET /api/candidates/:id enrichment", () => {
     expect(c.error_sources.find((e: { id: string }) => e.id === "catalog_gap").status).toBe("unknown");
   });
 
-  it("returns the report with checked=false when JPL is down", async () => {
-    const { get } = makeClient({ files, upstream: () => new Response("down", { status: 503 }) });
-    const res = await get(`/api/candidates/${base.candidate_id}`);
+  it("returns the report with checked=false when JPL is down, and retries later", async () => {
+    const kv = new MemoryKv();
+    const { res, c } = await lookUp(makeClient({ files, kv, upstream: () => new Response("down", { status: 503 }) }));
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("no-store");
-    const c = await json(res);
     expect(c.classification).toBe("unmatched");
     expect(c.known_object.checked).toBe(false);
     expect(c.known_object.catalogs_checked).toEqual([]);
     expect(c.known_object.not_checked_reason).toContain("503");
     expect(c.summary_plain).toContain("Not yet checked");
+    // The failure is stored with an expiry so it is retried, never kept forever.
+    const failed = [...kv.store.entries()].find(([k]) => k.startsWith("enrich:"))!;
+    expect(failed[1].ttl).toBeGreaterThan(0);
   });
 
-  it("serves the second request from the enrichment cache", async () => {
-    const cache = new MemoryCache();
-    const a = makeClient({ files, cache, upstream: jpl(2) });
-    await a.get(`/api/candidates/${base.candidate_id}`);
-    const b = makeClient({ files, cache });
+  it("serves later requests from the global store without calling JPL", async () => {
+    const kv = new MemoryKv();
+    await lookUp(makeClient({ files, kv, upstream: jpl(2) }));
+    const b = makeClient({ files, kv });
     const c = await json(await b.get(`/api/candidates/${base.candidate_id}`));
     expect(b.calls).toHaveLength(0);
     expect(c.known_object.enrichment).toBe("cached");
@@ -156,6 +192,25 @@ describe("GET /api/candidates/:id enrichment", () => {
     expect(c.classification).toBe("injected");
     expect(c.label_plain).toBe("SIMULATED");
     expect(c.known_object.checked).toBe(false);
+  });
+
+  it("the cron refreshes missing results within the subrequest budget", async () => {
+    const client = makeClient({ files, upstream: jpl(2) });
+    const report = await refreshStale(client.env, { ...client.deps, budget: { remaining: 40 } });
+    expect(report).toMatchObject({ considered: 2, stale: 2, skipped_for_budget: 0 });
+    expect(report.refreshed).toContain(base.candidate_id);
+    const c = await json(await client.get(`/api/candidates/${base.candidate_id}`));
+    expect(c.known_object.checked).toBe(true);
+    // A second run finds nothing stale.
+    const again = await refreshStale(client.env, { ...client.deps, budget: { remaining: 40 } });
+    expect(again.stale).toBe(0);
+  });
+
+  it("the cron leaves candidates for the next run when the budget runs out", async () => {
+    const client = makeClient({ files, upstream: jpl(2) });
+    const report = await refreshStale(client.env, { ...client.deps, budget: { remaining: 5 } });
+    expect(report.refreshed).toEqual([]);
+    expect(report.skipped_for_budget).toBe(2);
   });
 
   it("404s unknown candidates", async () => {

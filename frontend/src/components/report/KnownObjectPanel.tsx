@@ -6,7 +6,17 @@ import styles from "./report.module.css";
 export function KnownObjectPanel({ known, detections }: { known: KnownObject; detections: Detection[] }) {
   const byEpoch = new Map(detections.map((d, i) => [d.epoch_id, { d, i }]));
   let headline: React.ReactNode;
-  if (!known.checked) {
+  if (!known.checked && known.enrichment === "pending") {
+    headline = (
+      <div className={styles.callout} role="status" aria-live="polite">
+        <span className={styles.pulse} aria-hidden="true" />
+        <p>
+          <strong>Checking JPL&apos;s catalog now.</strong> We&apos;re asking NASA JPL which known asteroids and comets were at
+          these positions, as seen from SPHEREx. This page updates by itself when the answer arrives, usually within a minute.
+        </p>
+      </div>
+    );
+  } else if (!known.checked) {
     headline = (
       <div className={styles.callout} data-tone="warn">
         <p>
@@ -39,7 +49,11 @@ export function KnownObjectPanel({ known, detections }: { known: KnownObject; de
   }
 
   return (
-    <Panel id="known" title="Known-object match" kicker={known.checked ? (known.matched ? "matched" : "no match") : "not checked"}>
+    <Panel
+      id="known"
+      title="Known-object match"
+      kicker={known.checked ? (known.matched ? "matched" : "no match") : known.enrichment === "pending" ? "checking…" : "not checked"}
+    >
       {headline}
       <dl className={styles.facts} style={{ marginTop: "var(--space-4)" }}>
         <div>
