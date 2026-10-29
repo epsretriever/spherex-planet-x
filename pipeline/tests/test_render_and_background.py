@@ -49,3 +49,18 @@ def test_row_background_removes_edge_ramp_and_keeps_stars():
     assert abs(np.median(out[-1])) < 0.01
     assert abs(np.median(out[-15])) < 0.01
     assert out[60, 100] > 1.9  # the star survives
+
+
+def test_edge_glow_rows_flags_only_noisy_rows_at_the_detector_edge():
+    from types import SimpleNamespace
+
+    from spherex_px.science.detect import edge_glow_rows
+
+    ny, nx = 200, 50
+    var = np.full((ny, nx), 6e-4, np.float32)
+    var[-30:] = 3e-3  # raised noise in the last 30 detector rows
+    var[100:110] = 3e-3  # raised noise in the middle: not an edge, must not be masked
+    cut = SimpleNamespace(header={"NAXIS2": 2040}, y0=1840, y1=2040, variance=var)
+    rows = edge_glow_rows(cut, np.zeros((ny, nx), bool))
+    assert rows[-30:].all()
+    assert not rows[:-30].any()

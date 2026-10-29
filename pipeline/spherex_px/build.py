@@ -62,8 +62,9 @@ LINK = LinkParams()
 
 DISPLAY_NOTE = (
     "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels "
-    "SPHEREx flags as unusable are filled from their neighbors for display only, and only inside "
-    "the detector (measurements use the masked data); pixels outside the detector are "
+    "SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are "
+    "filled from their neighbors (or set to the sky level) for display only and only inside the "
+    "detector, while measurements use the masked data; pixels outside the detector are "
     "transparent; fixed asinh stretch shared by all images of the field"
 )
 
@@ -385,7 +386,12 @@ class FieldBuilder:
             xg, yg = self.grid.world_to_grid(d.ra[j], d.dec[j])
             stamp_path = cand_dir / f"{e.epoch_id}.webp"
             self._stamp(
-                data[i].prep.sci, c.wcs, float(d.ra[j]), float(d.dec[j]), stretch, stamp_path
+                display_image(data[i].prep),
+                c.wcs,
+                float(d.ra[j]),
+                float(d.dec[j]),
+                stretch,
+                stamp_path,
             )
             src = self.source(
                 e, DISPLAY_NOTE + "; 64 x 64 px stamp at 6.15 arcsec/px centered on the detection"

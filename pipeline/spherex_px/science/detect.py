@@ -36,6 +36,7 @@ class DetectParams:
     edge_px: int = 3
     astrometric_floor_arcsec: float = 0.8
     row_background: bool = True
+    mask_edge_glow: bool = True
 
 
 @dataclass
@@ -103,6 +104,32 @@ def psf_encircled_fraction(psf: np.ndarray | None, oversample: int, radius_px: f
     return float(p[r <= radius_px].sum() / p.sum())
 
 
+EDGE_ZONE_ROWS = 64
+EDGE_VARIANCE_RATIO = 1.25
+
+
+def edge_glow_rows(cutout: Cutout, bad: np.ndarray) -> np.ndarray:
+    """Rows near a detector edge whose noise is raised by edge glow (bool per cutout row).
+
+    QR2 detector 2 records smooth, unflagged excess light in its last ~30-40 rows: +0.4 to
+    +2 MJy/sr over a 0.4 MJy/sr sky, with VARIANCE 2-5x the interior's and structure along
+    the edge that no smooth background model removes. Rows within EDGE_ZONE_ROWS of the
+    detector's first or last row whose median variance exceeds EDGE_VARIANCE_RATIO times the
+    median of the cutout's other rows are treated as unusable.
+    """
+    ny_det = int(cutout.header.get("NAXIS2", 2040))
+    rows = np.arange(cutout.y0, cutout.y1)
+    dist = np.minimum(rows, ny_det - 1 - rows)
+    var = np.where(bad, np.nan, cutout.variance)
+    with np.errstate(all="ignore"):
+        row_var = np.nanmedian(var, axis=1)
+    interior = dist >= EDGE_ZONE_ROWS
+    if not interior.any() or not np.isfinite(row_var[interior]).any():
+        return np.zeros(len(rows), dtype=bool)
+    ref = np.nanmedian(row_var[interior])
+    return (dist < EDGE_ZONE_ROWS) & np.isfinite(row_var) & (row_var > EDGE_VARIANCE_RATIO * ref)
+
+
 def row_background(sci: np.ndarray, bad: np.ndarray, smooth_rows: int = 5) -> np.ndarray:
     """Per-row residual background (2-D array broadcast along rows).
 
@@ -133,6 +160,8 @@ def prepare(cutout: Cutout, params: DetectParams = DetectParams()) -> Prepared:
     soft = (cutout.flags & mask_for(cutout.flag_bits, SOFT_BAD)) != 0
     img = cutout.image - cutout.zodi
     bad = hard | ~np.isfinite(img) | ~np.isfinite(cutout.variance) | (cutout.variance <= 0)
+    if params.mask_edge_glow:
+        bad = bad | edge_glow_rows(cutout, bad)[:, None]
     img = np.where(bad, np.nan, img)
     sigma = np.sqrt(np.where(bad, np.nan, cutout.variance))
     box = min(params.background_box_px, max(8, min(img.shape) // 3))
