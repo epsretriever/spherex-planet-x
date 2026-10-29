@@ -1,7 +1,8 @@
 # Frontend plan
 
 Owner: Armaan (frontend, UI/UX, product design)
-Status: pre-kickoff plan. No application code until kickoff on **November 14, 2026, 9:00 AM Pacific**, per Space Apps rules. Before then we only do wireframes, the design system, research and data-access tests (see [Pre-kickoff checklist](#7-pre-kickoff-checklist)).
+Code: `frontend/` (the backend works in `backend/` and `shared/`).
+API contract source of truth: `docs/api-contract.md` and the example JSON in `shared/fixtures/`, both maintained by the backend. Section 4 of this plan summarizes the rules the frontend depends on; if the two ever disagree, `docs/api-contract.md` wins and this plan gets fixed.
 
 ## 0. Principles
 
@@ -9,10 +10,10 @@ These decide every trade-off below.
 
 1. **Demo first.** The 3-minute pitch video is judged. The path *landing → blink a real field → open a candidate → read its evidence* must be flawless before anything else gets built.
 2. **Public first.** Explorer mode uses no jargon. Detective mode can use real terms, but each one gets a plain-language tooltip.
-3. **Every pixel is traceable.** Each image shows, or is one tap away from, its source file, observation date and wavelength. No uncredited or unlabeled images.
-4. **Honest about uncertainty.** We never say "discovered," "new planet" or "Planet X found." An unmatched candidate is shown as *unexplained*, with artifact and catalog-gap explanations listed next to it. Simulated data is always labeled **SIMULATED**.
+3. **Every pixel is traceable.** Each image shows, or is one tap away from, its source file, observation date and wavelength. The frontend refuses to render an image that has no `source` block.
+4. **Honest about uncertainty.** We never say "discovered," "new planet" or "Planet X found." An unmatched candidate is shown as *Unexplained*, with artifact and catalog-gap explanations listed next to it. Injected objects are always labeled **SIMULATED**. The frontend never upgrades a classification.
 5. **Works at phone width.** Design at 360 px first, then scale up. The blink viewer has to work with one thumb.
-6. **Never blocked on the backend.** The frontend builds against JSON fixtures that follow the contract in section 4 from hour 2. Switching to the real API is a config change.
+6. **Never blocked on the backend.** The app has a `USE_FIXTURES` switch. With it on, the app reads the backend's shared fixtures from `shared/fixtures/` instead of calling the API. The frontend never invents observation data: if the fixtures are missing, it shows an empty state, not placeholder sky images.
 
 ## 1. Screens
 
@@ -20,14 +21,15 @@ These decide every trade-off below.
 |---|---|---|---|
 | `/` | **Landing**: one-line hook, "Explore the sky" and "Be a detective" entry points, short integrity note | — | P0 |
 | `/explore` | **Field picker**: curated sky patches as cards with thumbnails, plus an optional Aladin Lite all-sky map with field footprints | Explorer | P0 (cards), P1 (map) |
-| `/explore/[fieldId]` | **Blink viewer**: two or more real observations of the same patch, with blink, swipe and step controls, a date timeline and "what moved" highlights | Explorer | P0 |
-| `/detective` | **Candidate list**: flagged moving sources from the pipeline, sortable and filterable by match status and quality | Detective | P0 |
-| `/detective/[candidateId]` | **Evidence report**: cutout blink, per-observation positions, motion, quality, known-object match, error sources, grounded AI explanation | Detective | P0 |
+| `/explore/[fieldId]` | **Blink viewer**: real observations (epochs) of the same patch, with blink, swipe and step controls, a date timeline and "what moved" highlights | Explorer | P0 |
+| `/detective` | **Candidate list**: flagged moving sources from the pipeline, sortable and filterable by classification and score | Detective | P0 |
+| `/detective/[candidateId]` | **Evidence report**: stamp blink, per-epoch positions, motion, scores, known-object match, error sources, grounded explanation | Detective | P0 |
 | `/detective/[candidateId]#spectrum` | **Spectrum panel** (section of the report): flux across SPHEREx's 102 bands | Detective | Stretch |
-| `/simulated` | **Injection demo**: a simulated moving object injected into real images and then recovered by the pipeline, with a recovery-vs-brightness chart | Detective | P1 |
+| `/simulated` | **Injection demo**: injected moving objects recovered (or not) by the pipeline, with the recovery-grid chart | Detective | P1 |
+| `/analyze` | **Analyze a position** (optional): submit RA/Dec, follow the run's progress, then open the resulting field and candidates | Detective | Stretch |
 | `/about` | **Method and credits**: how it works in five steps, data sources, team, scientific-integrity statement | — | P0 (short), P1 (full) |
 
-Global elements: top bar with mode switch (Explorer / Detective), a "Source" drawer on every image (file name, observation ID, date/time UTC, wavelength range, IRSA link), and a footer with data credits.
+Global elements: top bar with mode switch (Explorer / Detective), a "Source" drawer on every image (file, IRSA observation ID, plane ID, date and time, wavelength, data release, IRSA link), and a footer with data credits.
 
 ## 2. User flows
 
@@ -35,51 +37,66 @@ Global elements: top bar with mode switch (Explorer / Detective), a "Source" dra
 
 ```
 Landing ─► "Explore the sky"
-   └─► Field picker: choose a card ("Near the ecliptic in Taurus", "Galactic plane", "North ecliptic pole deep field")
+   └─► Field picker: choose a card (name, blurb and thumbnail come from the backend)
          └─► Blink viewer
-               1. Opens with image A (earliest date) and a one-line prompt: "Watch for dots that jump."
+               1. Opens on the first blink pair. Wavelength-matched pairs are the default when they exist.
+                  One-line prompt: "Watch for dots that jump."
                2. Auto-blink starts at about 1 Hz. Big Play/Pause button, date chip shows the current frame.
-               3. User can switch to Swipe (drag a divider between A and B) or Step (prev/next through all dates).
-               4. "Show me what moved" toggles circles on flagged movers with arrows from old to new position.
-               5. Tapping a circled object opens a bottom sheet: "This dot moved about 40 arcsec in 3 days.
-                  It matches a known asteroid: (12345) Example."  ─► "See the full evidence" (Detective report)
+               3. User can switch to Swipe (drag a divider between A and B) or Step (prev/next through all epochs).
+               4. "Show me what moved" toggles circles on movers, with arrows from old to new position.
+               5. Tapping a circled object opens a bottom sheet with the backend's label_plain and summary_plain
+                  ─► "See the full evidence" (Detective report)
                6. "Source" chip on each frame opens the provenance drawer.
 ```
 
 Explorer copy rules: say "dot," "moved," "known asteroid," "we can't explain this one yet." Keep units plain ("about the width of 7 pixels", "in 3 days"). Arcseconds go in a tooltip.
 
-Science UX caveat to show in Explorer: SPHEREx uses linear variable filters, so a given spot on the sky can be imaged at a **different wavelength** in each visit. A dot that changes brightness between frames may be showing the filter change, not the object. The viewer shows the wavelength of each frame next to its date and gives a one-line "Why do brightnesses change?" explainer. (To confirm with Bodhi which cutouts we pair and how they are normalized.)
+Wavelength caveat: SPHEREx uses linear variable filters, so the same spot on the sky is usually imaged at a different wavelength in each visit, and a star's brightness changes with wavelength. The field response lists `blink_pairs` with `lambda_matched`. The viewer defaults to matched pairs, and any unmatched pair carries the label **"Different wavelengths: brightness changes are expected"**. Each frame shows its wavelength next to its date.
 
 ### Detective mode
 
 ```
 Landing ─► "Be a detective"   (or Explorer bottom sheet ─► "See the full evidence")
    └─► Candidate list
-         • Each row: thumbnail blink (GIF-like loop), ID, field, # observations, motion rate,
-           quality badge, match badge (Known object / Unexplained / Likely artifact / SIMULATED)
-         • Filters: match status, minimum quality, field.  Sort: quality, motion, date.
+         • Each row: stamp thumbnail loop, candidate ID, field, # detections, motion rate,
+           QualityMeter (quality_level), classification badge
+         • Filters: classification, minimum overall score, field, "Show simulated" (include_injected).
+           Sort: overall score, motion rate, date.
          └─► Evidence report
-               1. Header: candidate ID, match badge, one-sentence plain summary
-               2. Cutout strip + blink of all observations, motion track overlay
-               3. Measurements table: per observation date/time (UTC), RA/Dec, x/y, flux, SNR, wavelength
-               4. Motion: rate (arcsec/hr), direction (position angle), fit residuals, plotted track
-               5. Signal quality: SNR, detection count, fit quality, flags
-               6. Known-object match: yes/no, object name, catalog, separation, predicted vs. measured position
-               7. Possible error sources: checklist with each item's status (checked / not ruled out)
-               8. AI explanation: labeled "AI-generated from the measurements above"; every number it
-                  cites links to the table row it came from
+               1. Header: candidate ID, classification badge, summary_plain
+               2. Stamp strip + blink of all detections, motion track overlay, dashed predicted
+                  positions from known_object.per_epoch when there is a match
+               3. Measurements table: per detection time_utc, MJD, RA/Dec, x_pix/y_pix, flux_ujy ± flux_err_ujy,
+                  SNR, wavelength
+               4. Motion: rate_arcsec_per_hr, position angle, time_span_hours, fit_residual_rms_arcsec, plotted track
+               5. Scores: motion consistency, SNR, artifact likelihood, overall (labeled "rule-based score")
+               6. Known-object match: checked / matched, designation, catalogs checked, search radius,
+                  per-epoch separation, nearest object if unmatched
+               7. Possible error sources: ErrorSourceChecklist, plus an expandable technical table of vetting[]
+               8. Explanation: labeled by generator ("Template text from the measurements" or
+                  "AI-written from the measurements"); each grounded field links to the value it came from
                9. (Stretch) Spectrum across 102 bands
-              10. Provenance: every source file, with IRSA link
+              10. Provenance: every source file, with IRSA links, schema_version and pipeline_version
          └─► Prev/next candidate navigation
 ```
 
-Injection demo flow: `/simulated` opens with a clear **SIMULATED** banner. The user picks an injected brightness and speed, sees the injected object in the blink viewer (hatched outline, magenta), then sees whether the pipeline recovered it. A small chart shows recovery rate vs. brightness from the backend's injection run. The same component renders in the candidate list when the "Show simulated" filter is on, always with the SIMULATED badge.
+Classification display:
+
+| `classification` | Badge | Notes |
+|---|---|---|
+| `known_object` | **Known object** | Shows the designation |
+| `unmatched` | **Unexplained** | Never "New" or "Discovery" |
+| `likely_artifact` | **Likely artifact** | |
+| `unconfirmed_pair` | **Unconfirmed pair** | Only two epochs; copy says it is never a detection on its own |
+| `injected` | **SIMULATED** | Plus a SIMULATED banner on any view that shows it |
+
+Injection demo flow: `/simulated` opens with a **SIMULATED** banner. It shows the recovery grid from `GET /api/injection/{study_id}` (magnitude × rate, with Wilson 95% intervals), m50 per rate bin and the false-positive rate, plus example injected candidates in the blink viewer (hatched outline, SIMULATED badge). Injected candidates appear in the candidate list only when "Show simulated" is on.
 
 ## 3. Design system outline
 
 ### Color
 
-Dark theme by default (space imagery reads best on dark), with a light theme for `/about` and printouts. Status colors are chosen to be colorblind-safe and are always paired with an icon and a text label, never color alone.
+Dark theme by default (space imagery reads best on dark), with a light theme for `/about` and printing. Status colors are chosen to be colorblind-safe and are always paired with an icon and a text label, never color alone.
 
 | Token | Dark | Use |
 |---|---|---|
@@ -90,18 +107,20 @@ Dark theme by default (space imagery reads best on dark), with a light theme for
 | `--text` | `#E8ECF4` | Primary text (contrast ≥ 12:1 on `--bg`) |
 | `--text-muted` | `#9AA4B8` | Secondary text (≥ 4.5:1) |
 | `--accent` | `#6CB4FF` | Links, primary buttons, focus ring |
-| `--status-known` | `#4FA3FF` + check icon | Matched to a known object |
-| `--status-unexplained` | `#F2B84B` + question icon | Unmatched: "Unexplained", never "New" |
-| `--status-artifact` | `#8A93A6` + warning icon | Likely artifact |
-| `--status-simulated` | `#E36BD8` + hatched fill + "SIMULATED" text | Injected test objects |
+| `--status-known` | `#4FA3FF` + check icon | `known_object` |
+| `--status-unexplained` | `#F2B84B` + question icon | `unmatched` |
+| `--status-artifact` | `#8A93A6` + warning icon | `likely_artifact` |
+| `--status-pair` | `#B9A2FF` + link icon | `unconfirmed_pair` |
+| `--status-simulated` | `#E36BD8` + hatched fill + "SIMULATED" text | `injected` |
 | `--track` | `#7CF0C8` | Motion arrows and track overlays on images |
+| `--predicted` | `#E8ECF4`, dashed | Predicted known-object positions |
 
 Overlay colors must stay visible on both dark sky and bright stars: 2 px stroke with a 1 px dark halo.
 
 ### Type
 
-- **UI and body:** Inter (variable), 16 px base, 1.5 line height.
-- **Numbers and data:** JetBrains Mono or IBM Plex Mono with tabular figures for coordinates, dates and measurements.
+- **UI and body:** Inter (variable, self-hosted), 16 px base, 1.5 line height.
+- **Numbers and data:** JetBrains Mono with tabular figures for coordinates, dates and measurements.
 - **Display:** Inter at 600–700 weight for headings. Scale: 12 / 14 / 16 / 20 / 24 / 32 / 40.
 
 ### Spacing, shape, motion
@@ -115,279 +134,253 @@ Overlay colors must stay visible on both dark sky and bright stars: 2 px stroke 
 
 | Component | Notes |
 |---|---|
-| `BlinkViewer` | Core component. Modes: blink, swipe, step. Props: ordered frames, overlays, initial mode. Preloads every frame before starting so blinks never flash blank. Pinch-zoom and pan with all frames kept aligned. |
+| `BlinkViewer` | Core component. Modes: blink, swipe, step. Takes epochs, blink pairs and grid size. Preloads every frame before starting so blinks never flash blank. Field images are small (0.3° cutouts, about 175 px), so they are scaled up with `image-rendering: pixelated`; the frame size comes from `wcs.width_px` / `wcs.height_px`, never from a hard-coded size. Zoom and pan keep all frames aligned. |
 | `FrameLabel` / `DateChip` | Date (UTC), wavelength, frame index. Always visible on each frame. |
-| `SourceDrawer` | Provenance: file name, observation ID, date, wavelength, IRSA link, processing note. |
-| `MotionOverlay` | Circles at measured positions, arrow track, optional predicted (known-object) position in dashed outline. |
-| `FieldCard` | Thumbnail, plain-language name, number of dates, date range. |
+| `SourceDrawer` | Provenance: file, `obs_id`, `planeid`, `data_release`, IRSA archive link and cutout link. |
+| `MotionOverlay` | Circles at measured positions (`x_grid`, `y_grid`), arrow track, dashed predicted positions from `known_object.per_epoch`. |
+| `FieldCard` | Backend thumbnail, name, blurb, number of epochs, date range. |
 | `CandidateRow` / `CandidateCard` | Table row on desktop, card on phone. |
-| `StatusBadge` | Known / Unexplained / Likely artifact / SIMULATED. Icon + label + color. |
-| `QualityMeter` | 3-level (Low / Medium / High) with the numeric SNR in a tooltip. |
-| `MeasurementTable` | Sticky first column, horizontal scroll inside the table only (never the page) on phone. |
-| `MotionPlot` | RA/Dec offsets vs. time with linear fit. |
-| `ErrorSourceChecklist` | Each item: name, plain explanation, status (ruled out / not ruled out / unknown). |
-| `AIExplanation` | Labeled block, cited numbers link to table rows, "Not available" state if the backend omits it. |
+| `ClassificationBadge` | Known object / Unexplained / Likely artifact / Unconfirmed pair / SIMULATED. Icon + label + color. |
+| `QualityMeter` | Shows `quality_level` (Low / Medium / High). Tooltip shows the `scores` breakdown and says the score is rule-based. |
+| `MeasurementTable` | Sticky first column, horizontal scroll inside the table only (never the page) on phone. Uses native `x_pix` / `y_pix`. |
+| `MotionPlot` | RA/Dec offsets vs. time with the fitted motion. |
+| `ErrorSourceChecklist` | Each item: label, plain explanation, status (ruled out / not ruled out / unknown), evidence. |
+| `VettingTable` | Expandable technical table of `vetting[]`: check, value, threshold, passed. |
+| `Explanation` | Labeled by `generator`. Grounded-field values are highlighted and linked. "Not available" state when the block is missing. |
 | `SpectrumPlot` (stretch) | Flux vs. wavelength across 102 bands with error bars. |
-| `SimulatedBanner` | Full-width banner on any simulated view. |
-| `Tooltip` / `Glossary` | Plain-language definitions for SNR, arcsec, ecliptic, etc. |
+| `RecoveryGrid` | Injection recovery heatmap (magnitude × rate) with Wilson 95% intervals, m50 per rate bin, false-positive rate. |
+| `SimulatedBanner` | Full-width banner on any view that shows injected objects. |
+| `Tooltip` / `Glossary` | Plain-language definitions for SNR, arcsec, ecliptic, MJD, etc. |
 | `BottomSheet` | Phone detail view for a tapped object in Explorer. |
-
-Wireframes for Landing, Blink viewer (phone and desktop), Candidate list and Evidence report come before kickoff (low fidelity, no code).
 
 ## 4. JSON contract (backend → frontend)
 
-All endpoints are read-only `GET` from FastAPI. All times are ISO 8601 UTC. Angles are degrees for RA/Dec, arcseconds for offsets, arcsec/hour for rates. Image URLs can be relative to the API host or absolute (static/CDN). The frontend starts with these exact shapes as fixtures in `fixtures/`.
+The full contract lives in `docs/api-contract.md`, with example responses in `shared/fixtures/` (`fields.json`, `field_detail.json`, `candidates.json`, `candidate_detail.json`, `injection_study.json`). The frontend's TypeScript types in `frontend/src/lib/contract.ts` mirror it. This section lists the decisions the frontend relies on. Shapes below use types, not example values, so this plan never carries made-up observation data.
 
-### `GET /api/fields`
+### Endpoints
 
-```json
-{
-  "fields": [
-    {
-      "id": "taurus-ecliptic-01",
-      "name": "Near the ecliptic in Taurus",
-      "blurb": "A patch along the path of the planets, where asteroids are common.",
-      "center": { "ra_deg": 60.12, "dec_deg": 21.40 },
-      "size_deg": { "width": 0.5, "height": 0.5 },
-      "thumbnail_url": "/static/fields/taurus-ecliptic-01/thumb.webp",
-      "observation_count": 4,
-      "date_range": { "start": "2025-05-02T03:14:00Z", "end": "2025-11-08T22:41:00Z" },
-      "candidate_count": 3
-    }
-  ]
-}
-```
+| Method and path | Returns |
+|---|---|
+| `GET /api/health` | Service and upstream status |
+| `GET /api/fields` | Field list for the picker |
+| `GET /api/fields/{field_id}` | One field: field metadata + `epochs` + `movers` + `blink_pairs` |
+| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | Candidate list |
+| `GET /api/candidates/{candidate_id}` | Full evidence report for one candidate |
+| `GET /api/injection/{study_id}` | Injection-recovery study |
+| `POST /api/runs` → `GET /api/runs/{run_id}` | Optional job flow for analyzing any position. A finished run returns the same field and candidate shapes as above. |
 
-### `GET /api/fields/{field_id}`
+### Naming and envelope rules
 
-```json
-{
-  "id": "taurus-ecliptic-01",
-  "name": "Near the ecliptic in Taurus",
-  "center": { "ra_deg": 60.12, "dec_deg": 21.40 },
-  "wcs": {
-    "crval": [60.12, 21.40], "crpix": [256.5, 256.5],
-    "cdelt_arcsec": 6.2, "width_px": 512, "height_px": 512, "rotation_deg": 0.0
-  },
-  "observations": [
-    {
-      "id": "obs-001",
-      "obs_time": "2025-05-02T03:14:00Z",
-      "image_url": "/static/fields/taurus-ecliptic-01/obs-001.webp",
-      "image_width_px": 512,
-      "image_height_px": 512,
-      "wavelength_um": { "center": 1.62, "min": 1.58, "max": 1.66 },
-      "band_index": 37,
-      "stretch": { "type": "asinh", "min": -2.0, "max": 150.0, "units": "MJy/sr" },
-      "aligned": true,
-      "source": {
-        "file": "level2_2025W18_1A_0123_1D3_spx_l2b-v20-2025-140.fits",
-        "obs_id": "2025W18_1A_0123",
-        "detector": 3,
-        "archive": "IRSA",
-        "archive_url": "https://irsa.ipac.caltech.edu/...",
-        "product_level": "L2",
-        "processing_note": "Reprojected to common grid, asinh stretch"
-      }
-    }
-  ],
-  "movers": [
-    {
-      "candidate_id": "cand-0007",
-      "status": "known",
-      "label_plain": "Known asteroid",
-      "track_px": [
-        { "obs_id": "obs-001", "x": 120.4, "y": 300.1 },
-        { "obs_id": "obs-002", "x": 131.9, "y": 296.7 }
-      ]
-    }
-  ]
-}
-```
-
-### `GET /api/candidates?field_id=&status=&min_quality=&include_simulated=false`
-
-```json
-{
-  "generated_at": "2026-11-15T02:10:00Z",
-  "pipeline_version": "0.3.1",
-  "candidates": [
-    {
-      "id": "cand-0007",
-      "field_id": "taurus-ecliptic-01",
-      "status": "known",
-      "simulated": false,
-      "observation_count": 4,
-      "motion": { "rate_arcsec_per_hr": 31.2, "position_angle_deg": 102.5 },
-      "quality": { "level": "high", "mean_snr": 18.4 },
-      "known_match": { "matched": true, "name": "(12345) Example" },
-      "thumbnail_url": "/static/candidates/cand-0007/thumb.webp",
-      "summary_plain": "Moves steadily across 4 images and matches a known asteroid."
-    }
-  ]
-}
-```
-
-`status` is one of `"known" | "unexplained" | "likely_artifact" | "simulated"`. The backend owns this classification; the frontend never upgrades a status.
-
-### `GET /api/candidates/{candidate_id}`
-
-```json
-{
-  "id": "cand-0012",
-  "field_id": "taurus-ecliptic-01",
-  "status": "unexplained",
-  "simulated": false,
-  "summary_plain": "A faint dot that moves in a straight line across 3 images. It does not match any known object we checked.",
-  "detections": [
-    {
-      "obs_id": "obs-001",
-      "obs_time": "2025-05-02T03:14:00Z",
-      "ra_deg": 60.1432, "dec_deg": 21.3871,
-      "x_px": 245.1, "y_px": 198.6,
-      "pos_err_arcsec": 1.8,
-      "flux": { "value": 12.3, "err": 2.1, "units": "uJy" },
-      "snr": 5.9,
-      "wavelength_um": 1.62,
-      "cutout_url": "/static/candidates/cand-0012/obs-001.webp",
-      "cutout_size_px": 64,
-      "flags": [],
-      "source": { "file": "level2_..._spx_l2b.fits", "obs_id": "2025W18_1A_0123", "archive_url": "https://irsa.ipac.caltech.edu/..." }
-    }
-  ],
-  "motion": {
-    "model": "linear",
-    "rate_arcsec_per_hr": 2.4,
-    "rate_err_arcsec_per_hr": 0.3,
-    "position_angle_deg": 87.0,
-    "fit_rms_arcsec": 1.1,
-    "chi2_reduced": 0.9,
-    "time_baseline_hr": 70.5
-  },
-  "quality": {
-    "level": "medium",
-    "mean_snr": 6.2,
-    "detections": 3,
-    "score": 0.64,
-    "score_definition": "Classifier probability of a real moving source (0-1)"
-  },
-  "known_match": {
-    "matched": false,
-    "catalogs_checked": ["JPL SBDB / Horizons", "MPC"],
-    "search_radius_arcsec": 60,
-    "nearest": { "name": "2019 AB12", "separation_arcsec": 410.0, "predicted_ra_deg": 60.25, "predicted_dec_deg": 21.33 }
-  },
-  "error_sources": [
-    { "id": "cosmic_ray", "label": "Cosmic-ray hit", "explanation": "A particle strike can make a dot appear in one image.", "status": "ruled_out", "evidence": "Detected in 3 separate images." },
-    { "id": "detector_artifact", "label": "Detector artifact", "explanation": "Hot pixels or ghosts can mimic a source.", "status": "not_ruled_out", "evidence": "Positions are near a detector edge in obs-003." },
-    { "id": "misassociation", "label": "Unrelated dots linked together", "explanation": "Three separate faint dots can line up by chance.", "status": "unknown", "evidence": null },
-    { "id": "catalog_gap", "label": "Object missing from catalogs", "explanation": "Some real asteroids are not yet catalogued.", "status": "unknown", "evidence": null }
-  ],
-  "ai_explanation": {
-    "text": "This candidate was detected in 3 images over 70.5 hours, moving at 2.4 ± 0.3 arcsec per hour...",
-    "cites": ["motion.time_baseline_hr", "motion.rate_arcsec_per_hr", "quality.mean_snr"],
-    "model": "…",
-    "generated_at": "2026-11-15T02:12:00Z",
-    "grounding_note": "Generated only from the measured values in this report."
-  },
-  "spectrum": null,
-  "injection": null,
-  "provenance": { "pipeline_version": "0.3.1", "run_id": "run-2026-11-15-01" }
-}
-```
-
-Optional blocks:
-
-```json
-"spectrum": {
-  "units": { "wavelength": "um", "flux": "uJy" },
-  "points": [ { "band_index": 0, "wavelength_um": 0.75, "flux": 10.2, "flux_err": 1.4, "obs_id": "obs-001" } ]
-}
-```
-
-```json
-"injection": {
-  "injected": { "magnitude_ab": 19.5, "rate_arcsec_per_hr": 3.0, "position_angle_deg": 45.0 },
-  "recovered": true,
-  "recovered_rate_arcsec_per_hr": 2.9,
-  "position_error_arcsec": 1.2
-}
-```
-
-### `GET /api/injection/summary`
-
-```json
-{
-  "simulated": true,
-  "run_id": "inj-2026-11-15-01",
-  "bins": [
-    { "magnitude_ab": 18.0, "rate_arcsec_per_hr": 3.0, "injected": 50, "recovered": 49 },
-    { "magnitude_ab": 20.0, "rate_arcsec_per_hr": 3.0, "injected": 50, "recovered": 21 }
-  ],
-  "example_candidate_ids": ["sim-0001", "sim-0002"]
-}
-```
-
-Contract rules:
-
-- Every image object carries a `source` (or links to an observation that does). The frontend refuses to render an image without one and shows a "Missing source" placeholder, so gaps are caught early.
-- `simulated: true` anywhere means the SIMULATED badge and banner are mandatory.
-- `ai_explanation` may be `null`; the report still works without it.
-- `cites` paths must resolve inside the same JSON. The frontend highlights the cited values and drops (with a console warning) any citation that does not resolve.
+- snake_case, with units in the names: `flux_ujy`, `flux_err_ujy`, `x_pix`, `rate_arcsec_per_hr`, `time_span_hours`, `fit_residual_rms_arcsec`.
+- IDs are `field_id`, `epoch_id` and `candidate_id`, never a bare `id`. `obs_id` always means the IRSA observation ID.
+- Every response carries `schema_version` and `pipeline_version`. The frontend shows both in the provenance section and warns in the console on an unknown major version.
 - Unknown fields are ignored, so the backend can add fields without breaking the frontend.
+
+### Times
+
+Every epoch and detection has both `time_utc` (ISO 8601) and `mjd`. The UI shows `time_utc` to the public and `mjd` in the measurement table.
+
+### Provenance
+
+Every image, epoch, detection and stamp carries:
+
+```ts
+source: {
+  file: string;
+  obs_id: string;         // IRSA observation ID
+  planeid: string;
+  archive_url: string;
+  cutout_url: string;
+  data_release: string;
+}
+```
+
+The frontend refuses to render an image without `source` and shows a "Missing source" placeholder instead, so gaps are caught early.
+
+### Wavelength
+
+Epochs and detections carry `wavelength_um_center`, `bandwidth_um` and `wavelength_um_range: [min, max]`.
+
+### Field detail (`GET /api/fields/{field_id}`)
+
+```ts
+{
+  schema_version: string;
+  pipeline_version: string;
+  field_id: string;
+  name: string;            // display text comes from the backend
+  blurb: string;
+  thumbnail_url: string;
+  wcs: { width_px: number; height_px: number; /* + WCS keywords */ };
+  epochs: Array<{
+    epoch_id: string;
+    time_utc: string;
+    mjd: number;
+    image_url: string;     // WebP, common grid, fixed asinh stretch per field
+    wavelength_um_center: number;
+    bandwidth_um: number;
+    wavelength_um_range: [number, number];
+    source: Source;
+  }>;
+  blink_pairs: Array<{ epoch_ids: [string, string]; lambda_matched: boolean }>;
+  movers: Array<{
+    candidate_id: string;
+    classification: Classification;
+    label_plain: string;
+    track: Array<{ epoch_id: string; x_grid: number; y_grid: number }>;
+  }>;
+}
+```
+
+Images:
+
+- Field images are **0.3° cutouts, about 175 px**, on a common grid, WebP, with a fixed asinh stretch per field. The viewer scales them up with `image-rendering: pixelated` and reads real dimensions from `wcs.width_px` and `wcs.height_px`.
+- Overlays use `x_grid` / `y_grid` (common grid). `x_pix` / `y_pix` are native detector pixels and only appear in the measurement table.
+- Detection stamps are `stamp_url`, 64 px.
+
+Blink pairs: the viewer defaults to `lambda_matched: true` pairs when any exist. Unmatched pairs are labeled "Different wavelengths: brightness changes are expected".
+
+### Classification
+
+`classification` is one of `known_object | unmatched | likely_artifact | unconfirmed_pair | injected`. It replaces the earlier `status` and `simulated` fields. Display labels are in section 2. The frontend never upgrades a classification.
+
+### Scores
+
+```ts
+scores: {
+  motion_consistency: number;
+  snr: number;
+  artifact_likelihood: number;
+  overall: number;
+  method: "rule_based_v1";
+}
+quality_level: "low" | "medium" | "high";   // drives QualityMeter
+```
+
+The score is rule-based. The UI never calls it a probability or a classifier output.
+
+### Candidate detail (`GET /api/candidates/{candidate_id}`)
+
+```ts
+{
+  schema_version: string;
+  pipeline_version: string;
+  candidate_id: string;
+  field_id: string;
+  classification: Classification;
+  summary_plain: string;
+  label_plain: string;
+  detections: Array<{
+    epoch_id: string;
+    time_utc: string;
+    mjd: number;
+    ra_deg: number; dec_deg: number; pos_err_arcsec: number;
+    x_pix: number; y_pix: number;        // native detector pixels
+    x_grid: number; y_grid: number;      // common grid, for overlays
+    flux_ujy: number; flux_err_ujy: number; snr: number;
+    wavelength_um_center: number; bandwidth_um: number; wavelength_um_range: [number, number];
+    stamp_url: string;                   // 64 px
+    source: Source;
+  }>;
+  motion: {
+    rate_arcsec_per_hr: number;
+    position_angle_deg: number;
+    time_span_hours: number;
+    fit_residual_rms_arcsec: number;
+    /* + model, n_detections, fit statistics */
+  };
+  scores: Scores;
+  quality_level: QualityLevel;
+  known_object: {
+    checked: boolean;
+    matched: boolean;
+    designation: string | null;
+    predicted_vmag: number | null;
+    per_epoch: Array<{ epoch_id: string; predicted_ra_deg: number; predicted_dec_deg: number; separation_arcsec: number }>;
+    observer: string;
+    source: string;
+    catalogs_checked: string[];          // JPL SBIdent and Horizons only
+    search_radius_arcsec: number;
+    nearest: { designation: string; separation_arcsec: number } | null;
+  };
+  error_sources: Array<{
+    id: string; label: string; explanation: string;
+    status: "ruled_out" | "not_ruled_out" | "unknown";
+    evidence: string | null;
+  }>;
+  vetting: Array<{ check: string; value: number | boolean | string; threshold: number | boolean | string; passed: boolean }>;
+  explanation: {
+    text: string;
+    generator: string;                   // template text vs AI-written text
+    grounded_fields: string[];           // paths into this JSON, may include [n]
+    numeric_check: string;
+    generated_utc: string;
+  } | null;
+  spectrum: {
+    units: { wavelength: string; flux: string };
+    points: Array<{ band_index: number; wavelength_um: number; flux_ujy: number; flux_err_ujy: number; epoch_id: string }>;
+  } | null;
+}
+```
+
+Rules the UI depends on:
+
+- **Known objects:** the dashed predicted-position overlay uses `known_object.per_epoch`. `catalogs_checked` lists JPL SBIdent and Horizons only.
+- **Error sources:** `error_sources[]` feeds `ErrorSourceChecklist`. `vetting[]` is shown raw in the expandable `VettingTable`.
+- **Explanation:** labeled by `generator`: template generators show "Template text from the measurements", anything else shows "AI-written from the measurements". `grounded_fields` paths are resolved inside the same JSON, including array indexes such as `known_object.per_epoch[0].separation_arcsec`. A path that does not resolve is dropped with a console warning, and the rest of the explanation still shows.
+- **Optional blocks:** `explanation` and `spectrum` may be `null`. The report still works without them.
+
+### Injection study (`GET /api/injection/{study_id}`)
+
+The recovery grid is magnitude × rate. Each cell has injected and recovered counts, the recovery fraction and its Wilson 95% interval. The study also has m50 per rate bin and a false-positive rate. `RecoveryGrid` renders that shape. Everything on `/simulated` is labeled SIMULATED.
 
 ## 5. Tech choices (frontend)
 
-- **Next.js (App Router) + TypeScript.** Static export where possible so the demo can be hosted on Vercel/GitHub Pages and survive a backend outage by falling back to bundled fixtures.
-- **Styling:** CSS variables for the tokens above plus CSS Modules or Tailwind mapped to the same tokens. Pick one at kickoff; tokens are written first either way.
-- **Blink viewer:** plain `<canvas>` or stacked `<img>` with CSS opacity for blink/swipe. This is simpler and more reliable than a full sky viewer for aligned cutouts.
-- **Sky map:** Aladin Lite v3 on `/explore` only (P1), showing a survey background (e.g. a HiPS from IRSA or CDS) with our field footprints. Lazy-loaded so it never slows the blink viewer. If it fights us, fall back to the card picker.
-- **Charts:** a small library (e.g. Recharts or lightweight SVG) for motion plot, spectrum and injection recovery.
-- **Data layer:** one `api.ts` with typed fetchers and a `USE_FIXTURES` switch.
+- **Next.js (App Router) + TypeScript** in `frontend/`. Pages fetch on the server and pass typed data to client components.
+- **Styling:** CSS variables for the tokens above plus CSS Modules.
+- **Fonts:** Inter and JetBrains Mono, self-hosted through Fontsource so builds don't depend on a font CDN.
+- **Blink viewer:** stacked `<img>` elements on a fixed-size stage, with opacity for blink and a clip for swipe. This is simpler and more reliable than a full sky viewer for small aligned cutouts.
+- **Sky map:** Aladin Lite v3 on `/explore` only (P1), showing a survey background with our field footprints. Lazy-loaded so it never slows the blink viewer. If it fights us, the card picker is enough.
+- **Charts:** lightweight SVG for the motion plot, spectrum and recovery grid.
+- **Data layer:** `frontend/src/lib/api.ts` with typed fetchers and the `USE_FIXTURES` switch. With fixtures on, it reads `shared/fixtures/*.json`. With it off, it calls `API_BASE_URL`.
+- **Tests:** Vitest + Testing Library for components and data logic, Playwright for the demo path at phone and desktop widths.
 
-## 6. 48-hour build schedule
+## 6. Build order
 
-Hours are counted from kickoff (H0 = Sat Nov 14, 9:00 AM Pacific). Adjust the final hours to our local event's exact submission deadline.
+The schedule from planning, kept as a build order. Each step ends in a working, reviewed slice with its own pull request.
 
-| Hours | Frontend work | Sync with backend / science |
+| Step | Frontend work | Depends on |
 |---|---|---|
-| H0–H2 | Read final challenge text. Scaffold Next.js app, tokens, layout shell, routes. Commit fixtures from section 4. | Agree on JSON contract (30-minute meeting). Pick 2–3 demo fields with Bodhi. |
-| H2–H8 | **BlinkViewer** (blink, swipe, step, preload, labels, SourceDrawer) on fixture images. Landing page. | Backend: first real cutouts for one field. |
-| H8–H12 | Field picker cards. Wire `/explore/[fieldId]` to real cutouts as soon as they exist. Phone-width pass on the viewer. | Check alignment and stretch of real cutouts; fix with Bodhi. |
-| H12–H18 | Candidate list + StatusBadge + QualityMeter. Evidence report skeleton: header, cutout strip, MeasurementTable, motion section. | Backend: first candidates JSON. |
-| H18–H24 | Sleep in shifts. Before sleeping: deploy a preview build so teammates can test. | — |
-| H24–H30 | Report: known-object match, ErrorSourceChecklist, AIExplanation with citations, provenance. MotionOverlay in Explorer ("Show me what moved") + bottom sheet linking to report. | Backend: AI explanation endpoint, known-object matches. |
-| H30–H36 | `/simulated` injection demo + SimulatedBanner. `/about` page with credits and integrity statement. Stretch: SpectrumPlot if data is ready. | Backend: injection summary. |
-| H36–H40 | **Feature freeze.** Polish the demo path only: loading states, empty/error states, reduced motion, accessibility (focus, contrast, alt text), phone testing on real devices. | Freeze data for the demo; bundle it as fixtures fallback. |
-| H40–H45 | Record the 3-minute video: script → screen capture of the demo path (phone + desktop) → edit. Final copy check for "discovery" language. | Whole team reviews the video. |
-| H45–H48 | Buffer. Final deploy, README links, screenshots, submission form. | Submit. |
+| 1 | App shell: tokens, layout, top bar, footer, landing page, about page, data layer with `USE_FIXTURES` | — |
+| 2 | **BlinkViewer** (blink, swipe, step, preload, labels, SourceDrawer, blink pairs) and the Explorer field picker and field pages | `fields.json`, `field_detail.json` |
+| 3 | Phone-width and accessibility pass on the viewer | Real cutouts |
+| 4 | Candidate list + ClassificationBadge + QualityMeter. Evidence report skeleton: header, stamp strip, MeasurementTable, motion section | `candidates.json`, `candidate_detail.json` |
+| 5 | Report: known-object match and predicted positions, ErrorSourceChecklist, VettingTable, Explanation with grounded fields, provenance. MotionOverlay in Explorer + bottom sheet linking to the report | — |
+| 6 | `/simulated` with RecoveryGrid + SimulatedBanner. Full `/about`. Stretch: SpectrumPlot | `injection_study.json` |
+| 7 | **Polish the demo path:** loading, empty and error states, reduced motion, focus and contrast, alt text, phone testing on real devices | — |
+| 8 | Optional: `/analyze` run flow, Aladin Lite field map | `POST /api/runs` |
+| 9 | 3-minute video: script → screen capture of the demo path (phone + desktop) → edit. Final copy check for "discovery" language | — |
 
-Cut order if behind schedule: Aladin map → spectrum → injection controls (keep a static injection result) → candidate filters. Never cut: blink viewer, evidence report, provenance, SIMULATED labels.
+Cut order if time runs short: Aladin map → `/analyze` → spectrum → injection controls (keep a static recovery grid) → candidate filters. Never cut: blink viewer, evidence report, provenance, SIMULATED labels.
 
 ### Demo script draft (3 minutes)
 
 1. (0:00–0:20) Hook: "The sky changes. SPHEREx photographs it again and again in infrared. What moved?"
 2. (0:20–1:10) Explorer: pick a field, blink, tap "Show me what moved", tap a known asteroid.
-3. (1:10–2:10) Detective: candidate list, open an unexplained candidate, walk through measurements, error sources and the AI explanation's citations.
-4. (2:10–2:40) Injection demo: we hid fake objects in real data and measured how many we recover.
+3. (1:10–2:10) Detective: candidate list, open an unexplained candidate, walk through measurements, error sources and the explanation's grounded values.
+4. (2:10–2:40) Injection demo: we hid simulated objects in real data and measured how many we recover.
 5. (2:40–3:00) Integrity and impact: "We're not claiming Planet X. We're giving everyone the tools to look."
 
-## 7. Pre-kickoff checklist
-
-Allowed before Nov 14 (no application code):
+## 7. Supporting work
 
 - [ ] Low-fidelity wireframes: Landing, Field picker, Blink viewer (phone + desktop), Candidate list, Evidence report, Injection demo.
-- [ ] Design tokens written up (colors, type, spacing) and contrast-checked.
+- [ ] Design tokens contrast-checked.
 - [ ] Copy deck: plain-language strings for Explorer, glossary entries, integrity statement, badge labels.
-- [ ] Data-access tests (with Bodhi): query IRSA for SPHEREx images over a candidate ecliptic field; confirm what metadata (obs time, wavelength per pixel, WCS) is available; check whether an IRSA HiPS exists that Aladin Lite can load.
 - [ ] Aladin Lite v3 research: embedding in Next.js (client-only), overlaying footprints and markers, mobile performance.
-- [ ] Review this JSON contract with the backend owner and agree on it at kickoff.
+- [ ] Switch fixtures to `shared/fixtures/` as soon as the backend's files land, and re-check `frontend/src/lib/contract.ts` against `docs/api-contract.md`.
 - [ ] Draft the demo video script and shot list.
 
 ## 8. Open questions
 
 - Which fields have enough revisits on short enough timescales to show motion in a blink? (Bodhi)
-- How do we normalize brightness between frames taken at different wavelengths so the blink is not misleading? (Bodhi)
-- Cutout size and format: 512 px WebP for fields, 64 px for candidate cutouts? (backend)
-- Which LLM and prompt produce the AI explanation, and how is grounding enforced server-side? (AI/ML owner)
-- Hosting: Vercel for the frontend, and where does FastAPI run during judging? (team)
+- Hosting: where does the frontend run, and where does FastAPI run for the demo? (team)
