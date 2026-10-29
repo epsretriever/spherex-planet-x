@@ -11,6 +11,7 @@ const PAGES = [
   "/detective/candidate/?id=syn-unmatched",
   "/detective/candidate/?id=syn-injected",
   "/about/",
+  "/simulated/",
 ];
 
 for (const path of PAGES) {

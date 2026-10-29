@@ -9,6 +9,7 @@ const PAGES: [string, string][] = [
   ["field", `/explore/field/?id=${SYNTHETIC.FIELD_ID}`],
   ["about", "/about/"],
   ["detective", "/detective/"],
+  ["simulated", "/simulated/"],
   ["report-known", "/detective/candidate/?id=syn-known"],
   ["report-unmatched", "/detective/candidate/?id=syn-unmatched"],
 ];
