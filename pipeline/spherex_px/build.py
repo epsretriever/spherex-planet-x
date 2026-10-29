@@ -32,6 +32,7 @@ from .data.index import CoverageIndex, dichroic_partner
 from .data.l2file import L2File
 from .data.s3 import Level2Key, S3Archive
 from .data.spectral import band_index, lambda_match_tolerance
+from .pairs import EpochInfo, TrackPoint, build_pairs
 from .render import choose_stretch, write_thumbnail, write_webp
 from .science.detect import DetectParams, detect, measure, prepare
 from .science.grid import Grid, angular_sep_arcsec
@@ -47,8 +48,7 @@ from .science.link import (
 )
 from .science.vetting import TrackMeasurements, flux_ratio, vet
 from .settings import BACKEND_ROOT
-from .version import pipeline_version
-from .pairs import EpochInfo, TrackPoint, build_pairs
+from .version import build_run_id, pipeline_version
 
 log = logging.getLogger(__name__)
 
@@ -61,17 +61,26 @@ LINK = LinkParams()
 
 
 DISPLAY_NOTE = (
-    "Zodiacal light model (ZODI) and residual background subtracted; pixels SPHEREx flags as "
-    "unusable are filled from their neighbors for display only (measurements use the masked "
-    "data); fixed asinh stretch shared by all images of the field"
+    "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels "
+    "SPHEREx flags as unusable are filled from their neighbors for display only, and only inside "
+    "the detector (measurements use the masked data); pixels outside the detector are "
+    "transparent; fixed asinh stretch shared by all images of the field"
 )
 
 
 def display_image(prep) -> np.ndarray:
-    """Science image with flagged pixels interpolated from neighbors, for rendering only."""
+    """Science image for rendering: flagged pixels inside the detector filled from neighbors.
+
+    The cutout array lies entirely on the detector, so every pixel in it is covered. Flagged
+    (NaN) pixels are interpolated from valid neighbors; any still empty (inside large flagged
+    regions) are set to the sky level, 0 MJy/sr after background subtraction. Nothing outside
+    the detector is ever filled: reprojection leaves those pixels NaN and the renderer makes
+    them transparent.
+    """
     from astropy.convolution import Gaussian2DKernel, interpolate_replace_nans
 
-    return interpolate_replace_nans(prep.sci, Gaussian2DKernel(1.0)).astype(np.float32)
+    filled = interpolate_replace_nans(prep.sci, Gaussian2DKernel(1.0))
+    return np.where(np.isfinite(filled), filled, 0.0).astype(np.float32)
 
 
 def utc_now() -> str:
@@ -124,7 +133,8 @@ class FieldBuilder:
         self.archive = archive or S3Archive()
         self.index = CoverageIndex(archive=self.archive)
         self.grid = Grid(spec.ra_deg, spec.dec_deg, spec.size_deg)
-        self.version = pipeline_version()
+        self.version = pipeline_version(require_clean=True)
+        self.run_id = build_run_id()
         self.generated = utc_now()
 
     # -- data ------------------------------------------------------------------
@@ -232,6 +242,7 @@ class FieldBuilder:
         movers = [self._mover(c) for c in candidates]
         detail = S.FieldDetail(
             pipeline_version=self.version,
+            build_run_id=self.run_id,
             field_id=spec.field_id,
             name=spec.name,
             blurb=spec.blurb,
@@ -500,7 +511,7 @@ class FieldBuilder:
             spectrum=spectrum,
             injection=None,
             provenance=S.CandidateProvenance(
-                run_id=f"build-{self.spec.field_id}-{self.generated}",
+                run_id=self.run_id,
                 generated_utc=self.generated,
                 parameters={
                     "detect_threshold_snr": DETECT.threshold_snr,
@@ -636,7 +647,7 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     by_field: dict[str, list[S.CandidateDetail]] = {}
     for c in cands:
         by_field.setdefault(c.field_id, []).append(c)
-    version = pipeline_version()
+    version = pipeline_version(require_clean=True)
     now = utc_now()
     order = {"showcase": 0, "run": 1}
     fields.sort(key=lambda f: (order.get(f.origin, 2), f.field_id))
@@ -644,6 +655,7 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
         out_dir / "fields.json",
         S.FieldList(
             pipeline_version=version,
+            build_run_id=build_run_id(),
             generated_utc=now,
             fields=[field_summary_of(f, by_field.get(f.field_id, [])) for f in fields],
         ),
@@ -654,7 +666,11 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     write_json(
         out_dir / "candidates.json",
         S.CandidateList(
-            pipeline_version=version, generated_utc=now, total=len(summaries), candidates=summaries
+            pipeline_version=version,
+            build_run_id=build_run_id(),
+            generated_utc=now,
+            total=len(summaries),
+            candidates=summaries,
         ),
     )
     return len(fields), len(cands)
@@ -697,7 +713,10 @@ def blink_pairs_for(
 
     pairs = build_pairs(
         [EpochInfo(e.epoch_id, e.mjd, e.detector, e.wavelength_um_center) for e in epochs],
-        [[TrackPoint(p.epoch_id, p.ra_deg, p.dec_deg) for p in m.track if inside(p)] for m in movers],
+        [
+            [TrackPoint(p.epoch_id, p.ra_deg, p.dec_deg) for p in m.track if inside(p)]
+            for m in movers
+        ],
         field_width_arcsec=min(width_px, height_px) * cdelt_arcsec,
         tolerance=lambda_match_tolerance,
     )

@@ -589,9 +589,22 @@
       "type": "string"
     },
     "pipeline_version": {
-      "description": "Backend package version plus git commit",
+      "description": "Pipeline package version plus the git commit of the code that built the data",
       "title": "Pipeline Version",
       "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Pipeline run that wrote this file: 'gh-<run>-<attempt>' in GitHub Actions, 'local-<UTC time>-<commit>' otherwise",
+      "title": "Build Run Id"
     },
     "field_id": {
       "title": "Field Id",

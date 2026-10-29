@@ -27,7 +27,9 @@ class Model(BaseModel):
 
 class Envelope(Model):
     schema_version: Literal["1.0"] = SCHEMA_VERSION
-    pipeline_version: str = Field(description="Backend package version plus git commit")
+    pipeline_version: str = Field(
+        description="Pipeline package version plus the git commit of the code that built the data"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +202,9 @@ class BlinkPair(Model):
         default=None,
         description="How far a mover detected in both images shifts between them; null when none is",
     )
-    default: bool = Field(default=False, description="The pair the Explorer opens with; exactly one per field")
+    default: bool = Field(
+        default=False, description="The pair the Explorer opens with; exactly one per field"
+    )
 
 
 class TrackPoint(Model):
@@ -241,9 +245,19 @@ class FieldSummary(Model):
 class FieldList(Envelope):
     generated_utc: str
     fields: list[FieldSummary]
+    build_run_id: str | None = Field(
+        default=None,
+        description="Pipeline run that wrote this file: 'gh-<run>-<attempt>' in GitHub Actions, "
+        "'local-<UTC time>-<commit>' otherwise",
+    )
 
 
 class FieldDetail(Envelope):
+    build_run_id: str | None = Field(
+        default=None,
+        description="Pipeline run that wrote this file: 'gh-<run>-<attempt>' in GitHub Actions, "
+        "'local-<UTC time>-<commit>' otherwise",
+    )
     field_id: str
     name: str
     blurb: str
@@ -462,6 +476,11 @@ class CandidateSummary(Model):
 class CandidateList(Envelope):
     generated_utc: str
     total: int
+    build_run_id: str | None = Field(
+        default=None,
+        description="Pipeline run that wrote this file: 'gh-<run>-<attempt>' in GitHub Actions, "
+        "'local-<UTC time>-<commit>' otherwise",
+    )
     candidates: list[CandidateSummary]
 
 

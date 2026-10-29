@@ -35,6 +35,7 @@ class DetectParams:
     min_separation_px: int = 2
     edge_px: int = 3
     astrometric_floor_arcsec: float = 0.8
+    row_background: bool = True
 
 
 @dataclass
@@ -102,6 +103,31 @@ def psf_encircled_fraction(psf: np.ndarray | None, oversample: int, radius_px: f
     return float(p[r <= radius_px].sum() / p.sum())
 
 
+def row_background(sci: np.ndarray, bad: np.ndarray, smooth_rows: int = 5) -> np.ndarray:
+    """Per-row residual background (2-D array broadcast along rows).
+
+    Detector rows run along the linear variable filter, so each row is a single wavelength.
+    Some detectors also have smooth excess light near an edge that the ZODI model and a 24 px
+    Background2D box do not follow: QR2 detector 2 is about +0.4 MJy/sr brighter in its last
+    ~30 rows (y > 2010). A sigma-clipped median per row (stars clipped), smoothed over a few
+    rows, removes it without touching sources.
+    """
+    ny, nx = sci.shape
+    prof = np.full(ny, np.nan)
+    for y in range(ny):
+        vals = sci[y][~bad[y] & np.isfinite(sci[y])]
+        if vals.size >= 20:
+            _, med, _ = sigma_clipped_stats(vals, sigma=3.0, maxiters=3)
+            prof[y] = med
+    if not np.isfinite(prof).any():
+        return np.zeros_like(sci)
+    prof = np.where(np.isfinite(prof), prof, np.nanmedian(prof))
+    k = max(1, smooth_rows)
+    pad = np.pad(prof, k // 2, mode="edge")
+    smooth = np.array([np.median(pad[i : i + k]) for i in range(ny)])
+    return np.repeat(smooth[:, None], nx, axis=1).astype(sci.dtype)
+
+
 def prepare(cutout: Cutout, params: DetectParams = DetectParams()) -> Prepared:
     hard = (cutout.flags & mask_for(cutout.flag_bits, HARD_BAD)) != 0
     soft = (cutout.flags & mask_for(cutout.flag_bits, SOFT_BAD)) != 0
@@ -123,6 +149,8 @@ def prepare(cutout: Cutout, params: DetectParams = DetectParams()) -> Prepared:
         _, med, _ = sigma_clipped_stats(img[~bad])
         bkg = np.full_like(img, med)
     sci = img - bkg
+    if params.row_background:
+        sci = sci - row_background(sci, bad)
     omega = pixel_solid_angle_sr(cutout.header)
     apcorr = psf_encircled_fraction(cutout.psf, cutout.psf_oversample, params.aperture_radius_px)
     scale = math.sqrt(omega) * ARCSEC_PER_RAD
