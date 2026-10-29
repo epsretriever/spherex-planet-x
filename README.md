@@ -81,6 +81,7 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 | `docs/api-contract.md` | Backend ↔ frontend JSON contract |
 | `docs/backend-plan.md` | Backend architecture and science approach |
 | `docs/frontend-plan.md` | Frontend screens, flows and design system |
+| `docs/build-plan.md` | Roadmap: discovery engine, ML, AI features and audit fixes |
 
 ## Development
 
