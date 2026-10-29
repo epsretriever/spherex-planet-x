@@ -219,13 +219,14 @@
   pointer-events: none;
 }
 
+/* Near the bottom, so it never sits on the object we zoomed in on. */
 .dividerHandle {
   position: absolute;
-  top: 50%;
+  bottom: 12px;
   left: 50%;
   width: 28px;
   height: 28px;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   border-radius: 50%;
   background: var(--text);
   box-shadow: 0 0 0 2px rgb(0 0 0 / 0.6);

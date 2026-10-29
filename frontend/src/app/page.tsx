@@ -38,8 +38,8 @@ export default function LandingPage() {
               <Link href="/explore/" className="button button-primary">
                 Explore the sky →
               </Link>
-              <Link href="/about/" className="button">
-                How it works
+              <Link href="/detective/" className="button">
+                Be a detective
               </Link>
             </div>
           </div>
@@ -84,6 +84,29 @@ export default function LandingPage() {
             </Link>
           </div>
           <FieldGrid limit={3} />
+        </section>
+
+        <section className="section" aria-labelledby="modes-heading">
+          <h2 id="modes-heading" className="visually-hidden">
+            Two ways in
+          </h2>
+          <div className={styles.modes}>
+            <Link href="/explore/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Explorer</span>
+              <h3>Blink the sky yourself</h3>
+              <p>No jargon. Pick a patch, flip between dates, and see if you can spot the dot that jumps before we show you.</p>
+              <span className={styles.modeCta}>Start exploring →</span>
+            </Link>
+            <Link href="/detective/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Detective</span>
+              <h3>Weigh the evidence</h3>
+              <p>
+                Every moving object our pipeline flagged, with its positions, speed, signal quality, known-object match and the ways it
+                could be wrong.
+              </p>
+              <span className={styles.modeCta}>Open the case files →</span>
+            </Link>
+          </div>
         </section>
 
         <section className={`section ${styles.integrity}`} aria-labelledby="integrity-heading">

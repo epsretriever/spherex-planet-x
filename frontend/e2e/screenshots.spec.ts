@@ -8,6 +8,9 @@ const PAGES: [string, string][] = [
   ["explore", "/explore/"],
   ["field", `/explore/field/?id=${SYNTHETIC.FIELD_ID}`],
   ["about", "/about/"],
+  ["detective", "/detective/"],
+  ["report-known", "/detective/candidate/?id=syn-known"],
+  ["report-unmatched", "/detective/candidate/?id=syn-unmatched"],
 ];
 
 test.describe("screenshots", () => {

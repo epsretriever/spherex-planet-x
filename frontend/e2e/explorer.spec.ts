@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { installMockApi, SYNTHETIC } from "./support/mockApi";
 
 async function expectNoHorizontalScroll(page: import("@playwright/test").Page) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth, document.querySelector("main")!.scrollWidth) - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 }
 
