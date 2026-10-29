@@ -1,0 +1,35 @@
+# Curated showcase fields. name and blurb are written by the team; everything else the API
+# serves for a field is measured by the pipeline. Positions are ICRS degrees; segments are
+# SPHEREx Level 2 week segments in the public S3 bucket ("<release>/<segment>").
+#
+# The fields were chosen with `spherex-px search`, which ran detection and linking on 0.6 deg
+# tiles along the ecliptic in Aquarius for the 2025 June 1-4 visit and reported the tracks
+# it found. A and B are centered on two of those tracks; the quiet field is a tile where
+# no moving source was found.
+
+[[field]]
+field_id = "aquarius-a"
+name = "A moving dot in Aquarius"
+blurb = "A small patch of sky on the ecliptic, the path the planets follow, in the constellation Aquarius. SPHEREx photographed it again and again over two days in June 2025. Watch for the dot that jumps between frames."
+ra_deg = 346.530
+dec_deg = -6.384
+size_deg = 0.3
+segments = ["qr2/2025W23_1C"]
+
+[[field]]
+field_id = "aquarius-b"
+name = "A second traveler in Aquarius"
+blurb = "One degree north of the first field, also on the ecliptic. Here SPHEREx caught a dot crossing the patch over about a day and a half in June 2025."
+ra_deg = 346.723
+dec_deg = -5.451
+size_deg = 0.3
+segments = ["qr2/2025W23_1C"]
+
+[[field]]
+field_id = "aquarius-quiet"
+name = "A quiet patch in Aquarius"
+blurb = "A neighboring patch observed during the same two days, where the pipeline found nothing moving. Use it to see how stars change brightness from frame to frame only because each image is taken at a different infrared wavelength."
+ra_deg = 345.679
+dec_deg = -6.771
+size_deg = 0.3
+segments = ["qr2/2025W23_1C"]
