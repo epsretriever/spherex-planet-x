@@ -66,3 +66,7 @@ Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx 
 ## Data credits
 
 SPHEREx data: NASA / JPL-Caltech / IPAC, via the NASA/IPAC Infrared Science Archive.
+
+## Frontend
+
+The website lives in [`frontend/`](frontend/): a Next.js static export served by the Cloudflare Worker. See [`frontend/README.md`](frontend/README.md) for setup, scripts and how it talks to the API.

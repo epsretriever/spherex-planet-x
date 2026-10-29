@@ -1,0 +1,42 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--badge) 55%, transparent);
+  background: color-mix(in srgb, var(--badge) 14%, transparent);
+  color: var(--badge);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.badge[data-size="sm"] {
+  font-size: var(--text-xs);
+}
+
+.badge[data-size="lg"] {
+  font-size: var(--text-md);
+  padding: 4px 14px 4px 6px;
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  background: var(--badge);
+  color: #0b0710;
+  font-size: 0.8em;
+  font-weight: 800;
+}
+
+/* Simulated objects carry a hatched fill as well as the label. */
+.badge[data-classification="injected"] {
+  letter-spacing: 0.06em;
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--badge) 22%, transparent) 0 4px, transparent 4px 8px);
+}
