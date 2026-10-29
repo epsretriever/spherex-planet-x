@@ -1,8 +1,20 @@
 # API contract (v1.0)
 
-The contract between the backend (`backend/`) and the frontend (`frontend/`). The backend owns it.
+The contract between the backend and the frontend (`frontend/`). The backend owns it.
 
-- **Source of truth:** the Pydantic models in [`backend/spherex_px/schemas.py`](../backend/spherex_px/schemas.py).
+The deployed product is one Cloudflare Worker, `spherex-planet-x`, that serves both the website and the API:
+
+```
+                      ┌────────────── Cloudflare Worker "spherex-planet-x" ──────────────┐
+ browser ── /api/* ──►│ worker/src (Hono): reads static JSON via env.ASSETS, adds live JPL │──► IRSA TAP, JPL SBIdent, JPL Horizons
+         ── other ──► │ static assets: frontend/out (Next.js export, includes /data/*)    │
+                      └───────────────────────────────────────────────────────────────────┘
+ offline: pipeline/ (Python) ── reads SPHEREx L2 cutouts from s3://nasa-irsa-spherex ──► writes frontend/public/data/ (committed)
+```
+
+- **Pixels are processed offline** by `pipeline/` (Workers have CPU limits). It writes static JSON and WebP images to `frontend/public/data/`, which the Next.js static export copies into `frontend/out/data/`.
+- **The Worker** serves `/api/*` from that static data through `env.ASSETS` and adds live data. `/api/coverage` queries IRSA TAP, and every candidate's `known_object` block is filled at request time from JPL SBIdent and Horizons for each epoch. The frontend calls relative `/api/*` URLs only.
+- **Source of truth for shapes:** the Pydantic models in [`pipeline/spherex_px/schemas.py`](../pipeline/spherex_px/schemas.py). The Worker's TypeScript types in [`worker/src/contract.ts`](../worker/src/contract.ts) mirror them, and Worker tests validate responses against the exported JSON Schema.
 - **JSON Schema:** [`shared/schema/`](../shared/schema/), exported from the models with `spherex-px export-schema`. A test fails if the exports are stale. The frontend can generate TypeScript types from these files.
 - **Example responses:** [`shared/fixtures/`](../shared/fixtures/). Every fixture is a real backend response recorded from real SPHEREx data (see [Fixtures](#fixtures)), and a test validates each one against the models.
 
@@ -26,28 +38,42 @@ Changes to the contract go into all three in the same commit. Breaking changes b
 
 The public app reads **precomputed showcase fields**. The "analyze any position" feature (`/api/coverage`, `/api/runs`) is an extra. A finished run produces the same field and candidate shapes, with `origin: "run"`.
 
-| Method & path | Response model | Notes |
+| Method & path | Response model | Data |
 |---|---|---|
-| `GET /api/health` | `Health` | Service status and reachability of each upstream service. |
-| `GET /api/fields` | `FieldList` | All fields (showcase first, then finished runs). |
-| `GET /api/fields/{field_id}` | `FieldDetail` | Field + epochs + movers + blink pairs + common-grid WCS. |
-| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | `CandidateList` | List across fields. `classification` may repeat. `min_score` filters on `scores.overall`. Injected candidates are excluded unless `include_injected=true`, or unless `classification=injected` is requested explicitly. |
-| `GET /api/candidates/{candidate_id}` | `CandidateDetail` | Full evidence report. |
-| `GET /api/injection/{study_id}` | `InjectionStudy` | Injection-recovery results. |
-| `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | SPHEREx exposures covering a position (metadata only, no pixels). |
-| `POST /api/runs` | `RunStatus` (202) | Body: `RunRequest {ra_deg, dec_deg, size_deg=0.3, time_min_utc?, time_max_utc?, name?}`. |
-| `GET /api/runs/{run_id}` | `RunStatus` | `status`: `queued → discovering → fetching → detecting → linking → identifying → rendering → done` (or `failed`). When `done`, `field_id` is set. |
-| `GET /static/...` | images | WebP field images, thumbnails, 64 px stamps. URLs in responses are relative to the API host. |
+| `GET /api/health` | `Health` | Live probe of each upstream (IRSA TAP, JPL SBIdent, JPL Horizons, SPHEREx S3) + static data counts. Never cached. |
+| `GET /api/fields` | `FieldList` | Static `data/fields.json`. Each field's `candidate_counts` reflects the static (pipeline) classification. |
+| `GET /api/fields/{field_id}` | `FieldDetail` | Static `data/fields/{field_id}.json`. `movers[].classification` reflects the static classification. |
+| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | `CandidateList` | Static `data/candidates.json`, with each summary's known-object fields taken from enrichment results already in the cache. A candidate whose enrichment is not cached yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. |
+| `GET /api/candidates/{candidate_id}` | `CandidateDetail` | Static `data/candidates/{candidate_id}.json`, **enriched live** (see [Known-object enrichment](#known-object-enrichment)). |
+| `GET /api/injection/{study_id}` | `InjectionStudy` | Static `data/injection/{study_id}.json`. |
+| `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | **Live** IRSA TAP (`https://irsa.ipac.caltech.edu/TAP/sync`). |
+| `POST /api/runs` | `ErrorResponse` (501) | Pixel processing can't run inside a Worker. Runs are produced offline with `spherex-px run --ra ... --dec ...` and published with the static data. The endpoint returns 501 with instructions instead of pretending to queue work. |
+| `GET /api/runs/{run_id}` | `RunStatus` | Static `data/runs/{run_id}.json` for runs built offline. `field_id` points at the resulting field. |
+| `GET /data/...` | images, JSON | Static files: WebP field images, thumbnails, 64 px stamps. URLs in responses are root-relative (`/data/...`). |
 
-Errors return `{"detail": "..."}` with a 4xx or 5xx status.
+**Upstream calls** (Worker): 15 s timeout, descriptive `User-Agent`, successful responses cached with the Cache API (`caches.default`) for 24 hours.
+
+**Errors** are JSON `ErrorResponse {detail, upstream, upstream_status}`. `404` means an unknown id. `400` means invalid parameters. `502` means an upstream answered with an error (`upstream_status` is its HTTP status). `504` means an upstream timed out (`upstream_status: "timeout"`). `501` is returned for `POST /api/runs`.
+
+### Known-object enrichment
+
+The pipeline writes every candidate with `known_object.checked = false`, `enrichment: "static"` and `catalogs_checked: []`, because the offline builder has no JPL access. It never writes a match it did not check. On `GET /api/candidates/{candidate_id}` the Worker:
+
+1. Queries **JPL SBIdent** once per detection epoch, with the geocenter as observer (`mpc-code=500`), the exposure midpoint as `obs-time`, and a field of view centered on the detection with a half-width of 0.05° (180″). That's wide enough to include objects whose geocentric position is offset by SPHEREx's parallax.
+2. For objects SBIdent returns, queries **JPL Horizons** (geocentric observer, one request with all epoch times) for RA, Dec and distance, then corrects each position to SPHEREx's own vantage point using `spacecraft_geocentric_km` (SPHEREx orbits about 700 km up, which shifts nearby objects by several arcseconds).
+3. Calls a candidate `known_object` only if one object lies within `search_radius_arcsec` of the detection at **every** epoch. Otherwise the candidate stays as the pipeline classified it, with `nearest` set to the closest object returned.
+4. Sets `checked`, `catalogs_checked` (only the services that actually answered), `observer`, `query_utc`, `enrichment` (`live` or `cached`), and regenerates `label_plain`, `summary_plain`, the `known_object` and `catalog_gap` error sources, and `explanation` from the updated values.
+5. If JPL is unreachable, the candidate is returned with `checked: false` and a `not_checked_reason`. The response is still `200`, because the rest of the report is valid.
+
+Injected candidates are never sent to JPL and are never relabelled.
 
 ## Field (`FieldSummary`, `FieldDetail`)
 
-- `name` and `blurb` come from the curated showcase config (`backend/spherex_px/config/showcase.toml`). `summary_plain` is generated by the backend from measured values only.
+- `name` and `blurb` come from the curated showcase config (`pipeline/spherex_px/config/showcase.toml`). `summary_plain` is generated by the backend from measured values only.
 - `wcs` is the **one common grid** for the field: `{projection: "TAN", crval: [ra, dec], crpix: [x, y], cdelt_arcsec, width_px, height_px, rotation_deg}`. Field images are 0.3° cutouts (about 175 px at 6.15″/px) reprojected onto this grid. The frontend upscales them and must not assume a fixed size such as 512 px.
 - Image orientation: `crpix` is 1-based in the FITS convention. Rendered images have north up and east left when `rotation_deg = 0`. Image row 0 is the top (`y_grid = height_px`). Convert an overlay point with `col = x_grid - 0.5` and `row = height_px - y_grid + 0.5`, in image-pixel units.
 - `stretch`: a fixed asinh stretch per field (`min`, `max`, `softening`, `units: "MJy/sr"`, `zodi_subtracted: true`), shared by all epochs so blinking doesn't flicker.
-- `epochs[]`: one per SPHEREx exposure and detector covering the field. Each has `obs_id`, `time_utc`, `mjd`, start and end times, `exposure_s`, `detector`, `bandpass` (`SPHEREx-D1`…`D6`), wavelength fields, `band_index`, `image {url, width_px, height_px, format, source}`, `flagged_pixel_fraction`, `n_detections`, and `source`.
+- `epochs[]`: one per SPHEREx exposure and detector covering the field. Each has `obs_id`, `time_utc`, `mjd`, start and end times, `exposure_s`, `detector`, `bandpass` (`SPHEREx-D1`…`D6`), wavelength fields, `band_index`, `image {url, width_px, height_px, format, source}`, `flagged_pixel_fraction`, `n_detections`, `spacecraft_geocentric_km` (from the header, ICRF/J2000 equatorial axes), and `source`.
 - `blink_pairs[]`: `{epoch_id_a, epoch_id_b, time_separation_hours, lambda_matched, delta_lambda_frac, label_plain}`. `lambda_matched` is true when the central wavelengths differ by less than half a spectral resolution element (Δλ/λ < 1/(2R), with R from the calibration table). The viewer labels unmatched pairs as different-wavelength pairs, where brightness changes are expected.
 - `movers[]`: one per candidate in the field: `{candidate_id, classification, label_plain, quality_level, rate_arcsec_per_hr, track: [{epoch_id, time_utc, mjd, ra_deg, dec_deg, x_grid, y_grid}]}`.
 
@@ -67,9 +93,9 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 
 ### Blocks
 
-- `detections[]`: `epoch_id`, `obs_id`, `time_utc`, `mjd`, `ra_deg`, `dec_deg`, `pos_err_arcsec`, native `x_pix`/`y_pix` (0-based detector pixels), common-grid `x_grid`/`y_grid` (for overlays), `flux_ujy`, `flux_err_ujy`, `snr`, wavelength fields, `band_index`, `flag_bits`, `flag_names`, `flagged_pixels_in_aperture`, `psf_fit_reduced_chi2`, `stamp {url, width_px: 64, height_px: 64, format, source}`, `source`.
+- `detections[]`: `epoch_id`, `obs_id`, `time_utc`, `mjd`, `ra_deg`, `dec_deg`, `pos_err_arcsec`, native `x_pix`/`y_pix` (0-based detector pixels), common-grid `x_grid`/`y_grid` (for overlays), `flux_ujy`, `flux_err_ujy`, `snr`, wavelength fields, `band_index`, `flag_bits`, `flag_names`, `flagged_pixels_in_aperture`, `psf_fit_reduced_chi2`, `stamp {url, width_px: 64, height_px: 64, format, source}`, `spacecraft_geocentric_km`, `source`.
 - `motion`: `model` (`linear | parallax | none`), `n_detections`, `time_span_hours`, `rate_arcsec_per_hr`, `rate_err_arcsec_per_hr`, `position_angle_deg`, `ra_rate_arcsec_per_hr`, `dec_rate_arcsec_per_hr`, `fit_residual_rms_arcsec`, `fit_chi2`, `fit_dof`, `distance_au_estimate {best, lo, hi} | null`.
-- `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`.
+- `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`, `enrichment` (`static | live | cached`).
   - `catalogs_checked` lists **only services we actually queried**: `"JPL SBIdent"` and/or `"JPL Horizons"`. The model rejects anything else, so MPC can never appear unless we start calling it and update the contract.
 - `scores`: `motion_consistency`, `snr`, `artifact_likelihood`, `overall` (all in [0, 1]), `quality_level` (`low | medium | high`), `method: "rule_based_v1"`, `definition`. **The score is a rule-based ranking, not a probability.** Nothing in the UI or text may describe it as a classifier probability. Thresholds: `high` if `overall ≥ 0.6`, `medium` if `≥ 0.3`, else `low`.
 - `vetting[]`: raw checks `{check, description, value, threshold, passed}`. `passed` is `null` when a check couldn't be evaluated.
@@ -109,6 +135,25 @@ Every epoch, detection, field image and stamp carries `source`:
 
 `{study_id, generated_utc, simulated: true, field_ids, n_injected, n_recovered, mag_bins_ab, rate_bins_arcsec_per_hr, grid: [{mag_ab, rate_arcsec_per_hr, n_injected, n_recovered, fraction, ci_low, ci_high}], m50_by_rate: [{rate_arcsec_per_hr, m50_ab | null}], false_positives {n_control_runs, area_deg2, n_candidates, rate_per_deg2, ci_low_per_deg2, ci_high_per_deg2}, recovery_criteria, method_notes, example_candidate_ids}`. Intervals are Wilson 95% intervals for fractions and Poisson 95% intervals for rates.
 
+## Health, coverage and runs
+
+- `Health {status: ok | degraded, checked_utc, fields_loaded, candidates_loaded, upstream: [{name, url, reachable, http_status, latency_ms, detail}]}`.
+- `Coverage {center, radius_deg, searched, n_epochs, truncated, epochs: [{obs_id, planeid, detector, bandpass, time_utc, mjd, time_end_utc, wavelength_um_range, archive_url, cutout_url}]}`. Values come straight from IRSA's `spherex.plane` and `spherex.artifact` tables. Fields IRSA doesn't return are `null`.
+- `RunStatus {run_id, status, progress, message, request, field_id, created_utc, updated_utc}`.
+
+## Static data layout (`frontend/public/data/`, written by `spherex-px build`)
+
+| Path | Model |
+|---|---|
+| `data/fields.json` | `FieldList` |
+| `data/fields/{field_id}.json` | `FieldDetail` |
+| `data/fields/{field_id}/{epoch_id}.webp`, `thumb.webp` | field images |
+| `data/candidates.json` | `CandidateList` (all candidates, including injected) |
+| `data/candidates/{candidate_id}.json` | `CandidateDetail` (static, before enrichment) |
+| `data/candidates/{candidate_id}/{epoch_id}.webp`, `thumb.webp` | 64 px stamps |
+| `data/injection/{study_id}.json` | `InjectionStudy` |
+| `data/runs/{run_id}.json` | `RunStatus` |
+
 ## Fixtures
 
-`shared/fixtures/` holds `fields.json`, `field_detail.json`, `candidates.json`, `candidate_detail.json` and `injection_study.json`. They are **recorded backend responses for real SPHEREx data**, written by `spherex-px record-fixtures` from the same showcase build the API serves. Nothing in them is hand-written or invented. Synthetic sources appear only in injected candidates, classified `injected`. Images referenced by fixtures are committed under `shared/fixtures/static/` so the frontend can render them offline.
+`shared/fixtures/` holds `fields.json`, `field_detail.json`, `candidates.json`, `candidate_detail.json` and `injection_study.json`. They are **recorded responses for real SPHEREx data**, copied by `spherex-px record-fixtures` from the static data the Worker serves. Nothing in them is hand-written or invented. Synthetic sources appear only in injected candidates, classified `injected`. Image URLs in fixtures point at `/data/...`, which the frontend serves from `frontend/public/data/`.

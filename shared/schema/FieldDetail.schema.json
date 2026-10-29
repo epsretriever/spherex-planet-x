@@ -142,6 +142,16 @@
           "title": "N Detections",
           "type": "integer"
         },
+        "spacecraft_geocentric_km": {
+          "description": "SPHEREx position relative to Earth's center at exposure midpoint, km, ICRF/J2000 equatorial axes (header X_SC, Y_SC, Z_SC)",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Spacecraft Geocentric Km",
+          "type": "array"
+        },
         "source": {
           "$ref": "#/$defs/Source"
         }
@@ -162,6 +172,7 @@
         "image",
         "flagged_pixel_fraction",
         "n_detections",
+        "spacecraft_geocentric_km",
         "source"
       ],
       "title": "Epoch",

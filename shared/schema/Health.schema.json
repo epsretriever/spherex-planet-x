@@ -15,6 +15,30 @@
           "title": "Reachable",
           "type": "boolean"
         },
+        "http_status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Status"
+        },
+        "latency_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency Ms"
+        },
         "detail": {
           "anyOf": [
             {
@@ -58,6 +82,10 @@
       "title": "Status",
       "type": "string"
     },
+    "checked_utc": {
+      "title": "Checked Utc",
+      "type": "string"
+    },
     "fields_loaded": {
       "title": "Fields Loaded",
       "type": "integer"
@@ -77,6 +105,7 @@
   "required": [
     "pipeline_version",
     "status",
+    "checked_utc",
     "fields_loaded",
     "candidates_loaded",
     "upstream"

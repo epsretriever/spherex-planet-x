@@ -23,7 +23,8 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 | Layer | Tools |
 |---|---|
 | Frontend | React / Next.js |
-| Backend | Python, FastAPI |
+| Backend | Cloudflare Worker (TypeScript, Hono) |
+| Pipeline | Python offline builder |
 | Science | Astropy, Photutils, NumPy, SciPy |
 | AI / ML | scikit-learn or PyTorch |
 | Data | SPHEREx images from NASA/IPAC IRSA, JPL small-body data |
@@ -40,7 +41,8 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 
 | Path | Contents |
 |---|---|
-| `backend/` | Python package `spherex_px`: data access, science pipeline, FastAPI service |
+| `worker/` | Cloudflare Worker (Hono): `/api/*`, live IRSA and JPL queries |
+| `pipeline/` | Python package `spherex_px`: offline SPHEREx data access, detection, linking, scoring; writes `frontend/public/data/` |
 | `frontend/` | Next.js app |
 | `shared/schema/` | JSON Schema for every API response, exported from the backend models |
 | `shared/fixtures/` | Recorded API responses for real SPHEREx fields |

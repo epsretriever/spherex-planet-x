@@ -54,12 +54,12 @@ NASA Space Apps Challenge 2026 · Planet X and SPHEREx · Backend owners: Bodhi 
                              ▼
             10. Explain     text built only from measured fields in the report (section 5.3)
                              ▼
-            11. Serve       FastAPI: PNG/WebP cutouts, blink sequences, JSON candidate reports
+            11. Publish     static JSON + WebP to frontend/public/data → Cloudflare Worker serves /api/* (+ live JPL/IRSA)
 ```
 
 ### Module layout
 
-All code lives in `backend/spherex_px/` (the frontend works in `frontend/`).
+Deployment is one Cloudflare Worker, `spherex-planet-x` (`worker/`, TypeScript + Hono), serving the static site (`frontend/out`) and `/api/*`. Pixel work can't run inside a Worker, so stages 1–10 run offline in `pipeline/spherex_px/` (Python). That writes `frontend/public/data/`, which is committed and deployed with the site. The Worker adds the live parts: IRSA TAP coverage, and JPL SBIdent and Horizons known-object checks at request time. See [docs/api-contract.md](api-contract.md).
 
 | Module | Responsibility |
 |---|---|
@@ -78,9 +78,9 @@ All code lives in `backend/spherex_px/` (the frontend works in `frontend/`).
 | `science/explain.py` | Grounded explanation + numeric consistency check |
 | `science/inject.py` | Injection-recovery harness |
 | `build.py`, `render.py` | Build a field (showcase or run) into products; WebP rendering |
-| `api/` | FastAPI app, run queue |
+| `worker/src/` (TypeScript) | Hono API: static data via `env.ASSETS`, live IRSA TAP and JPL enrichment, Cache API, health |
 
-**Runtime model:** a field run takes minutes (dozens of cutouts), so `POST /runs` starts a background job and the frontend polls for status. Plain FastAPI `BackgroundTasks` plus a process pool is enough. For the demo, **precompute 3–5 showcase fields** and serve them from cache, so judging never depends on IRSA latency.
+**Runtime model:** a field build takes minutes (dozens of cutouts), so it runs offline (`spherex-px build`, and `spherex-px run` for an arbitrary position) and the results ship as static data. Showcase fields never depend on IRSA latency. Only the known-object enrichment and coverage queries are live, and both are cached for 24 hours.
 
 ---
 
@@ -207,7 +207,7 @@ Linking models:
 
 ## 5. JSON contract
 
-The contract is in **[docs/api-contract.md](api-contract.md)**. The models are in `backend/spherex_px/schemas.py`, JSON Schema in `shared/schema/`, and recorded examples in `shared/fixtures/`. In short:
+The contract is in **[docs/api-contract.md](api-contract.md)**. The models are in `pipeline/spherex_px/schemas.py` (mirrored in `worker/src/contract.ts`), JSON Schema in `shared/schema/`, and recorded examples in `shared/fixtures/`. In short:
 
 - Public endpoints read precomputed showcase fields: `GET /api/fields`, `/api/fields/{field_id}`, `/api/candidates`, `/api/candidates/{candidate_id}`, `/api/injection/{study_id}`, `/api/health`. The "analyze any position" feature adds `/api/coverage`, `POST /api/runs` and `GET /api/runs/{run_id}`, and a finished run yields the same field and candidate shapes.
 - Classification: `known_object | unmatched | likely_artifact | unconfirmed_pair | injected`, owned by the backend.
@@ -305,7 +305,7 @@ Already verified through the AWS bucket (Oct 29, 2026): the T4 HDU list, T5 WCS-
 | T9 | Horizons: does it have SPHEREx? Get its ID and geocentric state at T8's time; re-query SBIdent with `xobs` | ID; position difference geocenter vs spacecraft for the asteroid (expect several arcsec) |
 | T10 | Visual sanity: in T8's cutouts, is the known asteroid visible at the predicted position (by eye, DS9 or a quick imshow)? | yes/no + offset in px. Confirms time stamps and WCS line up |
 | T11 | Throughput: 20 cutouts sequential, then 4-way parallel | median/95th-percentile latency, error codes (503?), polite concurrency limit |
-| T12 | Pick showcase fields: 3–5 positions with (a) a known main-belt asteroid crossing within one visit and (b) a known TNO or dwarf planet seen in ≥ 2 surveys | list of (ra, dec, times, target) in `backend/spherex_px/config/showcase.toml` |
+| T12 | Pick showcase fields: 3–5 positions with (a) a known main-belt asteroid crossing within one visit and (b) a known TNO or dwarf planet seen in ≥ 2 surveys | list of (ra, dec, times, target) in `pipeline/spherex_px/config/showcase.toml` |
 
 Exit criterion: T1, T2, T4, T5, T8 pass, so we know we can discover, fetch, read wavelength, and identify. The S3 byte-range path (section 3.0) already gives discovery, fetching and wavelength without IRSA's services. Identification (T8, T9) still needs JPL access.
 
@@ -321,7 +321,7 @@ The original 48-hour schedule is kept as a **build order**, not a deadline. Each
 | 2 | Data access: S3 byte-range cutouts, L2 file reader (ZODI, FLAGS, VARIANCE, λ map, PSF), coverage index; IRSA TAP and JPL clients | B | real cutouts for showcase fields |
 | 3 | Science: common grid, per-epoch detection + photometry, static rejection, tracklet linking + motion fit, known-object matching | B (science), T (JPL) | known asteroid recovered in a showcase field ✅ **key milestone** (identification needs JPL access) |
 | 4 | Vetting, scores, error sources, grounded explanations | T | evidence report fields filled from measurements |
-| 5 | FastAPI app, WebP rendering, showcase builder, recorded fixtures | T (+A) | Explorer and Detective modes on real data |
+| 5 | Worker (Hono): static endpoints, live IRSA/JPL; WebP rendering, showcase builder, recorded fixtures | T (+A) | Explorer and Detective modes on real data |
 | 6 | Injection-recovery study | B (science), T (harness) | completeness heatmap, m₅₀, FP rate |
 | 7 | Runs ("analyze any position"), λ-matched differencing, parallax-constrained linking | B | TNO showcase field linked across surveys (stretch) |
 | 8 | Validation review of every showcase claim against measurements; README results + limitations | B | science sign-off |

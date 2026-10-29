@@ -180,6 +180,12 @@ class Epoch(Model):
     image: ImageRef
     flagged_pixel_fraction: float
     n_detections: int
+    spacecraft_geocentric_km: list[float] = Field(
+        min_length=3,
+        max_length=3,
+        description="SPHEREx position relative to Earth's center at exposure midpoint, km, "
+        "ICRF/J2000 equatorial axes (header X_SC, Y_SC, Z_SC)",
+    )
     source: Source
 
 
@@ -280,6 +286,12 @@ class Detection(Model):
     flagged_pixels_in_aperture: int
     psf_fit_reduced_chi2: float | None
     stamp: ImageRef = Field(description="64 x 64 px stamp centered on the detection")
+    spacecraft_geocentric_km: list[float] = Field(
+        min_length=3,
+        max_length=3,
+        description="SPHEREx position relative to Earth's center at exposure midpoint, km, "
+        "ICRF/J2000 equatorial axes (header X_SC, Y_SC, Z_SC)",
+    )
     source: Source
 
 
@@ -332,6 +344,11 @@ class KnownObject(Model):
     )
     observer: str | None = Field(default=None, description="Observer location used for predictions")
     query_utc: str | None = None
+    enrichment: Literal["static", "live", "cached"] = Field(
+        default="static",
+        description="static: as written by the offline pipeline (not checked); live/cached: "
+        "filled by the Worker from JPL at request time",
+    )
 
 
 class Scores(Model):
@@ -432,6 +449,7 @@ class CandidateSummary(Model):
     mean_snr: float
     overall_score: float
     quality_level: QualityLevel
+    known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
 
@@ -522,31 +540,42 @@ class UpstreamStatus(Model):
     name: str
     url: str
     reachable: bool
+    http_status: int | None = None
+    latency_ms: float | None = None
     detail: str | None = None
 
 
 class Health(Envelope):
     status: Literal["ok", "degraded"]
+    checked_utc: str
     fields_loaded: int
     candidates_loaded: int
     upstream: list[UpstreamStatus]
 
 
 class CoverageEpoch(Model):
-    obs_id: str
-    detector: int
-    bandpass: str
-    time_utc: str
+    """One SPHEREx spectral image covering the position, as listed by IRSA TAP."""
+
+    obs_id: str | None = Field(description="Parsed from the file name when possible")
+    planeid: str | None
+    detector: int | None = Field(default=None, ge=1, le=6)
+    bandpass: str | None
+    time_utc: str = Field(description="Exposure start (time_bounds_lower)")
     mjd: float
-    wavelength_um_center: float
-    wavelength_um_range: list[float] = Field(min_length=2, max_length=2)
-    source: Source
+    time_end_utc: str | None
+    wavelength_um_range: list[float] | None = Field(
+        default=None, min_length=2, max_length=2, description="From energy_bounds_lower/upper"
+    )
+    archive_url: str
+    cutout_url: str | None
 
 
 class Coverage(Envelope):
     center: SkyPosition
     radius_deg: float
-    searched: str = Field(description="What was searched, e.g. weeks of the S3 index")
+    searched: str = Field(description="Service and tables queried")
+    n_epochs: int
+    truncated: bool = Field(description="True when the result hit the row limit")
     epochs: list[CoverageEpoch]
 
 
@@ -576,6 +605,7 @@ class RunStatus(Envelope):
     status: RunStatusValue
     progress: float = Field(ge=0, le=1)
     message: str | None = None
+    request: RunRequest | None = None
     field_id: str | None = Field(
         default=None, description="Set when done; read it with GET /api/fields/{field_id}"
     )
@@ -585,6 +615,12 @@ class RunStatus(Envelope):
 
 class ErrorResponse(Model):
     detail: str
+    upstream: str | None = Field(default=None, description="Upstream service name, if any")
+    upstream_status: int | str | None = Field(
+        default=None,
+        description="Upstream HTTP status code, or 'timeout' / 'unreachable', when an upstream "
+        "service caused the error",
+    )
 
 
 ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
@@ -597,4 +633,5 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "Coverage": Coverage,
     "RunRequest": RunRequest,
     "RunStatus": RunStatus,
+    "ErrorResponse": ErrorResponse,
 }

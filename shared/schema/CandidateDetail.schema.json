@@ -176,6 +176,16 @@
           "$ref": "#/$defs/ImageRef",
           "description": "64 x 64 px stamp centered on the detection"
         },
+        "spacecraft_geocentric_km": {
+          "description": "SPHEREx position relative to Earth's center at exposure midpoint, km, ICRF/J2000 equatorial axes (header X_SC, Y_SC, Z_SC)",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Spacecraft Geocentric Km",
+          "type": "array"
+        },
         "source": {
           "$ref": "#/$defs/Source"
         }
@@ -203,6 +213,7 @@
         "flagged_pixels_in_aperture",
         "psf_fit_reduced_chi2",
         "stamp",
+        "spacecraft_geocentric_km",
         "source"
       ],
       "title": "Detection",
@@ -596,6 +607,17 @@
           ],
           "default": null,
           "title": "Query Utc"
+        },
+        "enrichment": {
+          "default": "static",
+          "description": "static: as written by the offline pipeline (not checked); live/cached: filled by the Worker from JPL at request time",
+          "enum": [
+            "static",
+            "live",
+            "cached"
+          ],
+          "title": "Enrichment",
+          "type": "string"
         }
       },
       "required": [
