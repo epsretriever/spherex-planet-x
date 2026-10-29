@@ -34,6 +34,8 @@ const MAX_PARALLEL = 6;
 export const MAX_SBIDENT_QUERIES = 6;
 /** Exposures closer together than this belong to the same visit. */
 const VISIT_GAP_HOURS = 1;
+/** Fewest SBIdent visits that must answer before we trust the search. */
+const MIN_ANSWERED_VISITS = 2;
 
 /** One representative detection per visit (the middle exposure), at most `max`, spread evenly. */
 export function sbidentSample<T extends { mjd: number }>(dets: T[], max = MAX_SBIDENT_QUERIES): T[] {
@@ -118,7 +120,10 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
     }
   });
   const failures = sb.filter((r): r is UpstreamError => r instanceof UpstreamError);
-  if (failures.length > 0) {
+  // Horizons checks every detection afterwards, so two answered visits are enough to find
+  // candidates; only give up when fewer than that came back.
+  const answered = sample.flatMap((d, i) => (sb[i] instanceof UpstreamError ? [] : [{ d, objs: sb[i] as SbidentObject[] }]));
+  if (answered.length < Math.min(MIN_ANSWERED_VISITS, sample.length)) {
     const f = failures[0]!;
     return {
       matched: false,
@@ -131,12 +136,10 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
       },
     };
   }
-  const perEpoch = sb as SbidentObject[][];
 
-  // 2. Rank objects by how many epochs they appear near the detection (geocentric positions).
+  // 2. Rank objects by how many visits they appear near the detection.
   const stats = new Map<string, { count: number; seps: number[]; vmag: number | null }>();
-  perEpoch.forEach((objs, i) => {
-    const d = sample[i]!;
+  answered.forEach(({ d, objs }) => {
     for (const o of objs) {
       const sep = separationArcsec(d.ra_deg, d.dec_deg, o.ra_deg, o.dec_deg);
       const s = stats.get(o.name) ?? { count: 0, seps: [], vmag: o.vmag };
