@@ -1,0 +1,1255 @@
+{
+  "$defs": {
+    "CandidateProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "generated_utc": {
+          "title": "Generated Utc",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "run_id",
+        "generated_utc",
+        "parameters"
+      ],
+      "title": "CandidateProvenance",
+      "type": "object"
+    },
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "Detection": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        },
+        "obs_id": {
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "time_utc": {
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "pos_err_arcsec": {
+          "title": "Pos Err Arcsec",
+          "type": "number"
+        },
+        "x_pix": {
+          "description": "Native detector x, 0-based (header WCS 'A')",
+          "title": "X Pix",
+          "type": "number"
+        },
+        "y_pix": {
+          "description": "Native detector y, 0-based",
+          "title": "Y Pix",
+          "type": "number"
+        },
+        "x_grid": {
+          "description": "Position on the field's common grid (GridWcs)",
+          "title": "X Grid",
+          "type": "number"
+        },
+        "y_grid": {
+          "title": "Y Grid",
+          "type": "number"
+        },
+        "flux_ujy": {
+          "title": "Flux Ujy",
+          "type": "number"
+        },
+        "flux_err_ujy": {
+          "title": "Flux Err Ujy",
+          "type": "number"
+        },
+        "snr": {
+          "title": "Snr",
+          "type": "number"
+        },
+        "wavelength_um_center": {
+          "title": "Wavelength Um Center",
+          "type": "number"
+        },
+        "bandwidth_um": {
+          "title": "Bandwidth Um",
+          "type": "number"
+        },
+        "wavelength_um_range": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Wavelength Um Range",
+          "type": "array"
+        },
+        "band_index": {
+          "anyOf": [
+            {
+              "maximum": 101,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Band Index"
+        },
+        "flag_bits": {
+          "description": "OR of FLAGS bits over the photometry aperture",
+          "title": "Flag Bits",
+          "type": "integer"
+        },
+        "flag_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Flag Names",
+          "type": "array"
+        },
+        "flagged_pixels_in_aperture": {
+          "title": "Flagged Pixels In Aperture",
+          "type": "integer"
+        },
+        "psf_fit_reduced_chi2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Psf Fit Reduced Chi2"
+        },
+        "stamp": {
+          "$ref": "#/$defs/ImageRef",
+          "description": "64 x 64 px stamp centered on the detection"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "epoch_id",
+        "obs_id",
+        "time_utc",
+        "mjd",
+        "ra_deg",
+        "dec_deg",
+        "pos_err_arcsec",
+        "x_pix",
+        "y_pix",
+        "x_grid",
+        "y_grid",
+        "flux_ujy",
+        "flux_err_ujy",
+        "snr",
+        "wavelength_um_center",
+        "bandwidth_um",
+        "wavelength_um_range",
+        "flag_bits",
+        "flag_names",
+        "flagged_pixels_in_aperture",
+        "psf_fit_reduced_chi2",
+        "stamp",
+        "source"
+      ],
+      "title": "Detection",
+      "type": "object"
+    },
+    "DistanceEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "best": {
+          "title": "Best",
+          "type": "number"
+        },
+        "lo": {
+          "title": "Lo",
+          "type": "number"
+        },
+        "hi": {
+          "title": "Hi",
+          "type": "number"
+        }
+      },
+      "required": [
+        "best",
+        "lo",
+        "hi"
+      ],
+      "title": "DistanceEstimate",
+      "type": "object"
+    },
+    "ErrorSource": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ErrorSourceStatus"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Evidence"
+        },
+        "from_checks": {
+          "description": "vetting[].check names this is derived from",
+          "items": {
+            "type": "string"
+          },
+          "title": "From Checks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "explanation",
+        "status",
+        "evidence",
+        "from_checks"
+      ],
+      "title": "ErrorSource",
+      "type": "object"
+    },
+    "ErrorSourceStatus": {
+      "enum": [
+        "ruled_out",
+        "not_ruled_out",
+        "unknown"
+      ],
+      "title": "ErrorSourceStatus",
+      "type": "string"
+    },
+    "Explanation": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "generator": {
+          "description": "'template_v1', or an LLM name/version",
+          "title": "Generator",
+          "type": "string"
+        },
+        "grounded_fields": {
+          "description": "JSON paths inside this candidate, e.g. known_object.per_epoch[0].separation_arcsec",
+          "items": {
+            "type": "string"
+          },
+          "title": "Grounded Fields",
+          "type": "array"
+        },
+        "numeric_check": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_run"
+          ],
+          "title": "Numeric Check",
+          "type": "string"
+        },
+        "generated_utc": {
+          "title": "Generated Utc",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "generator",
+        "grounded_fields",
+        "numeric_check",
+        "generated_utc"
+      ],
+      "title": "Explanation",
+      "type": "object"
+    },
+    "ImageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "width_px": {
+          "title": "Width Px",
+          "type": "integer"
+        },
+        "height_px": {
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "format": {
+          "default": "webp",
+          "enum": [
+            "webp",
+            "png"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "url",
+        "width_px",
+        "height_px",
+        "source"
+      ],
+      "title": "ImageRef",
+      "type": "object"
+    },
+    "InjectedTruth": {
+      "additionalProperties": false,
+      "properties": {
+        "mag_ab": {
+          "title": "Mag Ab",
+          "type": "number"
+        },
+        "flux_ujy": {
+          "title": "Flux Ujy",
+          "type": "number"
+        },
+        "model": {
+          "$ref": "#/$defs/MotionModel"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "position_angle_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Position Angle Deg"
+        },
+        "distance_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distance Au"
+        }
+      },
+      "required": [
+        "mag_ab",
+        "flux_ujy",
+        "model",
+        "rate_arcsec_per_hr",
+        "position_angle_deg"
+      ],
+      "title": "InjectedTruth",
+      "type": "object"
+    },
+    "InjectionInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "study_id": {
+          "title": "Study Id",
+          "type": "string"
+        },
+        "injection_id": {
+          "title": "Injection Id",
+          "type": "string"
+        },
+        "injected": {
+          "$ref": "#/$defs/InjectedTruth"
+        },
+        "recovered": {
+          "title": "Recovered",
+          "type": "boolean"
+        },
+        "recovered_rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Recovered Rate Arcsec Per Hr"
+        },
+        "position_error_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Position Error Arcsec"
+        }
+      },
+      "required": [
+        "study_id",
+        "injection_id",
+        "injected",
+        "recovered",
+        "recovered_rate_arcsec_per_hr",
+        "position_error_arcsec"
+      ],
+      "title": "InjectionInfo",
+      "type": "object"
+    },
+    "KnownObject": {
+      "additionalProperties": false,
+      "properties": {
+        "checked": {
+          "title": "Checked",
+          "type": "boolean"
+        },
+        "not_checked_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Checked Reason"
+        },
+        "matched": {
+          "title": "Matched",
+          "type": "boolean"
+        },
+        "catalogs_checked": {
+          "description": "Only services actually queried for this candidate",
+          "items": {
+            "enum": [
+              "JPL SBIdent",
+              "JPL Horizons"
+            ],
+            "type": "string"
+          },
+          "title": "Catalogs Checked",
+          "type": "array"
+        },
+        "search_radius_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Search Radius Arcsec"
+        },
+        "designation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Designation"
+        },
+        "predicted_vmag": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Predicted Vmag"
+        },
+        "per_epoch": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/KnownObjectEpoch"
+          },
+          "title": "Per Epoch",
+          "type": "array"
+        },
+        "nearest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NearestKnown"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Closest known object returned, when not matched"
+        },
+        "observer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Observer location used for predictions",
+          "title": "Observer"
+        },
+        "query_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query Utc"
+        }
+      },
+      "required": [
+        "checked",
+        "matched",
+        "catalogs_checked",
+        "search_radius_arcsec"
+      ],
+      "title": "KnownObject",
+      "type": "object"
+    },
+    "KnownObjectEpoch": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        },
+        "predicted_ra_deg": {
+          "title": "Predicted Ra Deg",
+          "type": "number"
+        },
+        "predicted_dec_deg": {
+          "title": "Predicted Dec Deg",
+          "type": "number"
+        },
+        "separation_arcsec": {
+          "title": "Separation Arcsec",
+          "type": "number"
+        }
+      },
+      "required": [
+        "epoch_id",
+        "predicted_ra_deg",
+        "predicted_dec_deg",
+        "separation_arcsec"
+      ],
+      "title": "KnownObjectEpoch",
+      "type": "object"
+    },
+    "Motion": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/MotionModel"
+        },
+        "n_detections": {
+          "title": "N Detections",
+          "type": "integer"
+        },
+        "time_span_hours": {
+          "title": "Time Span Hours",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "rate_err_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Err Arcsec Per Hr"
+        },
+        "position_angle_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "East of north, degrees",
+          "title": "Position Angle Deg"
+        },
+        "ra_rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "d(RA)cos(Dec)/dt",
+          "title": "Ra Rate Arcsec Per Hr"
+        },
+        "dec_rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dec Rate Arcsec Per Hr"
+        },
+        "fit_residual_rms_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fit Residual Rms Arcsec"
+        },
+        "fit_chi2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fit Chi2"
+        },
+        "fit_dof": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fit Dof"
+        },
+        "distance_au_estimate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistanceEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "model",
+        "n_detections",
+        "time_span_hours",
+        "rate_arcsec_per_hr",
+        "rate_err_arcsec_per_hr",
+        "position_angle_deg",
+        "ra_rate_arcsec_per_hr",
+        "dec_rate_arcsec_per_hr",
+        "fit_residual_rms_arcsec",
+        "fit_chi2",
+        "fit_dof"
+      ],
+      "title": "Motion",
+      "type": "object"
+    },
+    "MotionModel": {
+      "enum": [
+        "linear",
+        "parallax",
+        "none"
+      ],
+      "title": "MotionModel",
+      "type": "string"
+    },
+    "NearestKnown": {
+      "additionalProperties": false,
+      "properties": {
+        "designation": {
+          "title": "Designation",
+          "type": "string"
+        },
+        "separation_arcsec": {
+          "title": "Separation Arcsec",
+          "type": "number"
+        }
+      },
+      "required": [
+        "designation",
+        "separation_arcsec"
+      ],
+      "title": "NearestKnown",
+      "type": "object"
+    },
+    "QualityLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    },
+    "Scores": {
+      "additionalProperties": false,
+      "properties": {
+        "motion_consistency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Motion Consistency",
+          "type": "number"
+        },
+        "snr": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Snr",
+          "type": "number"
+        },
+        "artifact_likelihood": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Artifact Likelihood",
+          "type": "number"
+        },
+        "overall": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Overall",
+          "type": "number"
+        },
+        "quality_level": {
+          "$ref": "#/$defs/QualityLevel"
+        },
+        "method": {
+          "const": "rule_based_v1",
+          "default": "rule_based_v1",
+          "title": "Method",
+          "type": "string"
+        },
+        "definition": {
+          "default": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability.",
+          "title": "Definition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "motion_consistency",
+        "snr",
+        "artifact_likelihood",
+        "overall",
+        "quality_level"
+      ],
+      "title": "Scores",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Provenance for an image, epoch, detection or stamp. Required on every image.",
+      "properties": {
+        "file": {
+          "description": "SPHEREx Level 2 file name",
+          "title": "File",
+          "type": "string"
+        },
+        "obs_id": {
+          "description": "SPHEREx observation ID (OBSID header keyword)",
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "planeid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA CAOM plane ID, when known from an IRSA TAP query",
+          "title": "Planeid"
+        },
+        "detector": {
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Detector",
+          "type": "integer"
+        },
+        "archive_url": {
+          "description": "URL of the full Level 2 file in the archive",
+          "title": "Archive Url",
+          "type": "string"
+        },
+        "cutout_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA cutout-service URL, when the pixels came from IRSA's cutout service",
+          "title": "Cutout Url"
+        },
+        "cutout_method": {
+          "description": "How the pixels were fetched. s3_byte_range reads only the rows of the cutout from the public SPHEREx bucket on AWS; the full file is never downloaded.",
+          "enum": [
+            "irsa_cutout",
+            "s3_byte_range"
+          ],
+          "title": "Cutout Method",
+          "type": "string"
+        },
+        "cutout_region_pix": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[x_min, x_max, y_min, y_max] (0-based, inclusive-exclusive) of the native detector pixels read",
+          "title": "Cutout Region Pix"
+        },
+        "data_release": {
+          "description": "SPHEREx data release, e.g. 'QR2'",
+          "title": "Data Release",
+          "type": "string"
+        },
+        "processing_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Note"
+        }
+      },
+      "required": [
+        "file",
+        "obs_id",
+        "detector",
+        "archive_url",
+        "cutout_method",
+        "data_release"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "Spectrum": {
+      "additionalProperties": false,
+      "properties": {
+        "units": {
+          "$ref": "#/$defs/SpectrumUnits",
+          "default": {
+            "wavelength": "um",
+            "flux": "uJy"
+          }
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/SpectrumPoint"
+          },
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Spectrum",
+      "type": "object"
+    },
+    "SpectrumPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "band_index": {
+          "anyOf": [
+            {
+              "maximum": 101,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Band Index"
+        },
+        "wavelength_um": {
+          "title": "Wavelength Um",
+          "type": "number"
+        },
+        "flux_ujy": {
+          "title": "Flux Ujy",
+          "type": "number"
+        },
+        "flux_err_ujy": {
+          "title": "Flux Err Ujy",
+          "type": "number"
+        },
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "band_index",
+        "wavelength_um",
+        "flux_ujy",
+        "flux_err_ujy",
+        "epoch_id"
+      ],
+      "title": "SpectrumPoint",
+      "type": "object"
+    },
+    "SpectrumUnits": {
+      "additionalProperties": false,
+      "properties": {
+        "wavelength": {
+          "const": "um",
+          "default": "um",
+          "title": "Wavelength",
+          "type": "string"
+        },
+        "flux": {
+          "const": "uJy",
+          "default": "uJy",
+          "title": "Flux",
+          "type": "string"
+        }
+      },
+      "title": "SpectrumUnits",
+      "type": "object"
+    },
+    "VettingCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "title": "Check",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Threshold"
+        },
+        "passed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null when the check could not be evaluated",
+          "title": "Passed"
+        }
+      },
+      "required": [
+        "check",
+        "description",
+        "value",
+        "threshold",
+        "passed"
+      ],
+      "title": "VettingCheck",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "candidate_id": {
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "field_id": {
+      "title": "Field Id",
+      "type": "string"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "label_plain": {
+      "title": "Label Plain",
+      "type": "string"
+    },
+    "summary_plain": {
+      "title": "Summary Plain",
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "title": "Thumbnail Url",
+      "type": "string"
+    },
+    "detections": {
+      "items": {
+        "$ref": "#/$defs/Detection"
+      },
+      "title": "Detections",
+      "type": "array"
+    },
+    "motion": {
+      "$ref": "#/$defs/Motion"
+    },
+    "known_object": {
+      "$ref": "#/$defs/KnownObject"
+    },
+    "scores": {
+      "$ref": "#/$defs/Scores"
+    },
+    "vetting": {
+      "items": {
+        "$ref": "#/$defs/VettingCheck"
+      },
+      "title": "Vetting",
+      "type": "array"
+    },
+    "error_sources": {
+      "items": {
+        "$ref": "#/$defs/ErrorSource"
+      },
+      "title": "Error Sources",
+      "type": "array"
+    },
+    "explanation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Explanation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "spectrum": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Spectrum"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "injection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/InjectionInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Present only when classification == 'injected'"
+    },
+    "provenance": {
+      "$ref": "#/$defs/CandidateProvenance"
+    },
+    "disclaimer": {
+      "default": "An unmatched candidate may be an imaging artifact, a measurement error, or an object missing from the catalogs we checked. This is not a discovery claim.",
+      "title": "Disclaimer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "candidate_id",
+    "field_id",
+    "classification",
+    "label_plain",
+    "summary_plain",
+    "thumbnail_url",
+    "detections",
+    "motion",
+    "known_object",
+    "scores",
+    "vetting",
+    "error_sources",
+    "explanation",
+    "spectrum",
+    "provenance"
+  ],
+  "title": "CandidateDetail",
+  "type": "object"
+}

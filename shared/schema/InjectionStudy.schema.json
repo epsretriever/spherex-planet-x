@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "FalsePositives": {
+      "additionalProperties": false,
+      "properties": {
+        "n_control_runs": {
+          "title": "N Control Runs",
+          "type": "integer"
+        },
+        "area_deg2": {
+          "title": "Area Deg2",
+          "type": "number"
+        },
+        "n_candidates": {
+          "title": "N Candidates",
+          "type": "integer"
+        },
+        "rate_per_deg2": {
+          "title": "Rate Per Deg2",
+          "type": "number"
+        },
+        "ci_low_per_deg2": {
+          "title": "Ci Low Per Deg2",
+          "type": "number"
+        },
+        "ci_high_per_deg2": {
+          "title": "Ci High Per Deg2",
+          "type": "number"
+        }
+      },
+      "required": [
+        "n_control_runs",
+        "area_deg2",
+        "n_candidates",
+        "rate_per_deg2",
+        "ci_low_per_deg2",
+        "ci_high_per_deg2"
+      ],
+      "title": "FalsePositives",
+      "type": "object"
+    },
+    "M50": {
+      "additionalProperties": false,
+      "properties": {
+        "rate_arcsec_per_hr": {
+          "title": "Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null when 50% completeness is not bracketed",
+          "title": "M50 Ab"
+        }
+      },
+      "required": [
+        "rate_arcsec_per_hr",
+        "m50_ab"
+      ],
+      "title": "M50",
+      "type": "object"
+    },
+    "RecoveryCell": {
+      "additionalProperties": false,
+      "properties": {
+        "mag_ab": {
+          "title": "Mag Ab",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "title": "Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        },
+        "n_recovered": {
+          "title": "N Recovered",
+          "type": "integer"
+        },
+        "fraction": {
+          "title": "Fraction",
+          "type": "number"
+        },
+        "ci_low": {
+          "description": "Wilson 95% interval, lower bound",
+          "title": "Ci Low",
+          "type": "number"
+        },
+        "ci_high": {
+          "title": "Ci High",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mag_ab",
+        "rate_arcsec_per_hr",
+        "n_injected",
+        "n_recovered",
+        "fraction",
+        "ci_low",
+        "ci_high"
+      ],
+      "title": "RecoveryCell",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "study_id": {
+      "title": "Study Id",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "field_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Field Ids",
+      "type": "array"
+    },
+    "n_injected": {
+      "title": "N Injected",
+      "type": "integer"
+    },
+    "n_recovered": {
+      "title": "N Recovered",
+      "type": "integer"
+    },
+    "mag_bins_ab": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Mag Bins Ab",
+      "type": "array"
+    },
+    "rate_bins_arcsec_per_hr": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Rate Bins Arcsec Per Hr",
+      "type": "array"
+    },
+    "grid": {
+      "items": {
+        "$ref": "#/$defs/RecoveryCell"
+      },
+      "title": "Grid",
+      "type": "array"
+    },
+    "m50_by_rate": {
+      "items": {
+        "$ref": "#/$defs/M50"
+      },
+      "title": "M50 By Rate",
+      "type": "array"
+    },
+    "false_positives": {
+      "$ref": "#/$defs/FalsePositives"
+    },
+    "recovery_criteria": {
+      "title": "Recovery Criteria",
+      "type": "string"
+    },
+    "method_notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Method Notes",
+      "type": "array"
+    },
+    "example_candidate_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Example Candidate Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "study_id",
+    "generated_utc",
+    "field_ids",
+    "n_injected",
+    "n_recovered",
+    "mag_bins_ab",
+    "rate_bins_arcsec_per_hr",
+    "grid",
+    "m50_by_rate",
+    "false_positives",
+    "recovery_criteria",
+    "method_notes",
+    "example_candidate_ids"
+  ],
+  "title": "InjectionStudy",
+  "type": "object"
+}

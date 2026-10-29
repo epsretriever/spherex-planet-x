@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "CandidateSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        },
+        "summary_plain": {
+          "title": "Summary Plain",
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "title": "Thumbnail Url",
+          "type": "string"
+        },
+        "detection_count": {
+          "title": "Detection Count",
+          "type": "integer"
+        },
+        "time_span_hours": {
+          "title": "Time Span Hours",
+          "type": "number"
+        },
+        "first_time_utc": {
+          "title": "First Time Utc",
+          "type": "string"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "position_angle_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Position Angle Deg"
+        },
+        "mean_snr": {
+          "title": "Mean Snr",
+          "type": "number"
+        },
+        "overall_score": {
+          "title": "Overall Score",
+          "type": "number"
+        },
+        "quality_level": {
+          "$ref": "#/$defs/QualityLevel"
+        },
+        "known_object_matched": {
+          "title": "Known Object Matched",
+          "type": "boolean"
+        },
+        "known_object_designation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Known Object Designation"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "field_id",
+        "classification",
+        "label_plain",
+        "summary_plain",
+        "thumbnail_url",
+        "detection_count",
+        "time_span_hours",
+        "first_time_utc",
+        "rate_arcsec_per_hr",
+        "position_angle_deg",
+        "mean_snr",
+        "overall_score",
+        "quality_level",
+        "known_object_matched",
+        "known_object_designation"
+      ],
+      "title": "CandidateSummary",
+      "type": "object"
+    },
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "QualityLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "total": {
+      "title": "Total",
+      "type": "integer"
+    },
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/CandidateSummary"
+      },
+      "title": "Candidates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "total",
+    "candidates"
+  ],
+  "title": "CandidateList",
+  "type": "object"
+}

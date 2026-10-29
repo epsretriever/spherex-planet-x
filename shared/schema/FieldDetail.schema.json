@@ -1,0 +1,662 @@
+{
+  "$defs": {
+    "BlinkPair": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch_id_a": {
+          "title": "Epoch Id A",
+          "type": "string"
+        },
+        "epoch_id_b": {
+          "title": "Epoch Id B",
+          "type": "string"
+        },
+        "time_separation_hours": {
+          "title": "Time Separation Hours",
+          "type": "number"
+        },
+        "lambda_matched": {
+          "title": "Lambda Matched",
+          "type": "boolean"
+        },
+        "delta_lambda_frac": {
+          "description": "|lambda_a - lambda_b| / mean at field center",
+          "title": "Delta Lambda Frac",
+          "type": "number"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "epoch_id_a",
+        "epoch_id_b",
+        "time_separation_hours",
+        "lambda_matched",
+        "delta_lambda_frac",
+        "label_plain"
+      ],
+      "title": "BlinkPair",
+      "type": "object"
+    },
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "Epoch": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        },
+        "obs_id": {
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "time_utc": {
+          "description": "Exposure midpoint (DATE-AVG)",
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "description": "Exposure midpoint (MJD-AVG, UTC)",
+          "title": "Mjd",
+          "type": "number"
+        },
+        "time_start_utc": {
+          "title": "Time Start Utc",
+          "type": "string"
+        },
+        "time_end_utc": {
+          "title": "Time End Utc",
+          "type": "string"
+        },
+        "exposure_s": {
+          "title": "Exposure S",
+          "type": "number"
+        },
+        "detector": {
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Detector",
+          "type": "integer"
+        },
+        "bandpass": {
+          "description": "IRSA band name, e.g. 'SPHEREx-D3'",
+          "title": "Bandpass",
+          "type": "string"
+        },
+        "wavelength_um_center": {
+          "description": "Central wavelength at the field center",
+          "title": "Wavelength Um Center",
+          "type": "number"
+        },
+        "bandwidth_um": {
+          "description": "Bandwidth at the field center",
+          "title": "Bandwidth Um",
+          "type": "number"
+        },
+        "wavelength_um_range": {
+          "description": "[min, max] central wavelength over the field (the LVF varies across it)",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Wavelength Um Range",
+          "type": "array"
+        },
+        "band_index": {
+          "anyOf": [
+            {
+              "maximum": 101,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0-based index into SPHEREx's 102 channels",
+          "title": "Band Index"
+        },
+        "image": {
+          "$ref": "#/$defs/ImageRef"
+        },
+        "flagged_pixel_fraction": {
+          "title": "Flagged Pixel Fraction",
+          "type": "number"
+        },
+        "n_detections": {
+          "title": "N Detections",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "epoch_id",
+        "obs_id",
+        "time_utc",
+        "mjd",
+        "time_start_utc",
+        "time_end_utc",
+        "exposure_s",
+        "detector",
+        "bandpass",
+        "wavelength_um_center",
+        "bandwidth_um",
+        "wavelength_um_range",
+        "image",
+        "flagged_pixel_fraction",
+        "n_detections",
+        "source"
+      ],
+      "title": "Epoch",
+      "type": "object"
+    },
+    "GridWcs": {
+      "additionalProperties": false,
+      "description": "Common tangent-plane grid that every field image (and x_grid/y_grid) refers to.\n\nPixel convention: FITS-like, (1, 1) is the center of the first pixel; x to the right,\ny up in the FITS sense. Images are rendered so that row 0 is the TOP of the image\n(y = height_px), i.e. north up and east left when rotation_deg = 0.",
+      "properties": {
+        "projection": {
+          "const": "TAN",
+          "default": "TAN",
+          "title": "Projection",
+          "type": "string"
+        },
+        "crval": {
+          "description": "[ra_deg, dec_deg]",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Crval",
+          "type": "array"
+        },
+        "crpix": {
+          "description": "[x, y], 1-based",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Crpix",
+          "type": "array"
+        },
+        "cdelt_arcsec": {
+          "title": "Cdelt Arcsec",
+          "type": "number"
+        },
+        "width_px": {
+          "title": "Width Px",
+          "type": "integer"
+        },
+        "height_px": {
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "rotation_deg": {
+          "default": 0.0,
+          "title": "Rotation Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "crval",
+        "crpix",
+        "cdelt_arcsec",
+        "width_px",
+        "height_px"
+      ],
+      "title": "GridWcs",
+      "type": "object"
+    },
+    "ImageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "width_px": {
+          "title": "Width Px",
+          "type": "integer"
+        },
+        "height_px": {
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "format": {
+          "default": "webp",
+          "enum": [
+            "webp",
+            "png"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "url",
+        "width_px",
+        "height_px",
+        "source"
+      ],
+      "title": "ImageRef",
+      "type": "object"
+    },
+    "Mover": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        },
+        "quality_level": {
+          "$ref": "#/$defs/QualityLevel"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "track": {
+          "items": {
+            "$ref": "#/$defs/TrackPoint"
+          },
+          "title": "Track",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "classification",
+        "label_plain",
+        "quality_level",
+        "rate_arcsec_per_hr",
+        "track"
+      ],
+      "title": "Mover",
+      "type": "object"
+    },
+    "QualityLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    },
+    "SizeDeg": {
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "title": "SizeDeg",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Provenance for an image, epoch, detection or stamp. Required on every image.",
+      "properties": {
+        "file": {
+          "description": "SPHEREx Level 2 file name",
+          "title": "File",
+          "type": "string"
+        },
+        "obs_id": {
+          "description": "SPHEREx observation ID (OBSID header keyword)",
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "planeid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA CAOM plane ID, when known from an IRSA TAP query",
+          "title": "Planeid"
+        },
+        "detector": {
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Detector",
+          "type": "integer"
+        },
+        "archive_url": {
+          "description": "URL of the full Level 2 file in the archive",
+          "title": "Archive Url",
+          "type": "string"
+        },
+        "cutout_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA cutout-service URL, when the pixels came from IRSA's cutout service",
+          "title": "Cutout Url"
+        },
+        "cutout_method": {
+          "description": "How the pixels were fetched. s3_byte_range reads only the rows of the cutout from the public SPHEREx bucket on AWS; the full file is never downloaded.",
+          "enum": [
+            "irsa_cutout",
+            "s3_byte_range"
+          ],
+          "title": "Cutout Method",
+          "type": "string"
+        },
+        "cutout_region_pix": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[x_min, x_max, y_min, y_max] (0-based, inclusive-exclusive) of the native detector pixels read",
+          "title": "Cutout Region Pix"
+        },
+        "data_release": {
+          "description": "SPHEREx data release, e.g. 'QR2'",
+          "title": "Data Release",
+          "type": "string"
+        },
+        "processing_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Note"
+        }
+      },
+      "required": [
+        "file",
+        "obs_id",
+        "detector",
+        "archive_url",
+        "cutout_method",
+        "data_release"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "Stretch": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "asinh",
+          "default": "asinh",
+          "title": "Type",
+          "type": "string"
+        },
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        },
+        "softening": {
+          "description": "asinh softening parameter, in units of (max - min)",
+          "title": "Softening",
+          "type": "number"
+        },
+        "units": {
+          "const": "MJy/sr",
+          "default": "MJy/sr",
+          "title": "Units",
+          "type": "string"
+        },
+        "zodi_subtracted": {
+          "default": true,
+          "title": "Zodi Subtracted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "softening"
+      ],
+      "title": "Stretch",
+      "type": "object"
+    },
+    "TrackPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        },
+        "time_utc": {
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "x_grid": {
+          "title": "X Grid",
+          "type": "number"
+        },
+        "y_grid": {
+          "title": "Y Grid",
+          "type": "number"
+        }
+      },
+      "required": [
+        "epoch_id",
+        "time_utc",
+        "mjd",
+        "ra_deg",
+        "dec_deg",
+        "x_grid",
+        "y_grid"
+      ],
+      "title": "TrackPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "field_id": {
+      "title": "Field Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "blurb": {
+      "title": "Blurb",
+      "type": "string"
+    },
+    "summary_plain": {
+      "description": "Generated from measured values only",
+      "title": "Summary Plain",
+      "type": "string"
+    },
+    "center": {
+      "$ref": "#/$defs/SkyPosition"
+    },
+    "ecliptic_lat_deg": {
+      "title": "Ecliptic Lat Deg",
+      "type": "number"
+    },
+    "size_deg": {
+      "$ref": "#/$defs/SizeDeg"
+    },
+    "thumbnail_url": {
+      "title": "Thumbnail Url",
+      "type": "string"
+    },
+    "data_release": {
+      "title": "Data Release",
+      "type": "string"
+    },
+    "origin": {
+      "default": "showcase",
+      "enum": [
+        "showcase",
+        "run"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "wcs": {
+      "$ref": "#/$defs/GridWcs"
+    },
+    "stretch": {
+      "$ref": "#/$defs/Stretch"
+    },
+    "epochs": {
+      "items": {
+        "$ref": "#/$defs/Epoch"
+      },
+      "title": "Epochs",
+      "type": "array"
+    },
+    "blink_pairs": {
+      "items": {
+        "$ref": "#/$defs/BlinkPair"
+      },
+      "title": "Blink Pairs",
+      "type": "array"
+    },
+    "movers": {
+      "items": {
+        "$ref": "#/$defs/Mover"
+      },
+      "title": "Movers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "field_id",
+    "name",
+    "blurb",
+    "summary_plain",
+    "center",
+    "ecliptic_lat_deg",
+    "size_deg",
+    "thumbnail_url",
+    "data_release",
+    "generated_utc",
+    "wcs",
+    "stretch",
+    "epochs",
+    "blink_pairs",
+    "movers"
+  ],
+  "title": "FieldDetail",
+  "type": "object"
+}

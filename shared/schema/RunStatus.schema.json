@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "RunStatusValue": {
+      "enum": [
+        "queued",
+        "discovering",
+        "fetching",
+        "detecting",
+        "linking",
+        "identifying",
+        "rendering",
+        "done",
+        "failed"
+      ],
+      "title": "RunStatusValue",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatusValue"
+    },
+    "progress": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Progress",
+      "type": "number"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Message"
+    },
+    "field_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Set when done; read it with GET /api/fields/{field_id}",
+      "title": "Field Id"
+    },
+    "created_utc": {
+      "title": "Created Utc",
+      "type": "string"
+    },
+    "updated_utc": {
+      "title": "Updated Utc",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "run_id",
+    "status",
+    "progress",
+    "created_utc",
+    "updated_utc"
+  ],
+  "title": "RunStatus",
+  "type": "object"
+}

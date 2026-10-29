@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "CoverageEpoch": {
+      "additionalProperties": false,
+      "properties": {
+        "obs_id": {
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "detector": {
+          "title": "Detector",
+          "type": "integer"
+        },
+        "bandpass": {
+          "title": "Bandpass",
+          "type": "string"
+        },
+        "time_utc": {
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "wavelength_um_center": {
+          "title": "Wavelength Um Center",
+          "type": "number"
+        },
+        "wavelength_um_range": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Wavelength Um Range",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        }
+      },
+      "required": [
+        "obs_id",
+        "detector",
+        "bandpass",
+        "time_utc",
+        "mjd",
+        "wavelength_um_center",
+        "wavelength_um_range",
+        "source"
+      ],
+      "title": "CoverageEpoch",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Provenance for an image, epoch, detection or stamp. Required on every image.",
+      "properties": {
+        "file": {
+          "description": "SPHEREx Level 2 file name",
+          "title": "File",
+          "type": "string"
+        },
+        "obs_id": {
+          "description": "SPHEREx observation ID (OBSID header keyword)",
+          "title": "Obs Id",
+          "type": "string"
+        },
+        "planeid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA CAOM plane ID, when known from an IRSA TAP query",
+          "title": "Planeid"
+        },
+        "detector": {
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Detector",
+          "type": "integer"
+        },
+        "archive_url": {
+          "description": "URL of the full Level 2 file in the archive",
+          "title": "Archive Url",
+          "type": "string"
+        },
+        "cutout_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IRSA cutout-service URL, when the pixels came from IRSA's cutout service",
+          "title": "Cutout Url"
+        },
+        "cutout_method": {
+          "description": "How the pixels were fetched. s3_byte_range reads only the rows of the cutout from the public SPHEREx bucket on AWS; the full file is never downloaded.",
+          "enum": [
+            "irsa_cutout",
+            "s3_byte_range"
+          ],
+          "title": "Cutout Method",
+          "type": "string"
+        },
+        "cutout_region_pix": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[x_min, x_max, y_min, y_max] (0-based, inclusive-exclusive) of the native detector pixels read",
+          "title": "Cutout Region Pix"
+        },
+        "data_release": {
+          "description": "SPHEREx data release, e.g. 'QR2'",
+          "title": "Data Release",
+          "type": "string"
+        },
+        "processing_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Note"
+        }
+      },
+      "required": [
+        "file",
+        "obs_id",
+        "detector",
+        "archive_url",
+        "cutout_method",
+        "data_release"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "center": {
+      "$ref": "#/$defs/SkyPosition"
+    },
+    "radius_deg": {
+      "title": "Radius Deg",
+      "type": "number"
+    },
+    "searched": {
+      "description": "What was searched, e.g. weeks of the S3 index",
+      "title": "Searched",
+      "type": "string"
+    },
+    "epochs": {
+      "items": {
+        "$ref": "#/$defs/CoverageEpoch"
+      },
+      "title": "Epochs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "center",
+    "radius_deg",
+    "searched",
+    "epochs"
+  ],
+  "title": "Coverage",
+  "type": "object"
+}

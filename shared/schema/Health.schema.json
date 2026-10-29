@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "UpstreamStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "reachable": {
+          "title": "Reachable",
+          "type": "boolean"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "name",
+        "url",
+        "reachable"
+      ],
+      "title": "UpstreamStatus",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Backend package version plus git commit",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "degraded"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "fields_loaded": {
+      "title": "Fields Loaded",
+      "type": "integer"
+    },
+    "candidates_loaded": {
+      "title": "Candidates Loaded",
+      "type": "integer"
+    },
+    "upstream": {
+      "items": {
+        "$ref": "#/$defs/UpstreamStatus"
+      },
+      "title": "Upstream",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "status",
+    "fields_loaded",
+    "candidates_loaded",
+    "upstream"
+  ],
+  "title": "Health",
+  "type": "object"
+}
