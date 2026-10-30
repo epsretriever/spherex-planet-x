@@ -568,7 +568,7 @@ class FieldBuilder:
         )
         return (
             f"{len(epochs)} SPHEREx images of this patch taken over {when} starting {d0}, at wavelengths from "
-            f"{min(lam):.2f} to {max(lam):.2f} um. {moving}"
+            f"{min(lam):.2f} to {max(lam):.2f} µm. {moving}"
         ).replace(f" {n_vis} ", f" {n_vis} ")
 
 
