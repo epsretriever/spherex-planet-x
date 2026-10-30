@@ -408,8 +408,8 @@ def ranging(
         off_a = oa[pick] + rng.normal(0, 0.5 * sa, (n_samples, 2))
         off_b = ob[pick] + rng.normal(0, 0.5 * sb, (n_samples, 2))
     # Final pass: uniform over the box the valley occupies (log-uniform first distance,
-    # uniform change of distance), directions drawn from the astrometric errors. With this
-    # flat proposal, likelihood weights give the posterior under that prior.
+    # uniform change of distance), directions drawn from the astrometric errors. fit_orbit
+    # reweights it to a prior uniform in distance.
     allc = np.concatenate([p[0] for p in pool]) if pool else np.array([])
     if pool:
         lr = np.concatenate([p[1] for p in pool])
@@ -500,7 +500,11 @@ def fit_orbit(
         ra_b, dec_b, _ = predict_radec(rb[None], vb[None], np.array([epoch]), o.mjd_tdb, o.obs)
         resid = residuals_arcsec(ra_b, dec_b, o)[0].ravel()
         chi2_best = float(resid @ resid)
-        w = np.exp(-(chi2[keep] - chi2[keep].min()) / (2 * scale))
+        # The final pass samples the first distance log-uniformly; weighting by that distance
+        # turns this into a prior uniform in distance, which validation/orbits.json showed
+        # brackets distant objects far better (log-uniform pulls them too close).
+        rho = np.linalg.norm(r[keep] - o.obs[0], axis=1)
+        w = np.exp(-(chi2[keep] - chi2[keep].min()) / (2 * scale)) * rho
         idx = rng.choice(np.flatnonzero(keep), size=N_CLONES, replace=True, p=w / w.sum())
         cr, cv = r[idx], v[idx]
         el_clones = elements(cr, cv)
