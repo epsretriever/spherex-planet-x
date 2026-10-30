@@ -90,3 +90,15 @@ def test_selection_round_robins_across_weeks():
     tiles = [t("a", i) for i in range(5)] + [t("b", i) for i in range(2)]
     picked = select_tiles(tiles, 4)
     assert [p.segment for p in picked] == ["a", "b", "a", "b"]
+
+
+def test_dichroic_partner_does_not_inherit_file_size():
+    from spherex_px.data.index import dichroic_partner
+    from spherex_px.data.s3 import Level2Key
+
+    k = Level2Key(
+        "qr2/level2/W/v/2/level2_W_0001_1D2_spx_l2b-v.fits", "qr2", "W", "v", 2, "0001_1", 123
+    )
+    p = dichroic_partner(k)
+    assert p.detector == 5 and "/5/level2_" in p.key and "D5_" in p.key
+    assert p.size is None

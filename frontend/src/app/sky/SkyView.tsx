@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
@@ -27,8 +28,12 @@ function percent(area: number): string {
   return `${p < 0.1 ? p.toPrecision(1) : p.toFixed(1)}%`;
 }
 
+/** Rows shown before "Show all": the table is a reference, the map is the overview. */
+const TABLE_ROWS = 30;
+
 /** The survey footprint: as published at build time, then as the API serves it now. */
 export function SkyView({ initial, fieldNames }: { initial: Survey | null; fieldNames: Record<string, string> }) {
+  const [showAll, setShowAll] = useState(false);
   const state = useData("survey", (signal) => getSurvey(signal));
   const fields = useData("fields", (signal) => getFields(signal));
   const survey = state.status === "ok" ? state.data : initial;
@@ -54,6 +59,9 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
   const statuses = new Set(tiles.map((t) => t.status));
   const t = survey.totals;
+  // Tiles with moving objects first, then the rest by longitude.
+  const rows = [...tiles].sort((a, b) => Number(b.n_candidates > 0) - Number(a.n_candidates > 0));
+  const shown = showAll ? rows : rows.slice(0, TABLE_ROWS);
 
   return (
     <div className={styles.stack}>
@@ -137,7 +145,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
       </figure>
 
       <section className={styles.section} aria-labelledby="tiles-title">
-        <h2 id="tiles-title">Every tile</h2>
+        <h2 id="tiles-title">Tiles searched</h2>
         <p className={styles.intro}>
           The depth (m₅₀) is the magnitude at which we find half of the simulated objects we plant there; it stays blank until that test has
           run on the tile.
@@ -157,7 +165,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
               </tr>
             </thead>
             <tbody>
-              {tiles.map((tile) => (
+              {shown.map((tile) => (
                 <tr key={tile.tile_id}>
                   <th scope="row">
                     {tile.field_id && tile.status === "processed" ? (
@@ -202,6 +210,13 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
             </tbody>
           </table>
         </div>
+        {rows.length > shown.length && (
+          <p>
+            <button type="button" className="button" onClick={() => setShowAll(true)}>
+              Show all {rows.length} tiles
+            </button>
+          </p>
+        )}
         <p className={styles.note}>
           {survey.description} Survey map generated {formatUtcDateTime(survey.generated_utc)}.
           {survey.last_run && (
