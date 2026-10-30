@@ -1,12 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/inter";
-import "@fontsource-variable/jetbrains-mono";
-import "@fontsource-variable/space-grotesk";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { TopBar } from "@/components/TopBar";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import styles from "./layout.module.css";
+
+// Self-hosted, preloaded variable fonts (see src/fonts/README.md). Each exposes a CSS variable
+// that globals.css builds its font stacks from.
+const inter = localFont({
+  src: "../fonts/inter-latin-wght-normal.woff2",
+  weight: "100 900",
+  display: "swap",
+  variable: "--font-inter",
+});
+const spaceGrotesk = localFont({
+  src: "../fonts/space-grotesk-latin-wght-normal.woff2",
+  weight: "300 700",
+  display: "swap",
+  variable: "--font-space-grotesk",
+});
+const jetbrainsMono = localFont({
+  src: "../fonts/jetbrains-mono-latin-wght-normal.woff2",
+  weight: "100 800",
+  display: "swap",
+  variable: "--font-jetbrains-mono",
+});
 
 // Social previews need absolute URLs. Set NEXT_PUBLIC_SITE_URL (for example in the
 // Cloudflare build variables) to the deployed origin; without it the share image is left out
@@ -41,7 +60,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body>
         <a href="#main" className={styles.skip}>
           Skip to content

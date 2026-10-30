@@ -17,7 +17,7 @@ export function TopBar() {
   return (
     <header className={styles.bar}>
       <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.brand}>
+        <Link href="/" className={styles.brand} prefetch={false}>
           <span className={styles.mark} aria-hidden="true">
             <span />
           </span>
@@ -29,7 +29,7 @@ export function TopBar() {
               const active = pathname === item.match || pathname.startsWith(`${item.match}/`);
               return (
                 <li key={item.href}>
-                  <Link href={item.href} className={styles.link} aria-current={active ? "page" : undefined}>
+                  <Link href={item.href} className={styles.link} aria-current={active ? "page" : undefined} prefetch={false}>
                     {item.label}
                   </Link>
                 </li>

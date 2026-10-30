@@ -13,6 +13,8 @@ export default function config(phase: string): NextConfig {
   return {
     reactStrictMode: true,
     poweredByHeader: false,
+    // Inline the (small) CSS into each page so first paint doesn't wait on stylesheet requests.
+    experimental: { inlineCss: true },
     trailingSlash: true,
     // Sky images are small, pre-stretched cutouts; never resample them.
     images: { unoptimized: true },

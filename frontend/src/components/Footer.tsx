@@ -14,7 +14,7 @@ export function Footer() {
         </p>
         <p className="muted">
           We do not claim to have discovered Planet X. Objects we can&apos;t match may be image artifacts, measurement
-          errors or objects missing from catalogs. <Link href="/about/">How this works</Link>
+          errors or objects missing from catalogs. <Link href="/about/" prefetch={false}>How this works</Link>
         </p>
       </div>
     </footer>
