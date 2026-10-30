@@ -14,11 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       segments:
-        description: Week segments to search (space separated, release/segment)
-        default: qr2/2025W23_1C
+        description: 'Week segments to search: release/segment, or auto:N for N weeks spread over every release'
+        default: auto:8 qr2/2025W23_1C
       max_tiles:
         description: Most tiles to build
-        default: "150"
+        default: "600"
   schedule:
     - cron: "41 7 * * 0" # weekly, Sunday 07:41 UTC
   push:
@@ -35,14 +35,14 @@ permissions:
   contents: write
 
 env:
-  SEGMENTS: ${{ inputs.segments || 'qr2/2025W23_1C' }}
-  MAX_TILES: ${{ inputs.max_tiles || '150' }}
-  SHARDS: 15
+  SEGMENTS: ${{ inputs.segments || 'auto:8 qr2/2025W23_1C' }}
+  MAX_TILES: ${{ inputs.max_tiles || '600' }}
+  SHARDS: 20
 
 jobs:
   plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     outputs:
       started: ${{ steps.start.outputs.started }}
     steps:
@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

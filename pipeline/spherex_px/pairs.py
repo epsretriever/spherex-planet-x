@@ -130,7 +130,9 @@ def build_pairs(
     # 2. For each epoch, the closest-wavelength epoch on the same detector at least an hour away.
     for a in ordered:
         others = [
-            b for b in ordered if abs(b.mjd - a.mjd) * 24 >= MIN_GAP_HOURS and b.detector == a.detector
+            b
+            for b in ordered
+            if abs(b.mjd - a.mjd) * 24 >= MIN_GAP_HOURS and b.detector == a.detector
         ]
         if others:
             add(a, min(others, key=lambda b: abs(b.wavelength_um - a.wavelength_um)))
@@ -149,7 +151,12 @@ def build_pairs(
         if p.displacement_arcsec is not None:
             on_screen = MIN_VISIBLE_SHIFT_ARCSEC <= p.displacement_arcsec <= max_shift
             # Visible-and-on-screen first, then same wavelength, then the bigger (clearer) jump.
-            return (1, on_screen, p.lambda_matched, p.displacement_arcsec if on_screen else -p.displacement_arcsec)
+            return (
+                1,
+                on_screen,
+                p.lambda_matched,
+                p.displacement_arcsec if on_screen else -p.displacement_arcsec,
+            )
         # No mover in both images: same wavelength first, then the longest gap.
         return (0, False, p.lambda_matched, p.time_separation_hours)
 

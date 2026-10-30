@@ -64,3 +64,29 @@ def test_plans_only_tiles_seen_in_several_visits():
     assert plan_segment(FakeIndex(exps[:4]), "qr2/2025W23_1C", beta_max_deg=1.0, step_deg=0.5) == []
     lons = np.array([t.elon_deg for t in tiles])
     assert np.all((lons > 343) & (lons < 350))
+
+
+class FakeArchive:
+    def list(self, prefix):
+        return [], ["qr2/", "qr3/", "docs/"]
+
+    def level2_segments(self, release):
+        return {"qr2": ["2025W20_1A", "2025W21_1A", "2025W22_1A"], "qr3": ["2025W40_1A"]}[release]
+
+
+def test_auto_segments_spread_over_releases():
+    from spherex_px.survey import resolve_segments
+
+    got = resolve_segments(["auto:3", "qr2/2025W23_1C"], FakeArchive())
+    assert got == ["qr2/2025W20_1A", "qr2/2025W22_1A", "qr3/2025W40_1A", "qr2/2025W23_1C"]
+
+
+def test_selection_round_robins_across_weeks():
+    from spherex_px.survey import PlannedTile, select_tiles
+
+    def t(seg, i):
+        return PlannedTile(f"{seg}-{i}", 0, 0, 0, 0.1 * i, seg, 10, 3, 20, "Aquarius")
+
+    tiles = [t("a", i) for i in range(5)] + [t("b", i) for i in range(2)]
+    picked = select_tiles(tiles, 4)
+    assert [p.segment for p in picked] == ["a", "b", "a", "b"]

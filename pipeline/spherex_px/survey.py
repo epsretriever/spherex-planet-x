@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
-import math
+import os
 import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -129,23 +129,30 @@ def plan_segment(
         return out
 
     lon, lat = _icrs_to_ecl(ra, dec)
-    # Exposures near the ecliptic only; unwrap longitude around their circular mean.
     near = np.abs(lat) < beta_max_deg + DETECTOR_RADIUS_DEG
     if not near.any():
         return []
     lon, lat = lon[near], lat[near]
-    mean = math.degrees(math.atan2(np.sin(np.radians(lon)).mean(), np.cos(np.radians(lon)).mean()))
-    rel = (lon - mean + 180) % 360 - 180
-    lo, hi = rel.min() - 1.5, rel.max() + 1.5
-    grid_lon = np.arange(math.floor(lo / step_deg) * step_deg, hi + 1e-9, step_deg)
+    # A week can cross the ecliptic in several places, so build the grid on the whole circle
+    # and keep only grid longitudes within reach of an exposure.
+    n_lon = round(360 / step_deg)
+    grid_all = np.arange(n_lon) * step_deg
+    reach = np.zeros(n_lon, bool)
+    for x in lon:
+        d = np.abs((grid_all - x + 180) % 360 - 180)
+        reach |= d < DETECTOR_RADIUS_DEG + 0.2
+    grid_lon = grid_all[reach]
     grid_lat = np.arange(-beta_max_deg, beta_max_deg + 1e-9, step_deg)
     tiles: list[PlannedTile] = []
     for gl in grid_lon:
+        dlon = np.abs((lon - gl + 180) % 360 - 180)
         for gb in grid_lat:
             # Skip grid points far from any exposure center before the exact (WCS) check.
-            if not np.any((np.abs(rel - gl) < 2.8) & (np.abs(lat - gb) < DETECTOR_RADIUS_DEG)):
+            if not np.any(
+                (dlon < DETECTOR_RADIUS_DEG + 0.2) & (np.abs(lat - gb) < DETECTOR_RADIUS_DEG)
+            ):
                 continue
-            elon = (mean + gl) % 360
+            elon = float(gl)
             r, d = _ecl_to_icrs(np.array([elon]), np.array([gb]))
             r0, d0 = float(r[0]), float(d[0])
             mjds = covering(r0, d0)
@@ -173,6 +180,58 @@ def plan_segment(
     return tiles
 
 
+def resolve_segments(specs: list[str], archive=None) -> list[str]:
+    """Expand "auto:N" into N week segments spread evenly over every public release.
+
+    Other entries ("qr2/2025W23_1C") pass through. Segments are listed from the public
+    nasa-irsa-spherex bucket, so new weeks are picked up as IRSA releases them.
+    """
+    out: list[str] = []
+    for spec in specs:
+        if not spec.startswith("auto:"):
+            out.append(spec)
+            continue
+        n = int(spec.split(":", 1)[1])
+        if archive is None:
+            from .data.s3 import S3Archive
+
+            archive = S3Archive()
+        _, releases = archive.list("")
+        everything = [
+            f"{rel}/{seg}"
+            for rel in sorted(p.rstrip("/") for p in releases if p.startswith("qr"))
+            for seg in sorted(archive.level2_segments(rel))
+        ]
+        if len(everything) <= n:
+            picked = everything
+        else:
+            picked = (
+                [everything[round(i * (len(everything) - 1) / (n - 1))] for i in range(n)]
+                if n > 1
+                else everything[-1:]
+            )
+        log.info("auto:%d -> %s (of %d segments)", n, picked, len(everything))
+        out.extend(picked)
+    return list(dict.fromkeys(out))
+
+
+def select_tiles(tiles: list[PlannedTile], max_tiles: int | None) -> list[PlannedTile]:
+    """Best-covered tiles first (most visits, then nearest the ecliptic), taken round-robin
+    across week segments so a cap never spends the whole budget on one week."""
+    by_seg: dict[str, list[PlannedTile]] = {}
+    for t in sorted(tiles, key=lambda t: (-t.n_visits, abs(t.elat_deg), -t.n_exposures)):
+        by_seg.setdefault(t.segment, []).append(t)
+    queues = [by_seg[k] for k in sorted(by_seg)]
+    out: list[PlannedTile] = []
+    i = 0
+    while any(queues) and (max_tiles is None or len(out) < max_tiles):
+        q = queues[i % len(queues)]
+        if q:
+            out.append(q.pop(0))
+        i += 1
+    return out
+
+
 def plan(
     segments: list[str],
     out: Path,
@@ -185,12 +244,9 @@ def plan(
 
     index = CoverageIndex()
     tiles: list[PlannedTile] = []
-    for seg in segments:
+    for seg in resolve_segments(segments):
         tiles.extend(plan_segment(index, seg, beta_max_deg=beta_max_deg, step_deg=step_deg))
-    # Prefer the best-covered tiles near the ecliptic (most visits, then closest to beta = 0).
-    tiles.sort(key=lambda t: (-t.n_visits, abs(t.elat_deg), -t.n_exposures))
-    if max_tiles is not None:
-        tiles = tiles[:max_tiles]
+    tiles = select_tiles(tiles, max_tiles)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps([asdict(t) for t in tiles], indent=1) + "\n")
     return tiles
@@ -232,6 +288,15 @@ def _remove_outputs(out: Path, field_id: str) -> None:
         shutil.rmtree(p) if p.is_dir() else p.unlink()
 
 
+def _where(err: BaseException) -> str:
+    """Innermost pipeline frame of a traceback, e.g. 'build.py:212 build'."""
+    import traceback
+
+    frames = [f for f in traceback.extract_tb(err.__traceback__) if "spherex_px" in f.filename]
+    f = frames[-1] if frames else None
+    return f"{Path(f.filename).name}:{f.lineno} {f.name}" if f else "?"
+
+
 def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -> list[TileResult]:
     """Build tiles shard, shard+of, shard+2*of, ... of the plan; keep tiles with real movers."""
     tiles = [PlannedTile(**t) for t in json.loads(plan_file.read_text())]
@@ -243,9 +308,16 @@ def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -
         except Exception as err:  # one bad tile must not sink the shard
             log.exception("%s failed", t.field_id)
             _remove_outputs(out, t.field_id)
-            results.append(TileResult(t.field_id, "failed", 0, f"{type(err).__name__}: {err}", t))
+            detail = f"{type(err).__name__}: {err} (at {_where(err)})"
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                # Annotations are readable from the public API without downloading logs.
+                print(f"::warning title=tile {t.field_id} failed::{detail[:900]}", flush=True)
+            results.append(TileResult(t.field_id, "failed", 0, detail, t))
             continue
-        real = [c for c in cands if c.classification != S.Classification.likely_artifact]
+        # A tile is kept for linked tracks only: two lone sightings (unconfirmed pairs) are too
+        # weak to justify a field page on their own.
+        weak = (S.Classification.likely_artifact, S.Classification.unconfirmed_pair)
+        real = [c for c in cands if c.classification not in weak]
         if not real:
             _remove_outputs(out, t.field_id)
             results.append(TileResult(t.field_id, "empty", 0, tile=t))

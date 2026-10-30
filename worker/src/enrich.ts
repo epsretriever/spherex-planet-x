@@ -230,6 +230,21 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
       },
     };
   }
+  // SBIdent's fast pass is only good to tens of arcseconds, so a shortlisted object that
+  // Horizons could not refine is still a possible match: report the check as not done (it is
+  // retried) instead of calling the candidate unmatched.
+  if (!horizonsOk && shortlist.length > refined.length) {
+    return {
+      matched: false,
+      known_object: {
+        ...notCheckedKnownObject(
+          `JPL Horizons did not answer for ${shortlist[0]!.name}, the closest known object (about ${round(shortlist[0]!.med, 0)}″ away in JPL's quick search).`,
+        ),
+        query_utc: now,
+        enrichment: "live",
+      },
+    };
+  }
   // Not matched: report the nearest object we looked at.
   const nearest = best
     ? { designation: best.name, separation_arcsec: round(best.medSep, 1) }
