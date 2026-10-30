@@ -695,6 +695,19 @@ class JplOrbitComparison(Model):
     position_error_arcsec_30d: float | None = Field(
         description="Separation of our and JPL's predicted positions 30 days after the last detection"
     )
+    jpl_a_au: float | None = None
+    jpl_e: float | None = None
+    jpl_i_deg: float | None = None
+    inside_3sigma_30d: bool | None = Field(
+        default=None, description="JPL's 30-day position inside our 3-sigma ellipse"
+    )
+    jpl_helio_distance_au: float | None = Field(
+        default=None, description="JPL's distance from the Sun at our epoch"
+    )
+    our_helio_distance_au: DistanceEstimate | None = None
+    distance_in_interval: bool | None = Field(
+        default=None, description="Our 5-95% distance interval contains JPL's distance"
+    )
 
 
 class PredictionPoint(Model):

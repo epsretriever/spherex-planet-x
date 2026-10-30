@@ -335,6 +335,16 @@ export interface JplOrbitComparison {
   delta_e: number;
   delta_i_deg: number;
   position_error_arcsec_30d: number | null;
+  /** JPL's elements at our epoch (heliocentric J2000 ecliptic). */
+  jpl_a_au?: number;
+  jpl_e?: number;
+  jpl_i_deg?: number;
+  /** Was JPL's position 30 days after our last detection inside our 3-sigma ellipse? */
+  inside_3sigma_30d?: boolean | null;
+  /** JPL's distance from the Sun at our epoch, and whether our 5-95% interval contains it. */
+  jpl_helio_distance_au?: number;
+  our_helio_distance_au?: DistanceEstimate | null;
+  distance_in_interval?: boolean | null;
 }
 
 export interface OrbitalElements {
@@ -360,6 +370,8 @@ export interface OrbitalElements {
   n_ranging_orbits?: number | null;
   /** Which of the orbits that fit is reported, in plain words. */
   reported_orbit?: string | null;
+  /** Predicted geocentric position 30 days after the last detection (clones' centre, 1-sigma ellipse). */
+  check_30d?: PredictionPoint | null;
 }
 
 /** objects/{id}/clones.json: orbits consistent with the detections (the uncertainty cloud). */

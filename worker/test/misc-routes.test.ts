@@ -50,16 +50,6 @@ describe("GET /api/coverage", () => {
   });
 });
 
-describe("validation", () => {
-  it("serves published validation results by name only", async () => {
-    const doc = { schema_version: "1.1", pipeline_version: "test", simulated: true, rows: [] };
-    const { get } = makeClient({ files: { "/data/validation/orbits.json": doc } });
-    expect(await json(await get("/api/validation/orbits"))).toEqual(doc);
-    expect((await get("/api/validation/secrets")).status).toBe(404);
-    expect((await get("/api/validation/..%2Ffields")).status).toBe(404);
-  });
-});
-
 describe("runs and injection", () => {
   it("POST /api/runs explains that runs are built offline", async () => {
     const { get } = makeClient();

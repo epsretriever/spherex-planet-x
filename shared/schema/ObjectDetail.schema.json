@@ -200,6 +200,92 @@
           ],
           "description": "Separation of our and JPL's predicted positions 30 days after the last detection",
           "title": "Position Error Arcsec 30D"
+        },
+        "jpl_a_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jpl A Au"
+        },
+        "jpl_e": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jpl E"
+        },
+        "jpl_i_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jpl I Deg"
+        },
+        "inside_3sigma_30d": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "JPL's 30-day position inside our 3-sigma ellipse",
+          "title": "Inside 3Sigma 30D"
+        },
+        "jpl_helio_distance_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "JPL's distance from the Sun at our epoch",
+          "title": "Jpl Helio Distance Au"
+        },
+        "our_helio_distance_au": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistanceEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "distance_in_interval": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Our 5-95% distance interval contains JPL's distance",
+          "title": "Distance In Interval"
         }
       },
       "required": [

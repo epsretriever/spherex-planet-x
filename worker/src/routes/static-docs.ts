@@ -33,15 +33,3 @@ runs.get("/:runId", async (c) => {
   return c.json(run);
 });
 
-/** Published validation results (validation/{name}.json), e.g. orbits from spherex-px orbit-validation. */
-export const validation = new Hono<AppEnv>();
-
-const VALIDATIONS = new Set(["orbits"]);
-
-validation.get("/:name", async (c) => {
-  const name = c.req.param("name");
-  if (!VALIDATIONS.has(name)) throw new ApiError(404, `no validation named '${name}'`);
-  const doc = await requireStaticJson<unknown>(c.env, `validation/${name}.json`, `validation '${name}'`);
-  c.header("Cache-Control", "public, max-age=300");
-  return c.json(doc);
-});

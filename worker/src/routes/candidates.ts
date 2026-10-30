@@ -4,7 +4,7 @@ import type { Deps, Env } from "../env";
 import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type CandidateSummary, type Classification } from "../contract";
 import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
-import { ID_RE, requireStaticJson } from "../static-data";
+import { ID_RE, orbitOfCandidate, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
 import { readRecord, readRecords, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
@@ -37,7 +37,7 @@ candidates.get("/", async (c) => {
     // Start one background lookup so the list fills in even before the cron runs.
     deps.waitUntil(
       requireStaticJson<CandidateDetail>(c.env, `candidates/${missing.candidate_id}.json`, "candidate")
-        .then((cand) => refreshRecord(deps, cand))
+        .then(async (cand) => refreshRecord(deps, cand, await orbitOfCandidate(c.env, cand.candidate_id)))
         .catch((err) => console.error(`background JPL lookup for ${missing.candidate_id}:`, err)),
     );
   }
@@ -98,7 +98,9 @@ export async function loadCandidate(
   }
   // Nothing stored yet: answer now and look JPL up in the background. The client polls.
   deps.waitUntil(
-    refreshRecord(deps, cand).catch((err) => console.error(`background JPL lookup for ${id}:`, err)),
+    orbitOfCandidate(env, id)
+      .then((orbit) => refreshRecord(deps, cand, orbit))
+      .catch((err) => console.error(`background JPL lookup for ${id}:`, err)),
   );
   const pending = {
     ...notCheckedKnownObject("Checking JPL's catalog of known asteroids and comets now. This takes up to a minute the first time.", cand.known_object),

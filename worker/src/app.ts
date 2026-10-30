@@ -8,7 +8,8 @@ import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
 import { health } from "./routes/health";
 import { objects, survey } from "./routes/objects";
-import { injection, runs, validation } from "./routes/static-docs";
+import { injection, runs } from "./routes/static-docs";
+import { validation } from "./routes/validation";
 
 export type AppEnv = { Bindings: Env; Variables: { deps: Deps } };
 
