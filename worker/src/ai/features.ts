@@ -75,8 +75,12 @@ export async function writeup(ctx: AiContext, kind: AiSubjectKind, id: string, s
   const key = `ai:v${PROMPT_VERSION}:writeup:${await sha256(`${ctx.model}\n${input}`)}`;
   const hit = await cacheGet<AiWriteup>(ctx.deps, key);
   if (hit) return { ...hit, cached: true };
-  const fallback = () => templateWriteup(kind, id, s, now);
-  if (!ctx.ai || !(await takeQuota(ctx.db, "writeup", ctx.deps.now()))) return fallback();
+  const fallback = (reason: string) => {
+    console.warn(`writeup ${id}: template (${reason})`);
+    return { ...templateWriteup(kind, id, s, now), fallback_reason: reason };
+  };
+  if (!ctx.ai) return fallback("no_ai_binding");
+  if (!(await takeQuota(ctx.db, "writeup", ctx.deps.now()))) return fallback("daily_cap");
   const out = await runJson(ctx.deps, {
     ai: ctx.ai,
     model: ctx.model,
@@ -89,14 +93,18 @@ export async function writeup(ctx: AiContext, kind: AiSubjectKind, id: string, s
   const paragraphs = strings(out?.paragraphs).map((p) => p.trim()).filter(Boolean);
   const paths = strings(out?.grounded_fields);
   const text = [verdict, ...paragraphs].join(" ");
-  const ok =
-    verdict.length > 0 &&
-    verdict.length <= 300 &&
-    paragraphs.length === 3 &&
-    paragraphs.every((p) => p.length <= MAX_PARAGRAPH) &&
-    !FORBIDDEN.test(text) &&
-    grounded(text, paths, s);
-  if (!ok) return fallback();
+  const problem = !out
+    ? "model_unavailable"
+    : verdict.length === 0 || verdict.length > 300
+      ? "bad_verdict"
+      : paragraphs.length !== 3 || paragraphs.some((p) => p.length > MAX_PARAGRAPH)
+        ? `bad_paragraphs_${paragraphs.length}`
+        : FORBIDDEN.test(text)
+          ? "forbidden_claim"
+          : !grounded(text, paths, s)
+            ? "ungrounded_numbers"
+            : null;
+  if (problem) return fallback(problem);
   const result: AiWriteup = {
     schema_version: SCHEMA_VERSION,
     pipeline_version: s.pipeline_version,
