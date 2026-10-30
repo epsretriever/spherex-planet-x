@@ -31,6 +31,8 @@ export interface BlinkViewerProps {
   epochs: Epoch[];
   blinkPairs: BlinkPair[];
   movers?: Mover[];
+  /** Display name for a mover, e.g. its JPL designation. */
+  moverName?: (m: Mover) => string;
   /** Start with the "what moved" overlay on. */
   showMoversInitially?: boolean;
   /** Only show this candidate's track (evidence report). */
@@ -73,6 +75,7 @@ export function BlinkViewer({
   epochs,
   blinkPairs,
   movers = [],
+  moverName,
   showMoversInitially = false,
   onlyCandidateId,
   predicted = [],
@@ -374,7 +377,7 @@ export function BlinkViewer({
                         cy={pts.find((p) => visibleEpochIds.has(p.epoch_id))?.row ?? pts[0]!.row}
                         r={Math.max(r * 2.2, 6)}
                         role="button"
-                        aria-label={`${CLASSIFICATIONS[m.classification]?.label ?? m.classification}: ${m.label_plain}`}
+                        aria-label={`${moverName ? `${moverName(m)}, ` : ""}${CLASSIFICATIONS[m.classification]?.label ?? m.classification}: ${m.label_plain}`}
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => {
                           setPlayChoice(false);
@@ -562,7 +565,13 @@ export function BlinkViewer({
       </p>
 
       <SourceDrawer subject={sourceFor} onClose={() => setSourceFor(null)} />
-      <MoverSheet mover={activeMover} frames={frames} cdeltArcsec={wcs.cdelt_arcsec} onClose={() => setActiveMover(null)} />
+      <MoverSheet
+        mover={activeMover}
+        name={activeMover && moverName ? moverName(activeMover) : null}
+        frames={frames}
+        cdeltArcsec={wcs.cdelt_arcsec}
+        onClose={() => setActiveMover(null)}
+      />
     </section>
   );
 }
@@ -636,11 +645,13 @@ function WavelengthNote({ lambdaMatched, labelPlain }: { lambdaMatched: boolean 
 
 function MoverSheet({
   mover,
+  name,
   frames,
   cdeltArcsec,
   onClose,
 }: {
   mover: Mover | null;
+  name: string | null;
   frames: Epoch[];
   cdeltArcsec: number;
   onClose: () => void;
@@ -657,12 +668,11 @@ function MoverSheet({
   }, [mover, frames, cdeltArcsec]);
 
   return (
-    <Sheet open={!!mover} onClose={onClose} title="This dot moved">
+    <Sheet open={!!mover} onClose={onClose} title={name ?? "This dot moved"}>
       {mover && info && (
         <div className={styles.sheetBody}>
           <ClassificationBadge value={mover.classification} size="lg" />
           <p className={styles.sheetLead}>{mover.label_plain}</p>
-          <p className="muted">{CLASSIFICATIONS[mover.classification]?.plain}</p>
           <dl className={styles.facts}>
             {"px" in info && info.px !== undefined && (
               <div>

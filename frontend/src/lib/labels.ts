@@ -18,7 +18,8 @@ export const CLASSIFICATIONS: Record<Classification, ClassificationStyle> = {
   },
   unmatched: {
     label: "Unexplained",
-    plain: "Moves like a real object, but we couldn't match it to anything we checked. It could still be a glitch or a gap in the catalogs.",
+    plain:
+      "Moves like a real object, but isn't matched to a known one: either JPL's catalog had no match, or the check hasn't completed yet. It could still be a glitch or a gap in the catalogs.",
     icon: "?",
     cssVar: "--status-unexplained",
   },

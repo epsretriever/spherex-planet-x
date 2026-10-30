@@ -4,18 +4,26 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { BlinkViewer } from "@/components/BlinkViewer";
+import { Deferred } from "@/components/Deferred";
 import { ErrorState } from "@/components/DataState";
-import { FieldPageSkeleton } from "@/components/Skeletons";
+import { FieldPageSkeleton, ViewerSkeleton } from "@/components/Skeletons";
 import { Term } from "@/components/Term";
-import { getField } from "@/lib/api";
+import { getCandidates, getField } from "@/lib/api";
+import type { Mover } from "@/lib/contract";
 import { formatUtcDate } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
 import { useData } from "@/lib/useData";
+import { useObjectNames } from "@/lib/useObjectNames";
 import styles from "./FieldView.module.css";
 
 export function FieldView() {
   const id = useSearchParams().get("id");
   const state = useData(id ? `field:${id}` : null, (signal) => getField(id!, signal));
+  // The field file is static; the candidate list carries each object's live JPL status.
+  const live = useData(id ? `field-candidates:${id}` : null, (signal) =>
+    getCandidates({ field_id: id!, include_injected: true }, signal),
+  );
+  const { nameFor } = useObjectNames();
 
   useEffect(() => {
     if (state.status === "ok") document.title = `${state.data.name} · ${SITE_NAME}`;
@@ -40,6 +48,13 @@ export function FieldView() {
   }
 
   const f = state.data;
+  const liveById = new Map(live.status === "ok" ? live.data.candidates.map((c) => [c.candidate_id, c]) : []);
+  const movers: Mover[] = f.movers.map((m) => {
+    const c = liveById.get(m.candidate_id);
+    return c ? { ...m, classification: c.classification, label_plain: c.label_plain } : m;
+  });
+  const moverName = (m: Mover) =>
+    nameFor({ candidate_id: m.candidate_id, classification: m.classification, designation: liveById.get(m.candidate_id)?.known_object_designation }).title;
   const realMovers = f.movers.filter((m) => m.classification !== "injected").length;
 
   return (
@@ -53,7 +68,9 @@ export function FieldView() {
         </header>
 
         <div className={styles.viewer}>
-          <BlinkViewer fieldName={f.name} wcs={f.wcs} epochs={f.epochs} blinkPairs={f.blink_pairs} movers={f.movers} />
+          <Deferred fallback={<ViewerSkeleton label="Loading the images" />}>
+            <BlinkViewer fieldName={f.name} wcs={f.wcs} epochs={f.epochs} blinkPairs={f.blink_pairs} movers={movers} moverName={moverName} />
+          </Deferred>
         </div>
 
         <aside className={styles.aside}>
@@ -120,7 +137,7 @@ export function FieldView() {
 function Crumbs() {
   return (
     <nav aria-label="Breadcrumb" className={styles.crumbs}>
-      <Link href="/explore/">← All patches of sky</Link>
+      <Link href="/explore/" prefetch={false}>← All patches of sky</Link>
     </nav>
   );
 }
