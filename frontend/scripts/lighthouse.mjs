@@ -1,7 +1,8 @@
 // Lighthouse quality gate on real data.
 //
 // Starts (or reuses) `wrangler dev` from the repository root, runs Lighthouse with its default
-// mobile settings on Home, an Explore field and an evidence report (median of LH_RUNS runs,
+// mobile settings (CPU slowdown calibrated to this machine, see below) on Home, an Explore field
+// and an evidence report (median of LH_RUNS runs,
 // default 3), writes HTML and JSON reports to
 // lighthouse-reports/, and exits non-zero if performance, accessibility or best practices
 // scores below 90 on any of them. Build first: `npm run build` at the repository root.
@@ -52,14 +53,29 @@ const fields = await (await fetch(`${base}/api/fields`)).json();
 const cands = await (await fetch(`${base}/api/candidates`)).json();
 const pages = [
   ["home", "/"],
-  ["explore-field", `/explore/field/?id=${fields.fields[0].field_id}`],
-  ["report", `/detective/candidate/?id=${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}`],
+  ["explore-field", `/explore/${fields.fields[0].field_id}/`],
+  ["report", `/detective/${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}/`],
 ];
 
 const chrome = await chromeLauncher.launch({
   chromePath: process.env.CHROME_PATH ?? chromium.executablePath(),
   chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu"],
 });
+
+// Lighthouse emulates a mid-range phone by slowing this machine's CPU 4×, which assumes a
+// fast desktop (benchmark index ~1500). On slower machines such as CI runners that overstates
+// the phone's CPU cost, so calibrate the slowdown to the same target device (benchmark ~375),
+// as Lighthouse's throttling docs recommend. Never throttle less than 1× or more than 4×.
+// LH_CPU overrides the calibration.
+const TARGET_BENCHMARK = 375;
+let cpuSlowdown = Number(process.env.LH_CPU) || 0;
+let benchmark = null;
+if (!cpuSlowdown) {
+  const probe = await lighthouse(`${base}/`, { port: chrome.port, logLevel: "error", onlyCategories: ["performance"] });
+  benchmark = probe.lhr.environment.benchmarkIndex;
+  cpuSlowdown = Math.min(4, Math.max(1, Math.round((benchmark / TARGET_BENCHMARK) * 10) / 10));
+}
+console.log(`CPU slowdown ${cpuSlowdown}×${benchmark ? ` (this machine's benchmark index ${Math.round(benchmark)})` : " (LH_CPU)"}\n`);
 
 const outDir = join(root, "lighthouse-reports");
 mkdirSync(outDir, { recursive: true });
@@ -73,8 +89,7 @@ try {
         output: ["html", "json"],
         logLevel: "error",
         onlyCategories: CATEGORIES,
-        // For local experiments only: emulate a slower machine (CI keeps Lighthouse's default 4×).
-        ...(process.env.LH_CPU ? { throttling: { cpuSlowdownMultiplier: Number(process.env.LH_CPU) } } : {}),
+        throttling: { cpuSlowdownMultiplier: cpuSlowdown },
       });
       runs.push(result);
     }

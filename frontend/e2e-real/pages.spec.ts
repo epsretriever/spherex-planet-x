@@ -84,7 +84,7 @@ test("explore list", async ({ page }, info) => {
 
 test("explore field opens on the backend's default pair", async ({ page, request }, info) => {
   const field = await (await request.get(`/api/fields/${ids.field}`)).json();
-  await checkPage(page, info, `/explore/field/?id=${ids.field}`, "field");
+  await checkPage(page, info, `/explore/${ids.field}/`, "field");
   await expect(page.getByRole("img", { name: /SPHEREx infrared image/ }).first()).toBeVisible();
   const def = field.blink_pairs.find((p: { default?: boolean }) => p.default) ?? field.blink_pairs[0];
   if (def) {
@@ -102,7 +102,7 @@ test("detective list names every object", async ({ page }, info) => {
 });
 
 test("evidence report", async ({ page }, info) => {
-  const height = await checkPage(page, info, `/detective/candidate/?id=${ids.candidate}`, "report");
+  const height = await checkPage(page, info, `/detective/${ids.candidate}/`, "report");
   const h1 = await page.getByRole("heading", { level: 1 }).textContent();
   expect(h1, "report titled by object").not.toMatch(/^(Unexplained|Known asteroid|Known comet)$/);
   await expect(page.getByText(new RegExp(`Pipeline ID\\s*${ids.candidate}`))).toBeVisible();
@@ -118,7 +118,7 @@ test("evidence report", async ({ page }, info) => {
 });
 
 test("report section nav stays pinned while scrolling", async ({ page }) => {
-  await page.goto(`/detective/candidate/?id=${ids.candidate}`, { waitUntil: "networkidle" });
+  await page.goto(`/detective/${ids.candidate}/`, { waitUntil: "networkidle" });
   const nav = page.getByRole("navigation", { name: "Report sections" });
   await page.mouse.wheel(0, 3000);
   await page.waitForTimeout(300);
@@ -145,4 +145,26 @@ test("404", async ({ page }, info) => {
   await info.attach(file, { body: await page.screenshot({ fullPage: true, path: info.outputPath(file) }), contentType: "image/png" });
   // The 404 response itself is logged by Chromium as a failed resource load; nothing else should be.
   expect(errors.filter((e) => !/404/.test(e))).toEqual([]);
+});
+
+test("object pages are prerendered with their content and title", async ({ request }) => {
+  const fieldName = (await (await request.get(`/api/fields/${ids.field}`)).json()).name as string;
+  const html = await (await request.get(`/detective/${ids.candidate}/`)).text();
+  expect(html).toMatch(/<title>[^<]*(Moving object|Simulated object|\(?\d)/);
+  expect(html).toContain(ids.candidate);
+  const field = await (await request.get(`/explore/${ids.field}/`)).text();
+  expect(field).toContain(fieldName);
+});
+
+test("the ?id= routes still load from the API", async ({ page }) => {
+  await page.goto(`/detective/candidate/?id=${ids.candidate}`, { waitUntil: "networkidle" });
+  await expect(page.getByText(new RegExp(`Pipeline ID\\s*${ids.candidate}`))).toBeVisible();
+  await page.goto(`/explore/field/?id=${ids.field}`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("img", { name: /SPHEREx infrared image/ }).first()).toBeVisible();
+});
+
+test("an unknown object path forwards to the API-backed route", async ({ page }) => {
+  await page.goto("/detective/not-a-real-object/");
+  await expect(page).toHaveURL(/\/detective\/candidate\/\?id=not-a-real-object$/);
+  await expect(page.getByRole("alert").filter({ hasText: "couldn't find" })).toBeVisible();
 });

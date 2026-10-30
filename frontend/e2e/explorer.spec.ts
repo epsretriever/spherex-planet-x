@@ -57,7 +57,7 @@ test("show what moved, then open a mover", async ({ page }) => {
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("link", { name: /See the full evidence/ })).toHaveAttribute(
     "href",
-    "/detective/candidate/?id=syn-unmatched",
+    "/detective/syn-unmatched/",
   );
 });
 
