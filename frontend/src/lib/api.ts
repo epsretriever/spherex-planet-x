@@ -12,6 +12,7 @@ import {
   type FieldList,
   type InjectionStudy,
   type ObjectList,
+  type Survey,
   type Versioned,
 } from "./contract";
 
@@ -201,6 +202,12 @@ export async function getObjects(signal?: AbortSignal): Promise<ObjectList> {
   const body = await getJson<ObjectList>(USE_FIXTURES ? `${FIXTURE_BASE}/objects.json` : "/api/objects", signal);
   expectArray(body, "objects", "Object list");
   return checkVersion(body, "objects");
+}
+
+export async function getSurvey(signal?: AbortSignal): Promise<Survey> {
+  const body = await getJson<Survey>(USE_FIXTURES ? `${FIXTURE_BASE}/survey.json` : "/api/survey", signal);
+  expectArray(body, "tiles", "Survey");
+  return checkVersion(body, "survey");
 }
 
 /* ---- AI (contract v1.1). There is no AI in fixture mode: these report not_found. ---- */

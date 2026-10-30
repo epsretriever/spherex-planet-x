@@ -509,6 +509,21 @@ export interface SurveyTile {
   m50_ab: number | null;
 }
 
+/**
+ * PROPOSED (not yet in docs/api-contract.md): the published Planet Nine search region, binned
+ * from Brown & Batygin's reference population by the pipeline. Optional and additive; the map
+ * draws nothing without it or without its citation.
+ */
+export interface PlanetNineRegion {
+  citation: string;
+  url: string;
+  /** Sky positions are for this date. */
+  epoch_utc: string;
+  cell_deg: number;
+  /** RA/Dec bin centers; fraction is the share of the population in the bin. */
+  cells: { ra_deg: number; dec_deg: number; fraction: number }[];
+}
+
 export interface Survey extends Versioned {
   generated_utc: string;
   name: string;
@@ -526,6 +541,7 @@ export interface Survey extends Versioned {
     n_tiles_processed: number;
     n_new_objects: number;
   } | null;
+  planet_nine?: PlanetNineRegion | null;
 }
 
 export type AiSubjectKind = "candidate" | "object";

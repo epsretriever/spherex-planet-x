@@ -132,6 +132,13 @@ test("detection limits page", async ({ page }, info) => {
   await checkPage(page, info, "/limits/", "limits");
 });
 
+test("sky map", async ({ page }, info) => {
+  await checkPage(page, info, "/sky/", "sky");
+  const map = page.getByRole("group", { name: "All-sky map in equatorial coordinates" });
+  // Every published processed tile is a link to its field.
+  await expect(map.getByRole("link")).not.toHaveCount(0);
+});
+
 test("about", async ({ page }, info) => {
   await checkPage(page, info, "/about/", "about");
 });

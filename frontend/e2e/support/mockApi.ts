@@ -22,6 +22,7 @@ import type {
   InjectionStudy,
   Mover,
   ObjectList,
+  Survey,
   Source,
 } from "../../src/lib/contract";
 import { skyToGrid } from "../../src/lib/grid";
@@ -369,6 +370,8 @@ export interface MockOptions {
   ai?: boolean;
   /** Make POST /api/ask fail with this status. */
   askStatus?: number;
+  /** Serve the survey's Planet Nine region without its citation (it must not be drawn). */
+  surveyWithoutCitation?: boolean;
 }
 
 const AI_MODEL = "@synthetic/test-model";
@@ -461,6 +464,41 @@ const objectList: ObjectList = {
   })),
 };
 
+/** Synthetic survey: one searched tile on the mock field, one waiting, and a SYNTHETIC test region. */
+export const survey: Survey = {
+  schema_version: "1.1",
+  pipeline_version: PIPE,
+  generated_utc: "2026-01-01T00:00:00Z",
+  name: "Synthetic survey",
+  description: "Synthetic survey for tests.",
+  tile_size_deg: 0.3,
+  data_releases: ["SYNTHETIC"],
+  tiles: [
+    {
+      tile_id: FIELD_ID, center: { ra_deg: 120, dec_deg: 20 }, ecliptic_lon_deg: 117.9, ecliptic_lat_deg: -0.4, size_deg: 0.3, status: "processed",
+      n_epochs: 3, n_visits: 2, first_time_utc: epochs[0]!.time_utc, last_time_utc: epochs[2]!.time_utc, last_processed_utc: "2026-01-01T00:00:00Z",
+      field_id: FIELD_ID, n_candidates: 3, m50_ab: 19.4,
+    },
+    {
+      tile_id: "synthetic-pending-tile", center: { ra_deg: 200, dec_deg: -10 }, ecliptic_lon_deg: 205, ecliptic_lat_deg: 0.2, size_deg: 0.3, status: "pending",
+      n_epochs: 0, n_visits: 0, first_time_utc: null, last_time_utc: null, last_processed_utc: null, field_id: null, n_candidates: 0, m50_ab: null,
+    },
+  ],
+  totals: { n_tiles: 2, n_processed: 1, area_deg2_processed: 0.09, n_epochs: 3, n_candidates: 3, n_objects: 3 },
+  last_run: null,
+  planet_nine: {
+    citation: "SYNTHETIC test region (not a real prediction)",
+    url: "https://example.invalid/synthetic-region",
+    epoch_utc: "2026-01-01T00:00:00Z",
+    cell_deg: 10,
+    cells: [
+      { ra_deg: 50, dec_deg: 10, fraction: 0.5 },
+      { ra_deg: 60, dec_deg: 10, fraction: 0.3 },
+      { ra_deg: 70, dec_deg: 15, fraction: 0.2 },
+    ],
+  },
+};
+
 export async function installMockApi(page: Page, opts: MockOptions = {}) {
   await page.route("**/api/**", async (route) => {
     if (opts.failWith) return json(route, { detail: "synthetic failure" }, opts.failWith);
@@ -482,6 +520,7 @@ export async function installMockApi(page: Page, opts: MockOptions = {}) {
       return json(route, body);
     }
     if (path === "/api/objects") return json(route, objectList);
+    if (path === "/api/survey") return json(route, opts.surveyWithoutCitation ? { ...survey, planet_nine: { ...survey.planet_nine!, citation: "" } } : survey);
     if (opts.ai) {
       const w = path.match(/^\/api\/candidates\/(.+)\/writeup$/);
       if (w) return json(route, writeup(decodeURIComponent(w[1]!)));
