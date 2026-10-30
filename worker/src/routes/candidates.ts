@@ -5,7 +5,8 @@ import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type Candida
 import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
-import { readRecord, refreshRecord } from "../store";
+import { pageParams, paginate } from "../paging";
+import { readRecord, readRecords, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
@@ -24,27 +25,26 @@ candidates.get("/", async (c) => {
   }
   const includeInjected = c.req.query("include_injected") === "true" || classes.includes("injected");
 
+  const paging = pageParams((n) => c.req.query(n));
+
   const list = await requireStaticJson<CandidateList>(c.env, "candidates.json", "candidate list");
   const deps = c.get("deps");
-  // Fold in stored JPL results (no upstream calls from the list view).
-  let warming = false;
-  const enriched = await Promise.all(
-    list.candidates.map(async (s): Promise<CandidateSummary> => {
-      if (s.classification === "injected") return s;
-      const ref = { candidate_id: s.candidate_id, pipeline_version: list.pipeline_version };
-      const rec = await readRecord(deps, ref);
-      if (!rec && !warming) {
-        // Start one background lookup so the list fills in even before the cron runs.
-        warming = true;
-        deps.waitUntil(
-          requireStaticJson<CandidateDetail>(c.env, `candidates/${s.candidate_id}.json`, "candidate")
-            .then((cand) => refreshRecord(deps, cand))
-            .catch((err) => console.error(`background JPL lookup for ${s.candidate_id}:`, err)),
-        );
-      }
-      return rec ? applyToSummary(s, rec.enrichment) : s;
-    }),
-  );
+  // Fold in stored JPL results (one store query; no upstream calls from the list view).
+  const real = list.candidates.filter((s) => s.classification !== "injected");
+  const recs = await readRecords(deps, list.pipeline_version, real.map((s) => s.candidate_id));
+  const missing = real.find((s) => !recs.has(s.candidate_id));
+  if (missing) {
+    // Start one background lookup so the list fills in even before the cron runs.
+    deps.waitUntil(
+      requireStaticJson<CandidateDetail>(c.env, `candidates/${missing.candidate_id}.json`, "candidate")
+        .then((cand) => refreshRecord(deps, cand))
+        .catch((err) => console.error(`background JPL lookup for ${missing.candidate_id}:`, err)),
+    );
+  }
+  const enriched = list.candidates.map((s) => {
+    const rec = s.classification === "injected" ? undefined : recs.get(s.candidate_id);
+    return rec ? applyToSummary(s, rec.enrichment) : s;
+  });
   const filtered = enriched.filter(
     (s) =>
       (fieldId === undefined || s.field_id === fieldId) &&
@@ -52,7 +52,15 @@ candidates.get("/", async (c) => {
       (minScore === null || s.overall_score >= minScore) &&
       (includeInjected || s.classification !== "injected"),
   );
-  const body: CandidateList = { ...list, total: filtered.length, candidates: filtered };
+  const page = paginate(filtered, paging);
+  const body: CandidateList = {
+    ...list,
+    total: page.total,
+    offset: page.offset,
+    limit: page.limit,
+    next_offset: page.next_offset,
+    candidates: page.items,
+  };
   c.header("Cache-Control", "public, max-age=60");
   return c.json(body);
 });

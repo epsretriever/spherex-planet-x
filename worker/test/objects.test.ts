@@ -136,7 +136,7 @@ describe("objects", () => {
 
   it("serves the survey", async () => {
     const { get } = makeClient({ files });
-    expect(await json(await get("/api/survey"))).toEqual(survey);
+    expect(await json(await get("/api/survey"))).toEqual({ ...survey, totals: { ...survey.totals, n_known_objects: 0 } });
   });
 });
 

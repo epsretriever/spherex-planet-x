@@ -3,7 +3,8 @@ import type { AppEnv } from "../app";
 import type { Classification, FieldDetail, FieldList, QualityLevel } from "../contract";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
-import { readRecord } from "../store";
+import { pageParams, paginate } from "../paging";
+import { readRecords } from "../store";
 import { labelPlain } from "../text";
 
 export const fields = new Hono<AppEnv>();
@@ -26,8 +27,12 @@ fields.get("/", async (c) => {
     }
     throw err;
   });
+  const paging = pageParams((n) => c.req.query(n));
+  const origin = c.req.query("origin");
+  const items = origin === undefined ? list.fields : list.fields.filter((f) => f.origin === origin);
+  const page = paginate(items, paging);
   c.header("Cache-Control", STATIC_CACHE);
-  return c.json(list);
+  return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, fields: page.items });
 });
 
 fields.get("/:fieldId", async (c) => {
@@ -38,15 +43,17 @@ fields.get("/:fieldId", async (c) => {
   // Movers carry the same JPL-dependent label as the candidate list (stored results only; no
   // upstream calls here).
   const movers = (detail.movers as Mover[] | undefined) ?? [];
-  const enriched = await Promise.all(
-    movers.map(async (m): Promise<Mover> => {
-      if (m.classification === "injected") return m;
-      const rec = await readRecord(deps, { candidate_id: m.candidate_id, pipeline_version: detail.pipeline_version });
-      if (!rec) return m;
-      const classification: Classification = rec.enrichment.matched ? "known_object" : m.classification;
-      return { ...m, classification, label_plain: labelPlain({ classification, known_object: rec.enrichment.known_object }) };
-    }),
+  const recs = await readRecords(
+    deps,
+    detail.pipeline_version,
+    movers.filter((m) => m.classification !== "injected").map((m) => m.candidate_id),
   );
+  const enriched = movers.map((m): Mover => {
+    const rec = m.classification === "injected" ? undefined : recs.get(m.candidate_id);
+    if (!rec) return m;
+    const classification: Classification = rec.enrichment.matched ? "known_object" : m.classification;
+    return { ...m, classification, label_plain: labelPlain({ classification, known_object: rec.enrichment.known_object }) };
+  });
   c.header("Cache-Control", "public, max-age=60");
   return c.json(detail.movers === undefined ? detail : { ...detail, movers: enriched });
 });
