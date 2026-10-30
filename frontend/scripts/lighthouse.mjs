@@ -40,7 +40,7 @@ let server;
 if (!base) {
   base = `http://127.0.0.1:${PORT}`;
   if (!(await waitFor(`${base}/api/health`, 1000))) {
-    server = spawn("npx", ["wrangler", "dev", "--port", String(PORT), "--ip", "127.0.0.1"], {
+    server = spawn("npx", ["wrangler", "dev", "--env", "offline", "--port", String(PORT), "--ip", "127.0.0.1"], {
       cwd: join(root, ".."),
       stdio: "ignore",
       detached: true,
