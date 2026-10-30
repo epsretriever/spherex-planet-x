@@ -52,8 +52,8 @@ test("show what moved, then open a mover", async ({ page }) => {
   await page.goto(`/explore/field/?id=${SYNTHETIC.FIELD_ID}`);
   await page.getByRole("button", { name: "Show me what moved" }).click();
   await expect(page.getByText(/2 moving objects circled/)).toBeVisible();
-  await page.getByRole("button", { name: /Unexplained: Synthetic unexplained mover/ }).click();
-  const sheet = page.getByRole("dialog", { name: "This dot moved" });
+  await page.getByRole("button", { name: /Moving object B in \w+, Unexplained: Synthetic unexplained mover/ }).click();
+  const sheet = page.getByRole("dialog", { name: /Moving object B in / });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("link", { name: /See the full evidence/ })).toHaveAttribute(
     "href",
