@@ -145,6 +145,16 @@ def _survey_ledger(args: argparse.Namespace) -> int:
     return 0
 
 
+def _planet_nine(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .planet_nine import describe, fetch
+
+    meta, paths = fetch(Path(args.cache))
+    describe(meta, paths)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -187,6 +197,11 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
     sl.set_defaults(func=_survey_ledger)
+    p9 = sub.add_parser(
+        "planet-nine", help="download Brown & Batygin's Planet Nine population (CaltechDATA)"
+    )
+    p9.add_argument("--cache", default="var/planet-nine")
+    p9.set_defaults(func=_planet_nine)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

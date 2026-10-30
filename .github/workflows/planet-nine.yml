@@ -1,0 +1,29 @@
+# Planet Nine search region for the all-sky map: downloads Brown & Batygin's (2021) reference
+# population from CaltechDATA (runners can reach it) and bins its sky positions.
+name: Planet Nine region
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - pipeline/spherex_px/planet_nine.py
+      - .github/workflows/planet-nine.yml
+
+permissions:
+  contents: read
+
+jobs:
+  region:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e pipeline
+      - name: Download and describe the reference population
+        working-directory: pipeline
+        run: spherex-px -v planet-nine --cache var/planet-nine
