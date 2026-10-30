@@ -73,6 +73,8 @@ try {
         output: ["html", "json"],
         logLevel: "error",
         onlyCategories: CATEGORIES,
+        // For local experiments only: emulate a slower machine (CI keeps Lighthouse's default 4×).
+        ...(process.env.LH_CPU ? { throttling: { cpuSlowdownMultiplier: Number(process.env.LH_CPU) } } : {}),
       });
       runs.push(result);
     }

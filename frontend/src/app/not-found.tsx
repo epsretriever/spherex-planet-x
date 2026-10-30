@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ObjectPathFallback } from "@/components/ObjectPathFallback";
 import styles from "./not-found.module.css";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function NotFound() {
         <span className={styles.trail} />
         <span className={`${styles.dot} ${styles.gone}`} />
       </div>
+      <ObjectPathFallback />
       <p className="eyebrow">Error 404</p>
       <h1 className={styles.title}>This page moved on.</h1>
       <p className="lede">

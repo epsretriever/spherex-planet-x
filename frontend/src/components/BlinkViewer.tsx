@@ -8,6 +8,7 @@ import type { BlinkPair, Epoch, GridWcs, Mover } from "@/lib/contract";
 import { formatInterval, formatRate, formatUtcDate, formatUtcShortDate, formatWavelength } from "@/lib/format";
 import { gridToImage } from "@/lib/grid";
 import { CLASSIFICATIONS } from "@/lib/labels";
+import { candidateHref } from "@/lib/routes";
 import { useImagePreload } from "@/lib/useImagePreload";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { ClassificationBadge } from "./ClassificationBadge";
@@ -696,7 +697,7 @@ function MoverSheet({
               </dd>
             </div>
           </dl>
-          <Link className="button button-primary" href={`/detective/candidate/?id=${encodeURIComponent(mover.candidate_id)}`}>
+          <Link className="button button-primary" href={candidateHref(mover.candidate_id)}>
             See the full evidence →
           </Link>
         </div>

@@ -3,11 +3,10 @@ import { assetUrl } from "@/lib/api";
 import type { FieldSummary } from "@/lib/contract";
 import { formatUtcDate } from "@/lib/format";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER } from "@/lib/labels";
+import { fieldHref } from "@/lib/routes";
 import styles from "./FieldCard.module.css";
 
-export function fieldHref(fieldId: string) {
-  return `/explore/field/?id=${encodeURIComponent(fieldId)}`;
-}
+export { fieldHref } from "@/lib/routes";
 
 export function FieldCard({ field }: { field: FieldSummary }) {
   const counts = CLASSIFICATION_ORDER.filter((c) => c !== "injected" && (field.candidate_counts?.[c] ?? 0) > 0);

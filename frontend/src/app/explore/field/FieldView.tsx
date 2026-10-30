@@ -9,28 +9,33 @@ import { ErrorState } from "@/components/DataState";
 import { FieldPageSkeleton, ViewerSkeleton } from "@/components/Skeletons";
 import { Term } from "@/components/Term";
 import { getCandidates, getField } from "@/lib/api";
-import type { Mover } from "@/lib/contract";
+import type { FieldDetail, Mover } from "@/lib/contract";
 import { formatUtcDate } from "@/lib/format";
 import { SITE_NAME } from "@/lib/site";
 import { useData } from "@/lib/useData";
-import { useObjectNames } from "@/lib/useObjectNames";
+import { useObjectNames, type NameSeed } from "@/lib/useObjectNames";
 import styles from "./FieldView.module.css";
 
-export function FieldView() {
-  const id = useSearchParams().get("id");
-  const state = useData(id ? `field:${id}` : null, (signal) => getField(id!, signal));
+/**
+ * One field in the Explorer. `initial` is the field as published when the site was built (the
+ * API serves the same file), so prerendered pages skip that request; the candidate list is
+ * always fetched for each object's live JPL status.
+ */
+export function FieldView({ id, initial, seed }: { id: string | null; initial?: FieldDetail | null; seed?: NameSeed }) {
+  const state = useData(id && !initial ? `field:${id}` : null, (signal) => getField(id!, signal));
   // The field file is static; the candidate list carries each object's live JPL status.
   const live = useData(id ? `field-candidates:${id}` : null, (signal) =>
     getCandidates({ field_id: id!, include_injected: true }, signal),
   );
-  const { nameFor } = useObjectNames();
+  const { nameFor } = useObjectNames(seed);
+  const loaded = initial ?? (state.status === "ok" ? state.data : null);
 
   useEffect(() => {
-    if (state.status === "ok") document.title = `${state.data.name} · ${SITE_NAME}`;
-  }, [state]);
+    if (loaded && !initial) document.title = `${loaded.name} · ${SITE_NAME}`;
+  }, [loaded, initial]);
 
   if (!id) return <ErrorState reason="not_found" />;
-  if (state.status === "loading") {
+  if (!loaded && state.status === "loading") {
     return (
       <>
         <Crumbs />
@@ -38,7 +43,7 @@ export function FieldView() {
       </>
     );
   }
-  if (state.status === "error") {
+  if (!loaded && state.status === "error") {
     return (
       <>
         <Crumbs />
@@ -47,7 +52,7 @@ export function FieldView() {
     );
   }
 
-  const f = state.data;
+  const f = loaded!;
   const liveById = new Map(live.status === "ok" ? live.data.candidates.map((c) => [c.candidate_id, c]) : []);
   const movers: Mover[] = f.movers.map((m) => {
     const c = liveById.get(m.candidate_id);
@@ -140,4 +145,9 @@ function Crumbs() {
       <Link href="/explore/" prefetch={false}>← All patches of sky</Link>
     </nav>
   );
+}
+
+/** The `?id=` route: for objects published after the site was built, and old links. */
+export function FieldFromQuery() {
+  return <FieldView id={useSearchParams().get("id")} />;
 }

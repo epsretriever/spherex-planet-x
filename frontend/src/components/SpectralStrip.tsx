@@ -48,12 +48,13 @@ export function SpectralStrip() {
               <span
                 key={k}
                 className={styles.channel}
-                style={{ background: c.color, animationDelay: `${(d * PER_DETECTOR + k) * 18}ms` }}
+                style={{ background: c.color }}
               />
             ))}
             <span className={`mono ${styles.det}`}>D{d + 1}</span>
           </div>
         ))}
+        <span className={styles.sweep} aria-hidden="true" />
       </div>
       <figcaption className={styles.caption}>
         <span className="mono">0.75 µm</span>

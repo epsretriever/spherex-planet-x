@@ -5,11 +5,10 @@ import type { ObjectName } from "@/lib/names";
 import { formatHours, formatRate, formatUtcDate } from "@/lib/format";
 import { ClassificationBadge } from "./ClassificationBadge";
 import { QualityMeter } from "./QualityMeter";
+import { candidateHref } from "@/lib/routes";
 import styles from "./CandidateCard.module.css";
 
-export function candidateHref(id: string) {
-  return `/detective/candidate/?id=${encodeURIComponent(id)}`;
-}
+export { candidateHref } from "@/lib/routes";
 
 export function CandidateCard({ c, name }: { c: CandidateSummary; name: ObjectName }) {
   return (

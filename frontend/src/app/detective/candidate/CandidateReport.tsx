@@ -30,7 +30,7 @@ import { formatAgo, formatHours, formatRate } from "@/lib/format";
 import type { ObjectName } from "@/lib/names";
 import { SITE_NAME } from "@/lib/site";
 import { useData } from "@/lib/useData";
-import { useObjectNames } from "@/lib/useObjectNames";
+import { useObjectNames, type NameSeed } from "@/lib/useObjectNames";
 import styles from "./CandidateReport.module.css";
 
 const DISCLAIMER =
@@ -40,16 +40,20 @@ const DISCLAIMER =
 const PENDING_POLL_MS = 6000;
 const PENDING_POLL_MAX = 20;
 
-export function CandidateReport() {
-  const id = useSearchParams().get("id");
+/**
+ * One object's evidence report. `initial` is the report as published when the site was built;
+ * it renders at once and is replaced by the live API answer (with JPL results) when that arrives.
+ */
+export function CandidateReport({ id, initial, seed }: { id: string | null; initial?: CandidateDetail | null; seed?: NameSeed }) {
   const state = useData(id ? `candidate:${id}` : null, (signal) => getCandidate(id!, signal));
   const [fresh, setFresh] = useState<CandidateDetail | null>(null);
-  const { nameFor } = useObjectNames();
-  const shown = fresh && fresh.candidate_id === id ? fresh : state.status === "ok" ? state.data : null;
+  const { nameFor } = useObjectNames(seed);
+  const shown =
+    fresh && fresh.candidate_id === id ? fresh : state.status === "ok" ? state.data : (initial ?? null);
 
   useEffect(() => {
-    if (shown) document.title = `${nameFor({ candidate_id: shown.candidate_id, classification: shown.classification, designation: shown.known_object.designation }).title} · ${SITE_NAME}`;
-  }, [shown, nameFor]);
+    if (shown && (!initial || shown !== initial)) document.title = `${nameFor({ candidate_id: shown.candidate_id, classification: shown.classification, designation: shown.known_object.designation }).title} · ${SITE_NAME}`;
+  }, [shown, nameFor, initial]);
 
   // The Worker answers at once and checks JPL in the background; poll until the result lands.
   const pending = shown?.known_object.enrichment === "pending";
@@ -80,7 +84,7 @@ export function CandidateReport() {
   }, [pending, id]);
 
   if (!id) return <ErrorState reason="not_found" />;
-  if (state.status === "loading") {
+  if (!shown && state.status === "loading") {
     return (
       <>
         <Crumbs />
@@ -88,7 +92,7 @@ export function CandidateReport() {
       </>
     );
   }
-  if (state.status === "error") {
+  if (!shown && state.status === "error") {
     return (
       <>
         <Crumbs />
@@ -96,7 +100,7 @@ export function CandidateReport() {
       </>
     );
   }
-  const c = shown ?? state.data;
+  const c = shown!;
   return <Report c={c} name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object.designation })} nameFor={nameFor} />;
 }
 
@@ -271,7 +275,11 @@ function JplStatus({ known }: { known: CandidateDetail["known_object"] }) {
   const ago = known.query_utc ? formatAgo(known.query_utc) : null;
   let tone: "pending" | "ok" | "warn";
   let text: string;
-  if (!known.checked && known.enrichment === "pending") {
+  if (!known.checked && known.enrichment === "static") {
+    // The build-time snapshot, shown until the live report arrives.
+    tone = "pending";
+    text = "Loading the latest JPL result";
+  } else if (!known.checked && known.enrichment === "pending") {
     tone = "pending";
     text = "Checking JPL now";
   } else if (!known.checked) {
@@ -347,4 +355,9 @@ function SectionNav({ sections }: { sections: readonly (readonly [string, string
       </ul>
     </nav>
   );
+}
+
+/** The `?id=` route: for objects published after the site was built, and old links. */
+export function CandidateReportFromQuery() {
+  return <CandidateReport id={useSearchParams().get("id")} />;
 }
