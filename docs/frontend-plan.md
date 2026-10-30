@@ -126,7 +126,7 @@ Overlay colors must stay visible on both dark sky and bright stars: 2 px stroke 
 - **Display:** Space Grotesk for headings and the brand. Scale: 12 / 14 / 16 / 20 / 24 / 32 / 40, with a fluid hero size.
 - **UI and body:** Inter, 16 px base, 1.5 line height.
 - **Numbers and data:** JetBrains Mono with tabular figures for coordinates, dates, wavelengths and measurements.
-- All three are self-hosted through Fontsource.
+- All three are self-hosted (Latin subsets in `frontend/src/fonts/`) and preloaded through `next/font/local`.
 
 ### Spacing, shape, motion
 
@@ -353,7 +353,7 @@ The recovery grid is magnitude × rate. Each cell has injected and recovered cou
 - **Next.js (App Router) + TypeScript** in `frontend/`, built as a **static export**: `output: "export"`, `trailingSlash: true`, unoptimized images. No API routes, middleware or request-time server code. Data is fetched in the browser.
 - **Local development:** `npm run dev` proxies `/api/*` and `/static/*` to `npx wrangler dev` on port 8787.
 - **Styling:** CSS variables for the tokens above plus CSS Modules.
-- **Fonts:** Inter and JetBrains Mono, self-hosted through Fontsource so builds don't depend on a font CDN.
+- **Fonts:** Inter, Space Grotesk and JetBrains Mono, self-hosted in `frontend/src/fonts/` and preloaded through `next/font/local`, so builds don't depend on a font CDN.
 - **Blink viewer:** stacked `<img>` elements on a fixed-size stage, with opacity for blink and a clip for swipe. This is simpler and more reliable than a full sky viewer for small aligned cutouts.
 - **Sky map:** Aladin Lite v3 on `/explore` only (P1), showing a survey background with our field footprints. Lazy-loaded so it never slows the blink viewer. If it fights us, the card picker is enough.
 - **Charts:** lightweight SVG for the motion plot, spectrum and recovery grid.

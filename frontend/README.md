@@ -25,7 +25,9 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 | `npm run build` | Static export to `frontend/out/` (what the Worker serves) |
 | `npm start` | Serves `out/` locally on port 4173, the way the Worker does |
 | `npm run check` | Lint, typecheck and unit tests |
-| `npm run test:e2e` | Playwright tests against `out/` at desktop and phone widths (run `npm run build` first) |
+| `npm run test:e2e` | Playwright tests against `out/` at desktop and phone widths, with synthetic API responses (run `npm run build` first) |
+| `npm run test:real` | Playwright on **real data**: starts `wrangler dev` at the repo root and screenshots every page at 360, 768 and 1280 px, checking for a heading, no horizontal overflow and no console errors. Screenshots land in `test-results-real/`. Run `npm run build` at the root first. |
+| `npm run lighthouse` | Lighthouse on real data (median of 3 runs) for Home, an Explore field and an evidence report; fails below 90 for performance, accessibility or best practices. HTML reports land in `lighthouse-reports/`. |
 | `node scripts/make-share-images.mjs` | Re-renders `public/og.png` and `src/app/apple-icon.png` after a brand change |
 
 ## How it fits together
@@ -43,6 +45,26 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 
 - `NEXT_PUBLIC_SITE_URL` (build variable): the deployed origin, for example `https://…workers.dev`. Social previews need absolute image URLs, so without it the share image is left out of the page metadata.
 - The 404 page is exported as `out/404.html`. To serve it for unknown URLs, the Worker's `wrangler.toml` needs `not_found_handling = "404-page"`. With `"single-page-application"`, unknown URLs get the landing page with status 200. Every route here has its own `index.html`, so SPA fallback isn't needed.
+
+## Continuous checks
+
+`.github/workflows/frontend-quality.yml` runs the build, `npm run check`, `npm run test:real` and `npm run lighthouse` on every pull request that touches the site or the Worker, and uploads the screenshots and Lighthouse reports as artifacts.
+
+## Object names
+
+Cards and reports are titled by object, not by status (`src/lib/names.ts`):
+
+- A JPL-matched object uses its designation, for example "(2524) Budovicium".
+- Anything else is "Moving object A in Aquarius". The constellation comes from the field's center using the IAU boundaries (`src/lib/constellation.ts`, Roman 1987). Letters run across every published candidate in that constellation in order of first sighting, then ID, so a name stays the same on every page.
+- Simulated objects are lettered separately ("Simulated object A in …") so they never shift real names.
+- The pipeline ID is always shown as secondary text.
+
+## Performance notes
+
+- Pages that read `?id=` start their API requests from an inline script in the static HTML (`PrefetchData`), so data downloads while the JavaScript does.
+- CSS is inlined (`experimental.inlineCss`) and fonts are preloaded via `next/font/local` (`src/fonts/`).
+- Heavy subtrees mount in a React transition (`Deferred`) or when scrolled near (`WhenVisible`), keeping the main thread free on first load.
+- Site-chrome links don't prefetch, so they don't compete with the page's own data on slow connections.
 
 ## Rules the UI enforces
 
