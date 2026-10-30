@@ -39,6 +39,43 @@
       "title": "FalsePositives",
       "type": "object"
     },
+    "FieldRecovery": {
+      "additionalProperties": false,
+      "properties": {
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        },
+        "n_recovered": {
+          "title": "N Recovered",
+          "type": "integer"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For linear tracks at 3-100 arcsec/hr",
+          "title": "M50 Ab"
+        }
+      },
+      "required": [
+        "field_id",
+        "n_injected",
+        "n_recovered",
+        "m50_ab"
+      ],
+      "title": "FieldRecovery",
+      "type": "object"
+    },
     "M50": {
       "additionalProperties": false,
       "properties": {
@@ -66,6 +103,213 @@
       "title": "M50",
       "type": "object"
     },
+    "M50ByDistance": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "median_rate_arcsec_per_hr": {
+          "title": "Median Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null when 50% completeness is not bracketed",
+          "title": "M50 Ab"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "distance_au",
+        "median_rate_arcsec_per_hr",
+        "m50_ab",
+        "n_injected"
+      ],
+      "title": "M50ByDistance",
+      "type": "object"
+    },
+    "MotionModel": {
+      "enum": [
+        "linear",
+        "parallax",
+        "none"
+      ],
+      "title": "MotionModel",
+      "type": "string"
+    },
+    "PhotometryCheck": {
+      "additionalProperties": false,
+      "description": "Injected flux measured back with the pipeline's own photometry, at random positions.",
+      "properties": {
+        "mag_ab": {
+          "title": "Mag Ab",
+          "type": "number"
+        },
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "measured_over_injected_median": {
+          "title": "Measured Over Injected Median",
+          "type": "number"
+        },
+        "measured_over_injected_p25": {
+          "title": "Measured Over Injected P25",
+          "type": "number"
+        },
+        "measured_over_injected_p75": {
+          "title": "Measured Over Injected P75",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mag_ab",
+        "n",
+        "measured_over_injected_median",
+        "measured_over_injected_p25",
+        "measured_over_injected_p75"
+      ],
+      "title": "PhotometryCheck",
+      "type": "object"
+    },
+    "PlanetAssumptions": {
+      "additionalProperties": false,
+      "description": "How a predicted planet brightness was computed. Predictions, not observations.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "diameter_km": {
+          "title": "Diameter Km",
+          "type": "number"
+        },
+        "geometric_albedo": {
+          "title": "Geometric Albedo",
+          "type": "number"
+        },
+        "band_um": {
+          "title": "Band Um",
+          "type": "number"
+        },
+        "phase_function": {
+          "title": "Phase Function",
+          "type": "string"
+        },
+        "thermal_model": {
+          "title": "Thermal Model",
+          "type": "string"
+        },
+        "reference": {
+          "title": "Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "diameter_km",
+        "geometric_albedo",
+        "band_um",
+        "phase_function",
+        "thermal_model",
+        "reference"
+      ],
+      "title": "PlanetAssumptions",
+      "type": "object"
+    },
+    "PlanetContext": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "$ref": "#/$defs/PlanetAssumptions"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/PlanetContextRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "assumptions",
+        "rows"
+      ],
+      "title": "PlanetContext",
+      "type": "object"
+    },
+    "PlanetContextRow": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "predicted_mag_ab": {
+          "title": "Predicted Mag Ab",
+          "type": "number"
+        },
+        "band_um": {
+          "title": "Band Um",
+          "type": "number"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "m50 of the parallax tracks at this distance",
+          "title": "M50 Ab"
+        },
+        "recovery_fraction_at_predicted": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Recovery fraction interpolated at the predicted magnitude; null if not tested",
+          "title": "Recovery Fraction At Predicted"
+        },
+        "verdict": {
+          "enum": [
+            "detected",
+            "missed",
+            "not_tested"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        }
+      },
+      "required": [
+        "distance_au",
+        "predicted_mag_ab",
+        "band_um",
+        "m50_ab",
+        "recovery_fraction_at_predicted",
+        "verdict"
+      ],
+      "title": "PlanetContextRow",
+      "type": "object"
+    },
     "RecoveryCell": {
       "additionalProperties": false,
       "properties": {
@@ -74,8 +318,27 @@
           "type": "number"
         },
         "rate_arcsec_per_hr": {
+          "description": "Linear cells: the injected rate. Distance cells: median rate of their tracks",
           "title": "Rate Arcsec Per Hr",
           "type": "number"
+        },
+        "motion": {
+          "$ref": "#/$defs/MotionModel",
+          "default": "linear",
+          "description": "linear: fixed rate and direction; parallax: body at a fixed distance"
+        },
+        "distance_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distance cells only",
+          "title": "Distance Au"
         },
         "n_injected": {
           "title": "N Injected",
@@ -171,6 +434,14 @@
       "title": "Rate Bins Arcsec Per Hr",
       "type": "array"
     },
+    "distance_bins_au": {
+      "default": [],
+      "items": {
+        "type": "number"
+      },
+      "title": "Distance Bins Au",
+      "type": "array"
+    },
     "grid": {
       "items": {
         "$ref": "#/$defs/RecoveryCell"
@@ -185,8 +456,68 @@
       "title": "M50 By Rate",
       "type": "array"
     },
+    "m50_by_distance": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/M50ByDistance"
+      },
+      "title": "M50 By Distance",
+      "type": "array"
+    },
+    "per_field": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FieldRecovery"
+      },
+      "title": "Per Field",
+      "type": "array"
+    },
     "false_positives": {
       "$ref": "#/$defs/FalsePositives"
+    },
+    "recovered_rate_error_median": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Median |fitted - injected| / injected rate, linear tracks",
+      "title": "Recovered Rate Error Median"
+    },
+    "recovered_position_error_arcsec_median": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Recovered Position Error Arcsec Median"
+    },
+    "photometry_check": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PhotometryCheck"
+      },
+      "title": "Photometry Check",
+      "type": "array"
+    },
+    "planet_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanetContext"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "recovery_criteria": {
       "title": "Recovery Criteria",

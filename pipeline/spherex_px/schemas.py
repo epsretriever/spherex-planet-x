@@ -528,7 +528,14 @@ class CandidateDetail(Envelope):
 
 class RecoveryCell(Model):
     mag_ab: float
-    rate_arcsec_per_hr: float
+    rate_arcsec_per_hr: float = Field(
+        description="Linear cells: the injected rate. Distance cells: median rate of their tracks"
+    )
+    motion: MotionModel = Field(
+        default=MotionModel.linear,
+        description="linear: fixed rate and direction; parallax: body at a fixed distance",
+    )
+    distance_au: float | None = Field(default=None, description="Distance cells only")
     n_injected: int
     n_recovered: int
     fraction: float
@@ -539,6 +546,48 @@ class RecoveryCell(Model):
 class M50(Model):
     rate_arcsec_per_hr: float
     m50_ab: float | None = Field(description="null when 50% completeness is not bracketed")
+
+
+class M50ByDistance(Model):
+    distance_au: float
+    median_rate_arcsec_per_hr: float
+    m50_ab: float | None = Field(description="null when 50% completeness is not bracketed")
+    n_injected: int
+
+
+class PlanetAssumptions(Model):
+    """How a predicted planet brightness was computed. Predictions, not observations."""
+
+    name: str
+    diameter_km: float
+    geometric_albedo: float
+    band_um: float
+    phase_function: str
+    thermal_model: str
+    reference: str
+
+
+class PlanetContextRow(Model):
+    distance_au: float
+    predicted_mag_ab: float
+    band_um: float
+    m50_ab: float | None = Field(description="m50 of the parallax tracks at this distance")
+    recovery_fraction_at_predicted: float | None = Field(
+        description="Recovery fraction interpolated at the predicted magnitude; null if not tested"
+    )
+    verdict: Literal["detected", "missed", "not_tested"]
+
+
+class PlanetContext(Model):
+    assumptions: PlanetAssumptions
+    rows: list[PlanetContextRow]
+
+
+class FieldRecovery(Model):
+    field_id: str
+    n_injected: int
+    n_recovered: int
+    m50_ab: float | None = Field(description="For linear tracks at 3-100 arcsec/hr")
 
 
 class FalsePositives(Model):
@@ -559,12 +608,43 @@ class InjectionStudy(Envelope):
     n_recovered: int
     mag_bins_ab: list[float]
     rate_bins_arcsec_per_hr: list[float]
+    distance_bins_au: list[float] = []
     grid: list[RecoveryCell]
     m50_by_rate: list[M50]
+    m50_by_distance: list[M50ByDistance] = []
+    per_field: list[FieldRecovery] = []
     false_positives: FalsePositives
+    recovered_rate_error_median: float | None = Field(
+        default=None, description="Median |fitted - injected| / injected rate, linear tracks"
+    )
+    recovered_position_error_arcsec_median: float | None = None
+    photometry_check: list[PhotometryCheck] = []
+    planet_context: PlanetContext | None = None
     recovery_criteria: str
     method_notes: list[str]
     example_candidate_ids: list[str]
+
+
+class PhotometryCheck(Model):
+    """Injected flux measured back with the pipeline's own photometry, at random positions."""
+
+    mag_ab: float
+    n: int
+    measured_over_injected_median: float
+    measured_over_injected_p25: float
+    measured_over_injected_p75: float
+
+
+class InjectionStudyRef(Model):
+    study_id: str
+    generated_utc: str
+    field_ids: list[str]
+    n_injected: int
+
+
+class InjectionStudyIndex(Envelope):
+    build_run_id: str | None = None
+    studies: list[InjectionStudyRef]
 
 
 # ---------------------------------------------------------------------------
@@ -1075,6 +1155,7 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "CandidateList": CandidateList,
     "CandidateDetail": CandidateDetail,
     "InjectionStudy": InjectionStudy,
+    "InjectionStudyIndex": InjectionStudyIndex,
     "Health": Health,
     "Coverage": Coverage,
     "RunRequest": RunRequest,

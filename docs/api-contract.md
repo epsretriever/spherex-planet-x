@@ -45,6 +45,7 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 | `GET /api/fields/{field_id}` | `FieldDetail` | Static `data/fields/{field_id}.json`, with each mover's `classification` and `label_plain` taken from its candidate's stored JPL result (no upstream calls). |
 | `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false&limit=&offset=` | `CandidateList` | Static `data/candidates.json`, with each summary's `classification`, `label_plain`, `summary_plain` and known-object fields taken from stored enrichment results. A candidate with no stored result yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. Paged after filtering. |
 | `GET /api/candidates/{candidate_id}` | `CandidateDetail` | Static `data/candidates/{candidate_id}.json`, with the stored JPL result, or `enrichment: "pending"` while the first lookup runs (see [Known-object enrichment](#known-object-enrichment)). |
+| `GET /api/injection` | `InjectionStudyIndex` | Static `data/injection/index.json`: the published studies. |
 | `GET /api/injection/{study_id}` | `InjectionStudy` | Static `data/injection/{study_id}.json`. |
 | `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | **Live** IRSA TAP (`https://irsa.ipac.caltech.edu/TAP/sync`). |
 | `POST /api/runs` | `ErrorResponse` (501) | Pixel processing can't run inside a Worker. Runs are produced offline with `spherex-px run --ra ... --dec ...` and published with the static data. The endpoint returns 501 with instructions instead of pretending to queue work. |
@@ -160,9 +161,19 @@ Every epoch, detection, field image and stamp carries `source`:
 - `planeid`: the IRSA CAOM plane ID when the observation was found through IRSA TAP; otherwise `null`.
 - The frontend refuses to render an image without `source`.
 
-## Injection study (`InjectionStudy`)
+## Injection study (`InjectionStudy`, `InjectionStudyIndex`)
 
-`{study_id, generated_utc, simulated: true, field_ids, n_injected, n_recovered, mag_bins_ab, rate_bins_arcsec_per_hr, grid: [{mag_ab, rate_arcsec_per_hr, n_injected, n_recovered, fraction, ci_low, ci_high}], m50_by_rate: [{rate_arcsec_per_hr, m50_ab | null}], false_positives {n_control_runs, area_deg2, n_candidates, rate_per_deg2, ci_low_per_deg2, ci_high_per_deg2}, recovery_criteria, method_notes, example_candidate_ids}`. Intervals are Wilson 95% intervals for fractions and Poisson 95% intervals for rates.
+Synthetic moving objects are injected into the **real** cutouts of the published fields and found (or missed) by the unmodified pipeline. This measures how faint and how slow an object the pipeline recovers. Everything in a study is simulated (`simulated: true`).
+
+- `{study_id, generated_utc, simulated: true, field_ids, n_injected, n_recovered, mag_bins_ab, rate_bins_arcsec_per_hr, distance_bins_au, grid[], m50_by_rate[], m50_by_distance[], per_field[], false_positives, recovered_rate_error_median, recovered_position_error_arcsec_median, photometry_check[], planet_context, recovery_criteria, method_notes, example_candidate_ids}`.
+- `grid[]`: `{mag_ab, rate_arcsec_per_hr, motion: linear | parallax, distance_au, n_injected, n_recovered, fraction, ci_low, ci_high}`. `linear` cells move at a fixed rate in a random direction. `parallax` cells are bodies at a fixed heliocentric distance on circular prograde orbits, seen from SPHEREx's real position, which is how a distant planet moves; their `rate_arcsec_per_hr` is the median rate of their tracks.
+- `m50_by_rate[] {rate_arcsec_per_hr, m50_ab}` and `m50_by_distance[] {distance_au, median_rate_arcsec_per_hr, m50_ab, n_injected}`: the magnitude where recovery crosses 50%, or `null` when recovery never reaches 50% (or never drops below it) on the magnitude grid. `per_field[] {field_id, n_injected, n_recovered, m50_ab}` uses linear tracks at 3–100″/hr.
+- `false_positives {n_control_runs, area_deg2, n_candidates, rate_per_deg2, ci_low_per_deg2, ci_high_per_deg2}`: linked tracks that match no injection and no real mover.
+- `photometry_check[] {mag_ab, n, measured_over_injected_median, measured_over_injected_p25, measured_over_injected_p75}`: injected flux measured back with the pipeline's own photometry.
+- `planet_context {assumptions, rows[]}`: how bright a Neptune-sized planet would look at each distance, compared with what the study recovers. `assumptions {name, diameter_km, geometric_albedo, band_um, phase_function, thermal_model, reference}` states every input; the magnitudes are predictions from reflected sunlight, not observations. `rows[] {distance_au, predicted_mag_ab, band_um, m50_ab, recovery_fraction_at_predicted, verdict}`: `verdict` is `detected` when the parallax-track recovery fraction interpolated at the predicted magnitude is at least 0.5, `missed` when below, and `not_tested` when that distance or magnitude was outside the study (`recovery_fraction_at_predicted` is then `null`).
+- `example_candidate_ids`: candidates classified `injected` (label "SIMULATED"), with full evidence reports and an `injection` block giving the truth. They're never sent to JPL and never relabelled. List them with `/api/candidates?classification=injected`.
+- Intervals are Wilson 95% for fractions and Poisson 95% for counts.
+- `InjectionStudyIndex {studies[] {study_id, generated_utc, field_ids, n_injected}}`.
 
 ## Objects (`ObjectSummary`, `ObjectDetail`, `ObjectPrediction`)
 
@@ -221,6 +232,7 @@ Every output is checked before it is shown. It must parse as JSON in the expecte
 | `data/candidates.json` | `CandidateList` (all candidates, including injected) |
 | `data/candidates/{candidate_id}.json` | `CandidateDetail` (static, before enrichment) |
 | `data/candidates/{candidate_id}/{epoch_id}.webp`, `thumb.webp` | 64 px stamps |
+| `data/injection/index.json` | `InjectionStudyIndex` |
 | `data/injection/{study_id}.json` | `InjectionStudy` |
 | `data/runs/{run_id}.json` | `RunStatus` |
 | `data/objects.json` | `ObjectList` |

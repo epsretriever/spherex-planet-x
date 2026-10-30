@@ -145,6 +145,35 @@ def _survey_ledger(args: argparse.Namespace) -> int:
     return 0
 
 
+def _injection_study(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT, publish
+    from .injection import build_examples, run_study
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    study = run_study(
+        args.study_id,
+        field_ids=args.fields or None,
+        trials_per_cell=args.trials,
+        workers=args.workers,
+        out_dir=out,
+    )
+    if args.examples_field:
+        ids = build_examples(args.study_id, args.examples_field, out)
+        study.example_candidate_ids = ids
+        from .build import write_json
+
+        write_json(out / "injection" / f"{args.study_id}.json", study)
+        publish(out)
+    print(
+        f"{study.study_id}: {study.n_recovered}/{study.n_injected} recovered; "
+        f"m50 by rate {[(m.rate_arcsec_per_hr, m.m50_ab) for m in study.m50_by_rate]}; "
+        f"false positives {study.false_positives.n_candidates} in {study.false_positives.area_deg2} deg2"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -165,6 +194,16 @@ def main(argv: list[str] | None = None) -> int:
     rp = sub.add_parser("rank-pairs", help="recompute blink pairs for built fields")
     rp.add_argument("--out")
     rp.set_defaults(func=_rank_pairs)
+    inj = sub.add_parser("injection-study", help="injection-recovery study on built fields")
+    inj.add_argument("study_id")
+    inj.add_argument("--fields", nargs="*", help="field ids (default: every showcase field)")
+    inj.add_argument("--trials", type=int, default=200, help="injections per grid cell")
+    inj.add_argument("--workers", type=int, default=4)
+    inj.add_argument(
+        "--examples-field", help="also write example SIMULATED candidates for this field"
+    )
+    inj.add_argument("--out")
+    inj.set_defaults(func=_injection_study)
     ix = sub.add_parser("index", help="index exposure headers for week segments")
     ix.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
     ix.set_defaults(func=_index)

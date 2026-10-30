@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "InjectionStudyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "study_id": {
+          "title": "Study Id",
+          "type": "string"
+        },
+        "generated_utc": {
+          "title": "Generated Utc",
+          "type": "string"
+        },
+        "field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Ids",
+          "type": "array"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "study_id",
+        "generated_utc",
+        "field_ids",
+        "n_injected"
+      ],
+      "title": "InjectionStudyRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Build Run Id"
+    },
+    "studies": {
+      "items": {
+        "$ref": "#/$defs/InjectionStudyRef"
+      },
+      "title": "Studies",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "studies"
+  ],
+  "title": "InjectionStudyIndex",
+  "type": "object"
+}
