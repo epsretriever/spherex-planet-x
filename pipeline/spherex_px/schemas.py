@@ -880,6 +880,26 @@ class SurveyTotals(Model):
     area_deg2_searched: float = 0.0
 
 
+class PlanetNineCell(Model):
+    ra_deg: float
+    dec_deg: float
+    fraction: float = Field(description="Share of the remaining population in this RA/Dec cell")
+
+
+class PlanetNineRegion(Model):
+    """Brown & Batygin's Planet Nine population still open after the ZTF, DES and Pan-STARRS
+    searches, binned on the sky (spherex-px planet-nine)."""
+
+    citation: str
+    url: str
+    epoch_utc: str = Field(description="Sky positions are for this date")
+    cell_deg: float
+    population: str
+    n_population: int
+    n_remaining: int
+    cells: list[PlanetNineCell]
+
+
 class Survey(Envelope):
     build_run_id: str | None = None
     generated_utc: str
@@ -891,6 +911,9 @@ class Survey(Envelope):
     totals: SurveyTotals
     last_run: SurveyRun | None
     runs: list[SurveyRun] = Field(default=[], description="Most recent runs first (up to 20)")
+    planet_nine: PlanetNineRegion | None = Field(
+        default=None, description="Published Planet Nine search region (added by the Worker)"
+    )
 
 
 class AiSubjectKind(StrEnum):

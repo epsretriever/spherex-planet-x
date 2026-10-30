@@ -8,11 +8,12 @@ import type {
   ObjectList,
   ObjectPrediction,
   ObjectSummary,
+  PlanetNineRegion,
   Survey,
 } from "../contract";
 import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
-import { ID_RE, requireStaticJson } from "../static-data";
+import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
 import { readRecord, readRecords, refreshRecord } from "../store";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
@@ -199,7 +200,13 @@ survey.get("/", async (c) => {
   const designations = new Set(
     all.filter((o) => o.known_object_matched && o.known_object_designation).map((o) => designationKey(o.known_object_designation!)),
   );
-  const body: Survey = { ...survey, totals: { ...survey.totals, n_known_objects: designations.size } };
+  // The Planet Nine region is published on its own (spherex-px planet-nine) and added here.
+  const planetNine = survey.planet_nine ?? (await readStaticJson<PlanetNineRegion>(c.env, "survey/planet_nine.json").catch(() => null));
+  const body: Survey = {
+    ...survey,
+    totals: { ...survey.totals, n_known_objects: designations.size },
+    ...(planetNine ? { planet_nine: planetNine } : {}),
+  };
   c.header("Cache-Control", "public, max-age=300");
   return c.json(body);
 });

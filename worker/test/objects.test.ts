@@ -138,6 +138,22 @@ describe("objects", () => {
     const { get } = makeClient({ files });
     expect(await json(await get("/api/survey"))).toEqual({ ...survey, totals: { ...survey.totals, n_known_objects: 0 } });
   });
+
+  it("adds the published Planet Nine region to the survey", async () => {
+    const region = {
+      citation: "Brown & Batygin 2021, AJ 162, 219: Planet Nine reference population (CaltechDATA)",
+      url: "https://data.caltech.edu/records/8fjad-x7y61",
+      epoch_utc: "2018-06-01T12:00:00Z",
+      cell_deg: 5,
+      population: "Synthetic Planet Nine orbits not detectable by the ZTF, DES or Pan-STARRS searches",
+      n_population: 100000,
+      n_remaining: 2,
+      cells: [{ ra_deg: 12.5, dec_deg: -12.5, fraction: 1 }],
+    };
+    const { get } = makeClient({ files: { ...files, "/data/survey/planet_nine.json": region } });
+    const body = (await json(await get("/api/survey"))) as { planet_nine: unknown };
+    expect(body.planet_nine).toEqual(region);
+  });
 });
 
 describe("JPL results stay consistent across endpoints", () => {

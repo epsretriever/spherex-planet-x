@@ -1,5 +1,84 @@
 {
   "$defs": {
+    "PlanetNineCell": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "fraction": {
+          "description": "Share of the remaining population in this RA/Dec cell",
+          "title": "Fraction",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg",
+        "fraction"
+      ],
+      "title": "PlanetNineCell",
+      "type": "object"
+    },
+    "PlanetNineRegion": {
+      "additionalProperties": false,
+      "description": "Brown & Batygin's Planet Nine population still open after the ZTF, DES and Pan-STARRS\nsearches, binned on the sky (spherex-px planet-nine).",
+      "properties": {
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "epoch_utc": {
+          "description": "Sky positions are for this date",
+          "title": "Epoch Utc",
+          "type": "string"
+        },
+        "cell_deg": {
+          "title": "Cell Deg",
+          "type": "number"
+        },
+        "population": {
+          "title": "Population",
+          "type": "string"
+        },
+        "n_population": {
+          "title": "N Population",
+          "type": "integer"
+        },
+        "n_remaining": {
+          "title": "N Remaining",
+          "type": "integer"
+        },
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/PlanetNineCell"
+          },
+          "title": "Cells",
+          "type": "array"
+        }
+      },
+      "required": [
+        "citation",
+        "url",
+        "epoch_utc",
+        "cell_deg",
+        "population",
+        "n_population",
+        "n_remaining",
+        "cells"
+      ],
+      "title": "PlanetNineRegion",
+      "type": "object"
+    },
     "SkyPosition": {
       "additionalProperties": false,
       "properties": {
@@ -410,6 +489,18 @@
       },
       "title": "Runs",
       "type": "array"
+    },
+    "planet_nine": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanetNineRegion"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Published Planet Nine search region (added by the Worker)"
     }
   },
   "required": [

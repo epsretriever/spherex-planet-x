@@ -104,3 +104,33 @@ def bin_sky(
         for (a, b), x in sorted(cells.items())
         if x > 0
     ]
+
+
+#: The population file's epoch: JD 2458270.0 (stated in its header).
+EPOCH_UTC = "2018-06-01T12:00:00Z"
+POPULATION_FILE = "reference_population.csv"
+
+
+def load_population(path: Path) -> dict[str, np.ndarray]:
+    """Columns of reference_population.csv (comment lines start with '#')."""
+    lines = [ln for ln in path.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
+    names = [n.strip() for n in lines[0].split(",")]
+    data = np.array([[float(x) for x in ln.split(",")] for ln in lines[1:]])
+    return {n: data[:, k] for k, n in enumerate(names)}
+
+
+def region(pop: dict[str, np.ndarray], cell_deg: float = 5.0) -> dict:
+    """Sky cells of the population that the ZTF, DES and Pan-STARRS searches would not have
+    detected (the region still open), plus counts for the full population."""
+    open_ = (pop["ZTF"] == 0) & (pop["DES"] == 0) & (pop["PS1"] == 0)
+    return {
+        "citation": CITATION,
+        "url": RECORD_URL,
+        "epoch_utc": EPOCH_UTC,
+        "cell_deg": cell_deg,
+        "population": "Synthetic Planet Nine orbits not detectable by the ZTF, DES or Pan-STARRS "
+        "searches (Brown & Batygin 2021b; Belyakov et al. 2022; Brown et al. 2023)",
+        "n_population": int(len(open_)),
+        "n_remaining": int(open_.sum()),
+        "cells": bin_sky(pop["ra"][open_], pop["dec"][open_], None, cell_deg),
+    }
