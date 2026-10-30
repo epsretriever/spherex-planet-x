@@ -697,6 +697,17 @@ class JplOrbitComparison(Model):
     )
 
 
+class PredictionPoint(Model):
+    time_utc: str
+    mjd: float
+    ra_deg: float
+    dec_deg: float
+    sigma_major_arcsec: float = Field(description="1-sigma uncertainty ellipse, semi-major axis")
+    sigma_minor_arcsec: float
+    sigma_pa_deg: float = Field(description="Position angle of the major axis, east of north")
+    vmag_estimate: float | None = None
+
+
 class OrbitalElements(Model):
     """Heliocentric osculating elements (J2000 ecliptic) with uncertainty."""
 
@@ -729,6 +740,11 @@ class OrbitalElements(Model):
     )
     reported_orbit: str | None = Field(
         default=None, description="Which of the orbits that fit is reported, in plain words"
+    )
+    check_30d: PredictionPoint | None = Field(
+        default=None,
+        description="Predicted geocentric position 30 days after the last detection (clones' "
+        "centre and 1-sigma ellipse); the API compares it with JPL's position for identified objects",
     )
 
 
@@ -851,17 +867,6 @@ class ObjectDetail(Envelope):
     history: list[ObjectHistoryEntry]
     provenance: CandidateProvenance
     disclaimer: str = CandidateDetail.model_fields["disclaimer"].default
-
-
-class PredictionPoint(Model):
-    time_utc: str
-    mjd: float
-    ra_deg: float
-    dec_deg: float
-    sigma_major_arcsec: float = Field(description="1-sigma uncertainty ellipse, semi-major axis")
-    sigma_minor_arcsec: float
-    sigma_pa_deg: float = Field(description="Position angle of the major axis, east of north")
-    vmag_estimate: float | None = None
 
 
 class ObjectPrediction(Envelope):

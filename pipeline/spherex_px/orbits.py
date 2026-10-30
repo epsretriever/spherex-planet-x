@@ -145,6 +145,25 @@ def _sym(m: np.ndarray) -> list[list[float]]:
     return [[float(f"{x:.6g}") for x in row] for row in m]
 
 
+CHECK_DAYS = 30.0
+
+
+def check_point(rec: OrbitRecord) -> S.PredictionPoint:
+    """Clones' geocentric position 30 days after the last detection."""
+    mjd_utc = rec.epoch_tdb - O.TDB_MINUS_UTC + rec.arc_days + CHECK_DAYS
+    geo = O.observer_helio(np.array([mjd_utc]), None)
+    ra, dec, major, minor, pa = O.predict_sky(rec.fit(), np.array([mjd_utc]), geo)
+    return S.PredictionPoint(
+        time_utc=Time(mjd_utc, format="mjd").isot[:19] + "Z",
+        mjd=round(float(mjd_utc), 6),
+        ra_deg=round(float(ra[0]), 6),
+        dec_deg=round(float(dec[0]), 6),
+        sigma_major_arcsec=round(float(major[0]), 1),
+        sigma_minor_arcsec=round(float(minor[0]), 1),
+        sigma_pa_deg=round(float(pa[0]), 1),
+    )
+
+
 def orbital_elements(rec: OrbitRecord, object_id: str) -> S.OrbitalElements:
     a, e, i, node, peri, mean = rec.elements
     return S.OrbitalElements(
@@ -169,6 +188,7 @@ def orbital_elements(rec: OrbitRecord, object_id: str) -> S.OrbitalElements:
             hi=round(rec.helio_distance[2], 3),
         ),
         n_ranging_orbits=rec.n_accepted,
+        check_30d=check_point(rec),
         reported_orbit=(
             "Least-squares fit to all detections."
             if rec.status == "refined"

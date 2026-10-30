@@ -897,6 +897,18 @@
           "default": null,
           "description": "Which of the orbits that fit is reported, in plain words",
           "title": "Reported Orbit"
+        },
+        "check_30d": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PredictionPoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Predicted geocentric position 30 days after the last detection (clones' centre and 1-sigma ellipse); the API compares it with JPL's position for identified objects"
         }
       },
       "required": [
@@ -914,6 +926,64 @@
         "arc_hours"
       ],
       "title": "OrbitalElements",
+      "type": "object"
+    },
+    "PredictionPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "time_utc": {
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "sigma_major_arcsec": {
+          "description": "1-sigma uncertainty ellipse, semi-major axis",
+          "title": "Sigma Major Arcsec",
+          "type": "number"
+        },
+        "sigma_minor_arcsec": {
+          "title": "Sigma Minor Arcsec",
+          "type": "number"
+        },
+        "sigma_pa_deg": {
+          "description": "Position angle of the major axis, east of north",
+          "title": "Sigma Pa Deg",
+          "type": "number"
+        },
+        "vmag_estimate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vmag Estimate"
+        }
+      },
+      "required": [
+        "time_utc",
+        "mjd",
+        "ra_deg",
+        "dec_deg",
+        "sigma_major_arcsec",
+        "sigma_minor_arcsec",
+        "sigma_pa_deg"
+      ],
+      "title": "PredictionPoint",
       "type": "object"
     },
     "QualityLevel": {

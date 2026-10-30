@@ -91,6 +91,8 @@ def test_prediction_and_published_files(cand, tmp_path):
     el = orbital_elements(rec, "obj-x")
     assert el.helio_distance_au.lo <= el.helio_distance_au.best <= el.helio_distance_au.hi
     assert el.clones_url == "/data/objects/obj-x/clones.json" and el.n_clones == O.N_CLONES
+    last = max(d.mjd for d in cand.detections)
+    assert el.check_30d.mjd == pytest.approx(last + 30, abs=1e-3)
     clones = clones_doc(rec, "obj-x", "test")
     assert len(clones.clones) == O.N_CLONES and all(c.e < 1 for c in clones.clones)
     pred = prediction_doc(rec, "obj-x", "test", datetime(2026, 10, 30, 15, 0, tzinfo=UTC))
