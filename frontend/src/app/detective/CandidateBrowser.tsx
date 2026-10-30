@@ -10,6 +10,7 @@ import { getCandidates } from "@/lib/api";
 import type { CandidateSummary, Classification } from "@/lib/contract";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER, isClassification } from "@/lib/labels";
 import { useData } from "@/lib/useData";
+import { useObjectNames } from "@/lib/useObjectNames";
 import styles from "./CandidateBrowser.module.css";
 
 type SortKey = "score" | "rate" | "date";
@@ -32,6 +33,7 @@ export function CandidateBrowser() {
   const minScore = Number(params.get("min") ?? 0) || 0;
   const includeInjected = params.get("sim") === "1";
   const [sort, setSort] = useState<SortKey>("score");
+  const { nameFor } = useObjectNames();
 
   const update = (mutate: (p: URLSearchParams) => void) => {
     const next = new URLSearchParams(params.toString());
@@ -156,7 +158,11 @@ export function CandidateBrowser() {
               </p>
               <ul className={`${styles.list} fade-in`}>
                 {sorted.map((c) => (
-                  <CandidateCard key={c.candidate_id} c={c} />
+                  <CandidateCard
+                    key={c.candidate_id}
+                    c={c}
+                    name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object_designation })}
+                  />
                 ))}
               </ul>
             </>

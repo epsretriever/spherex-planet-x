@@ -7,28 +7,29 @@ test.beforeEach(async ({ page }) => {
 
 test("candidate list hides simulated objects until asked", async ({ page }) => {
   await page.goto("/detective/");
-  await expect(page.getByRole("link", { name: "Synthetic known object" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Synthetic unexplained mover" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Synthetic injected object" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "(99999) Synthetic" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Moving object B in / })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Simulated object A in / })).toHaveCount(0);
   const sim = page.getByLabel("Show SIMULATED test objects");
   await sim.click();
   await expect(sim).toBeChecked();
-  await expect(page.getByRole("link", { name: "Synthetic injected object" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Simulated object A in / })).toBeVisible();
   await expect(page).toHaveURL(/sim=1/);
 });
 
 test("classification filter narrows the list", async ({ page }) => {
   await page.goto("/detective/");
   await page.getByRole("button", { name: /Unexplained/ }).click();
-  await expect(page.getByRole("link", { name: "Synthetic known object" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Synthetic unexplained mover" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "(99999) Synthetic" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Moving object B in / })).toBeVisible();
 });
 
 test("evidence report for an unexplained candidate", async ({ page }) => {
   await page.goto("/detective/");
-  await page.getByRole("link", { name: "Synthetic unexplained mover" }).click();
+  await page.getByRole("link", { name: /^Moving object B in / }).click();
   await expect(page).toHaveURL(/\/detective\/candidate\/\?id=syn-unmatched/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Synthetic unexplained mover");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Moving object B in \w+$/);
+  await expect(page.getByText(/Pipeline ID\s*syn-unmatched/)).toBeVisible();
   await expect(page.getByRole("note").filter({ hasText: "not a discovery claim" })).toBeVisible();
   await expect(page.getByText("No match.", { exact: false })).toBeVisible();
   await expect(page.getByText("Template text from the measurements")).toBeVisible();
@@ -56,6 +57,8 @@ test("injected candidate is labeled SIMULATED everywhere", async ({ page }) => {
 
 test("stamp source opens the provenance drawer", async ({ page }) => {
   await page.goto("/detective/candidate/?id=syn-known");
+  // Stamps mount when scrolled near.
+  await page.getByRole("heading", { name: "Each sighting up close" }).scrollIntoViewIfNeeded();
   await page.getByRole("button", { name: "Source", exact: true }).first().click();
   await expect(page.getByRole("dialog", { name: /Sighting 1: source/ })).toContainText("SYNTHETIC_TEST_t1.fits");
 });

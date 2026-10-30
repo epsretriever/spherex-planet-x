@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { getField } from "@/lib/api";
 import type { CandidateDetail, FieldDetail } from "@/lib/contract";
 import { projectionMatches, skyToGrid } from "@/lib/grid";
+import { fieldHref } from "@/lib/routes";
 import { useData } from "@/lib/useData";
 import { BlinkViewer, type PredictedMarker } from "../BlinkViewer";
 import { ErrorState } from "../DataState";
@@ -93,7 +94,7 @@ export function FieldContext({ candidate }: { candidate: CandidateDetail }) {
       <p className={styles.note} style={{ marginTop: "var(--space-2)" }}>
         Zoomed in on {state.data.name}. Circles mark the measured positions
         {ctx.predicted.length ? "; dashed white circles mark where JPL predicted the known object would be" : ""}.{" "}
-        <Link href={`/explore/field/?id=${encodeURIComponent(state.data.field_id)}`}>Open the whole patch →</Link>
+        <Link href={fieldHref(state.data.field_id)}>Open the whole patch →</Link>
       </p>
     </div>
   );

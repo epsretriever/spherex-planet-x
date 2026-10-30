@@ -106,14 +106,17 @@ export function MotionPlot({ detections, motion }: { detections: Detection[]; mo
           <g key={i}>
             <circle cx={sx(p.east)} cy={sy(p.north)} r={Math.max(2, p.err * pxPerArcsec)} fill="rgb(255 138 76 / 0.15)" stroke="var(--accent)" strokeWidth={1} />
             <circle cx={sx(p.east)} cy={sy(p.north)} r={3} fill="var(--accent)" />
-            <text className={styles.tick} x={sx(p.east) + 7} y={sy(p.north) - 7} style={{ fill: "var(--text)" }}>
-              {i + 1}
-            </text>
+            {(pts.length <= 8 || i === 0 || i === pts.length - 1) && (
+              <text className={styles.tick} x={sx(p.east) + 7} y={sy(p.north) - 7} style={{ fill: "var(--text)" }}>
+                {i === 0 && pts.length > 8 ? "1 (first)" : i === pts.length - 1 && pts.length > 8 ? `${i + 1} (last)` : i + 1}
+              </text>
+            )}
           </g>
         ))}
       </svg>
       <figcaption className={styles.note}>
-        Dots are measured positions, numbered by sighting; circles show each position&apos;s uncertainty.
+        Dots are measured positions{pts.length > 8 ? "; the first and last sightings are numbered" : ", numbered by sighting"}; circles show
+        each position&apos;s uncertainty.
         {ends.length === 2 ? " The dashed arrow is the fitted straight-line motion." : ""}
       </figcaption>
     </figure>

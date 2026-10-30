@@ -8,8 +8,9 @@ import styles from "./report.module.css";
 export function SpectrumPanel({ spectrum }: { spectrum: Spectrum }) {
   const pts = [...spectrum.points].filter((p) => Number.isFinite(p.wavelength_um) && Number.isFinite(p.flux_ujy)).sort((a, b) => a.wavelength_um - b.wavelength_um);
   if (!pts.length) return null;
-  const W = 640;
-  const H = 280;
+  // Narrow enough that the axis labels stay readable when the chart shrinks to a phone.
+  const W = 440;
+  const H = 260;
   const m = { l: 56, r: 16, t: 16, b: 44 };
   const sx = (um: number) => m.l + wavelengthT(um) * (W - m.l - m.r);
   const [y0, y1] = extent(pts.flatMap((p) => [p.flux_ujy - p.flux_err_ujy, p.flux_ujy + p.flux_err_ujy]), 0.12);

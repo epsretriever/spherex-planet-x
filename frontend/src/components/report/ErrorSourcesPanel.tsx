@@ -22,6 +22,24 @@ export function ErrorSourcesPanel({ errorSources, vetting }: { errorSources: Err
       <ul className={styles.checklist}>
         {sorted.map((e) => {
           const s = ERROR_STATUS[e.status] ?? ERROR_STATUS.unknown;
+          // Only the explanations we can't rule out stay open; the rest fold to one line.
+          if (e.status !== "not_ruled_out") {
+            return (
+              <li key={e.id} className={styles.checkItem} data-tone={s.tone} data-compact>
+                <span className={styles.checkIcon} aria-hidden="true">
+                  {s.icon}
+                </span>
+                <details className={styles.checkDetails}>
+                  <summary className={styles.checkTitle}>
+                    {e.label}
+                    <span className={styles.checkStatus}>{s.label}</span>
+                  </summary>
+                  <p>{e.explanation}</p>
+                  {e.evidence && <p className={styles.checkEvidence}>{e.evidence}</p>}
+                </details>
+              </li>
+            );
+          }
           return (
             <li key={e.id} className={styles.checkItem} data-tone={s.tone}>
               <span className={styles.checkIcon} aria-hidden="true">

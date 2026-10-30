@@ -1,16 +1,21 @@
+"use client";
+
 import { assetUrl } from "@/lib/api";
 import { hasSource } from "@/lib/blink";
 import type { Detection } from "@/lib/contract";
 import { formatUtcShortDate, formatUtcTime, formatWavelength } from "@/lib/format";
+import { useShowAll } from "./ShowAll";
 import styles from "./report.module.css";
 
 export const detectionLabel = (i: number) => `${i + 1}`;
 
 /** One 64 px stamp per detection, each centered on the measured position. */
 export function StampStrip({ detections, onSource }: { detections: Detection[]; onSource: (i: number) => void }) {
+  const { count, toggle } = useShowAll(detections.length, 6, "sightings");
   return (
+    <>
     <ol className={styles.stamps}>
-      {detections.map((d, i) => {
+      {detections.slice(0, count).map((d, i) => {
         const ok = !!d.stamp?.url && hasSource(d.stamp.source);
         return (
           <li key={`${d.epoch_id}-${i}`} className={styles.stamp}>
@@ -42,5 +47,7 @@ export function StampStrip({ detections, onSource }: { detections: Detection[]; 
         );
       })}
     </ol>
+    {toggle}
+    </>
   );
 }

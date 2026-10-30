@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { assetUrl } from "@/lib/api";
 import type { CandidateSummary } from "@/lib/contract";
+import type { ObjectName } from "@/lib/names";
 import { formatHours, formatRate, formatUtcDate } from "@/lib/format";
 import { ClassificationBadge } from "./ClassificationBadge";
 import { QualityMeter } from "./QualityMeter";
+import { candidateHref } from "@/lib/routes";
 import styles from "./CandidateCard.module.css";
 
-export function candidateHref(id: string) {
-  return `/detective/candidate/?id=${encodeURIComponent(id)}`;
-}
+export { candidateHref } from "@/lib/routes";
 
-export function CandidateCard({ c }: { c: CandidateSummary }) {
+export function CandidateCard({ c, name }: { c: CandidateSummary; name: ObjectName }) {
   return (
     <li className={`card ${styles.card}`} data-classification={c.classification}>
       <div className={styles.thumb}>
@@ -30,7 +30,7 @@ export function CandidateCard({ c }: { c: CandidateSummary }) {
         </div>
         <h2 className={styles.title}>
           <Link href={candidateHref(c.candidate_id)} className={styles.link}>
-            {c.label_plain}
+            {name.title}
           </Link>
         </h2>
         <p className={styles.summary}>{c.summary_plain}</p>
@@ -51,7 +51,6 @@ export function CandidateCard({ c }: { c: CandidateSummary }) {
         <p className={`mono ${styles.foot}`}>
           <span>{c.candidate_id}</span>
           <span>{formatUtcDate(c.first_time_utc)}</span>
-          {c.known_object_designation && <span>{c.known_object_designation}</span>}
         </p>
       </div>
     </li>

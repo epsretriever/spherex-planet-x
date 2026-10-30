@@ -303,6 +303,21 @@ const study: InjectionStudy = {
   recovery_criteria: "Synthetic criteria text.",
   method_notes: ["Synthetic method note."],
   example_candidate_ids: ["syn-injected"],
+  // Proposed fields (build plan section 5), exercised here so the UI is ready for them.
+  ...({
+    m50_by_distance: [
+      { distance_au: 30, m50_ab: 18.8, n_injected: 40 },
+      { distance_au: 100, m50_ab: 18.6, n_injected: 40 },
+      { distance_au: 500, m50_ab: null, n_injected: 40 },
+    ],
+    planet_context: {
+      assumptions: { diameter_km: 25000, geometric_albedo: 0.4, phase_function: "Synthetic", thermal_model: "Synthetic", reference: "Synthetic test values" },
+      rows: [
+        { distance_au: 100, predicted_mag_ab: 17.5, band_um: 1.5, m50_ab: 18.6, verdict: "detected" },
+        { distance_au: 500, predicted_mag_ab: 21.0, band_um: 1.5, m50_ab: null, verdict: "missed" },
+      ],
+    },
+  } as object),
 };
 
 /** Deterministic pseudo-random numbers for the synthetic sky. */
@@ -323,17 +338,20 @@ function skyImage(epochIndex: number, w = W, h = H, center?: { x: number; y: num
   const sources = [...STARS, ...dots];
   const ox = center ? center.x - w / 2 : 0;
   const oy = center ? center.y - h / 2 : 0;
+  // The third date has a corner outside the detector: transparent, as real field images are.
+  const noData = epochIndex === 2 && !center;
   return encodePng(w, h, (px, py) => {
     const x = px + ox;
     const y = py + oy;
+    if (noData && x + y < 50) return [0, 0, 0, 0];
     let v = 14 + noise() * 16;
     for (const st of sources) {
       const d2 = (x - st.x) ** 2 + (y - st.y) ** 2;
       if (d2 < 25) v += st.a * Math.exp(-d2 / (2 * st.s * st.s));
     }
     const c = Math.min(255, Math.round(v));
-    return [c, c, c];
-  });
+    return noData ? [c, c, c, 255] : [c, c, c];
+  }, noData);
 }
 
 const json = (route: Route, body: unknown, status = 200) =>

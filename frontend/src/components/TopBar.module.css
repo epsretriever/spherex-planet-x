@@ -1,5 +1,5 @@
 .bar {
-  position: sticky;
+  position: relative;
   top: 0;
   z-index: 10;
   background: rgb(8 6 13 / 0.86);
@@ -15,7 +15,7 @@
 
 .inner {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   column-gap: var(--space-4);
@@ -116,21 +116,136 @@
   background: var(--accent);
 }
 
-@media (max-width: 559px) {
+/* Pinned on wider screens; on phones it scrolls away to give content the space. */
+@media (min-width: 560px) {
+  .bar {
+    position: sticky;
+  }
+}
+
+/* Below 900 px the links move into a menu so the bar stays one row as sections grow. */
+.menuButton {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  border-color: var(--accent);
+}
+
+.menuIcon,
+.menuIcon::before,
+.menuIcon::after,
+.menuIcon span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.menuIcon {
+  position: relative;
+  background: transparent;
+}
+
+.menuIcon::before,
+.menuIcon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.menuIcon::before {
+  top: -5px;
+}
+
+.menuIcon::after {
+  top: 5px;
+}
+
+@media (max-width: 899px) {
   .navWrap {
-    flex-basis: 100%;
-    margin: 0 calc(var(--space-2) * -1);
+    display: none;
   }
 
-  .nav {
-    justify-content: space-between;
+  .menuButton {
+    display: inline-flex;
+  }
+}
+
+.menuList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuLink {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.menuLink:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.menuLink[aria-current="page"] {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.menuLabel {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.menuBlurb {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.brand {
+  min-width: 0;
+}
+
+/* Narrow phones: icon-only menu button (it keeps its accessible name) so the bar stays one row. */
+@media (max-width: 479px) {
+  .menuButton {
+    width: var(--touch);
+    justify-content: center;
+    padding: 0;
   }
 
-  .link {
-    padding: 0 var(--space-2);
+  .menuText {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
-  .inner {
-    padding-top: var(--space-1);
+  .brand {
+    font-size: var(--text-md);
   }
 }

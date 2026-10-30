@@ -3,6 +3,8 @@
 }
 
 .strip {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 6px;
@@ -25,14 +27,31 @@
 
 .channel {
   border-radius: 1px;
-  transform-origin: bottom;
+  filter: brightness(0.9);
+}
+
+/* One composited layer sweeps across the channels, like a source drifting across the filter.
+   Only its transform animates, so it costs nothing on the main thread. */
+.sweep {
+  position: absolute;
+  inset: 0 0 20px;
+  width: 18%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .channel {
-    animation:
-      rise 900ms var(--ease-out) both,
-      scan 5.1s ease-in-out infinite;
+  .strip {
+    animation: rise 900ms var(--ease-out) both;
+    transform-origin: bottom;
+  }
+
+  .sweep {
+    opacity: 1;
+    animation: sweep 5.1s ease-in-out 1s infinite;
+    will-change: transform;
   }
 }
 
@@ -43,17 +62,12 @@
   }
 }
 
-/* A slow brightening sweep, like a source drifting across the filter. */
-@keyframes scan {
-  0%,
-  100% {
-    filter: brightness(0.85);
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
   }
-  8% {
-    filter: brightness(1.6) saturate(1.2);
-  }
-  20% {
-    filter: brightness(0.85);
+  to {
+    transform: translateX(560%);
   }
 }
 

@@ -77,3 +77,16 @@ export function formatHours(hours: number | null | undefined): string {
   const days = hours / 24;
   return `${days < 10 ? days.toFixed(1) : Math.round(days)} days`;
 }
+
+/** "just now", "12 minutes ago", "3 hours ago", "2 days ago". */
+export function formatAgo(iso: string, now: number = Date.now()): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "at an unknown time";
+  const mins = Math.max(0, Math.round((now - t) / 60000));
+  const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"} ago`;
+  if (mins < 1) return "just now";
+  if (mins < 60) return plural(mins, "minute");
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return plural(hours, "hour");
+  return plural(Math.round(hours / 24), "day");
+}

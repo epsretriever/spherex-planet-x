@@ -189,6 +189,8 @@ export interface CandidateSummary {
   mean_snr: number;
   overall_score: number;
   quality_level: QualityLevel;
+  /** False until JPL has answered for this candidate. */
+  known_object_checked?: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
 }

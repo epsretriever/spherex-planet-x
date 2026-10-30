@@ -82,7 +82,7 @@ export default function AboutPage() {
         <p>
           We plant fake moving objects, of known brightness and speed, into real images and check how many the pipeline finds. We
           also run it on patches with nothing planted to count false alarms. These planted objects are always labeled SIMULATED.{" "}
-          <Link href="/simulated/">See the results →</Link>
+          <Link href="/limits/">See the results →</Link>
         </p>
       </section>
 

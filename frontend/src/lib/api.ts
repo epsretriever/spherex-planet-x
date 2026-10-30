@@ -38,10 +38,19 @@ export class DataError extends Error {
 export const USE_FIXTURES = process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 const FIXTURE_BASE = (process.env.NEXT_PUBLIC_FIXTURE_BASE ?? "/data").replace(/\/+$/, "");
 
+/** Requests a page's inline <PrefetchData> script started before the JavaScript loaded. */
+function takePrefetched(url: string): Promise<Response> | undefined {
+  if (typeof window === "undefined") return undefined;
+  const store = (window as unknown as { __spxPrefetch?: Record<string, Promise<Response>> }).__spxPrefetch;
+  const pending = store?.[url];
+  if (pending) delete store[url];
+  return pending;
+}
+
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { headers: { accept: "application/json" }, signal });
+    res = (await takePrefetched(url)) ?? (await fetch(url, { headers: { accept: "application/json" }, signal }));
   } catch (err) {
     if ((err as Error).name === "AbortError") throw err;
     throw new DataError("unavailable", `Could not reach ${url}.`);

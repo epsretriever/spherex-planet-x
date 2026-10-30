@@ -13,8 +13,7 @@ const name = site.match(/SITE_NAME = "([^"]+)"/)[1];
 const tagline = site.match(/SITE_TAGLINE = "([^"]+)"/)[1];
 const icon = readFileSync(join(root, "src/app/icon.svg"), "utf8");
 // setContent pages can't load file:// URLs, so fonts are inlined.
-const font = (pkg, file) =>
-  `url(data:font/woff2;base64,${readFileSync(join(root, "node_modules/@fontsource-variable", pkg, "files", file)).toString("base64")})`;
+const font = (_family, file) => `url(data:font/woff2;base64,${readFileSync(join(root, "src/fonts", file)).toString("base64")})`;
 
 // The same 102-channel diagram as the landing page: six detectors × 17 channels.
 const stops = ["#4a0c6b", "#781c6d", "#a52c60", "#cf4446", "#ed6925", "#fb9b06", "#f7d13d"];

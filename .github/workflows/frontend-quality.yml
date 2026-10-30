@@ -1,0 +1,70 @@
+# Frontend quality gate on REAL data: builds the site exactly as Cloudflare does, serves it with
+# the Worker via `wrangler dev`, then runs the frontend's unit tests, the Playwright screenshot
+# suite at 360/768/1280 px, and Lighthouse (performance, accessibility and best practices ≥ 90
+# on Home, an Explore field and an evidence report). Screenshots and Lighthouse reports are
+# uploaded as artifacts on every run.
+name: Frontend quality
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "worker/**"
+      - "package.json"
+      - "package-lock.json"
+      - "wrangler.toml"
+      - ".github/workflows/frontend-quality.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (same command as Cloudflare)
+        run: npm run build
+
+      - name: Install Chromium for Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint, typecheck, unit tests
+        working-directory: frontend
+        run: npm run check
+
+      - name: Screenshots on real data (360, 768, 1280 px)
+        working-directory: frontend
+        env:
+          CI: "1"
+        run: npm run test:real
+
+      - name: Lighthouse ≥ 90
+        working-directory: frontend
+        run: npm run lighthouse
+
+      - name: Upload screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-quality
+          path: |
+            frontend/test-results-real/
+            frontend/playwright-report-real/
+            frontend/lighthouse-reports/
+          retention-days: 14

@@ -27,9 +27,79 @@
   margin-bottom: var(--space-4);
 }
 
+/* On phones the badge and the JPL status always take a row each, so the header doesn't jump
+   when the live status (a different length of text) replaces the build-time one. */
+@media (max-width: 559px) {
+  .headerTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}
+
+.title {
+  margin-bottom: var(--space-1);
+  font-size: clamp(1.75rem, 5vw, 2.75rem);
+  overflow-wrap: anywhere;
+}
+
 .id {
+  margin: 0 0 var(--space-4);
   font-size: var(--text-sm);
   color: var(--text-muted);
+}
+
+.verdict {
+  color: var(--text);
+}
+
+.jpl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.jpl:hover {
+  color: var(--text);
+}
+
+.jplDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-artifact);
+}
+
+.jpl[data-tone="ok"] .jplDot {
+  background: var(--ok);
+}
+
+.jpl[data-tone="warn"] .jplDot {
+  background: var(--warning);
+}
+
+.jpl[data-tone="pending"] .jplDot {
+  background: var(--accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .jpl[data-tone="pending"] .jplDot {
+    animation: jpl-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes jpl-pulse {
+  50% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
 }
 
 .classNote {
@@ -75,16 +145,22 @@
   z-index: 5;
   margin: 0 calc(var(--gutter) * -1) var(--space-6);
   padding: var(--space-2) var(--gutter);
-  background: rgb(8 6 13 / 0.9);
+  background: rgb(8 6 13 / 0.92);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   scrollbar-width: none;
 }
 
+.toc::-webkit-scrollbar {
+  display: none;
+}
+
+/* On phones the top bar scrolls away, so the section links take the top edge. */
 @media (max-width: 559px) {
   .toc {
-    top: 101px;
+    top: 0;
   }
 }
 
@@ -108,11 +184,25 @@
   font-size: var(--text-sm);
   text-decoration: none;
   white-space: nowrap;
+  transition:
+    color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    background var(--dur) var(--ease-out);
 }
 
 .toc a:hover {
   color: var(--text);
   border-color: var(--accent);
+}
+
+.toc a[aria-current="true"] {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toc .top {
+  border-style: dashed;
 }
 
 .sections {

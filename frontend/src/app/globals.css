@@ -37,13 +37,15 @@
   --status-simulated: #f06bd8;
   --track: #7cf0c8;
   --predicted: #f3eef9;
+  /* Where an image has no data (outside the detector). */
+  --no-data: repeating-linear-gradient(135deg, #1a1622 0 5px, #0d0b12 5px 10px);
   --ok: #7cf0c8;
   --warning: #ffd166;
   --danger: #ff7a7a;
 
-  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Space Grotesk Variable", "Inter Variable", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -280,19 +282,21 @@ input {
 
 .section {
   margin-top: var(--space-12);
+  /* Below-the-fold sections skip layout and paint until they're near the screen. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
 }
 
 .fade-in {
   animation: fade-in var(--dur-slow) var(--ease-out) both;
 }
 
+/* Transform only: content is never invisible, so it can count as the page's largest paint. */
 @keyframes fade-in {
   from {
-    opacity: 0;
     transform: translateY(6px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

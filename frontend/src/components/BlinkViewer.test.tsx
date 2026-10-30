@@ -114,7 +114,7 @@ describe("BlinkViewer", () => {
     await userEvent.click(screen.getByLabelText("Include SIMULATED test objects"));
     expect(screen.getByText(/2 moving objects circled/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Unexplained: Test mover" }));
-    expect(screen.getByRole("link", { name: /See the full evidence/ })).toHaveAttribute("href", expect.stringMatching(/^\/detective\/candidate\/?\?id=cand-1$/));
+    expect(screen.getByRole("link", { name: /See the full evidence/ })).toHaveAttribute("href", expect.stringMatching(/^\/detective\/cand-1\/?$/));
   });
 
   it("shows an empty state with no epochs", async () => {

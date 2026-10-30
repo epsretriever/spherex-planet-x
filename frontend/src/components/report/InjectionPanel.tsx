@@ -44,7 +44,7 @@ export function InjectionPanel({ injection }: { injection: InjectionInfo }) {
           </div>
         )}
       </dl>
-      <Link href={`/simulated/?study=${encodeURIComponent(injection.study_id)}`}>See the full injection test →</Link>
+      <Link href={`/limits/?study=${encodeURIComponent(injection.study_id)}`}>See the full injection test →</Link>
     </Panel>
   );
 }
