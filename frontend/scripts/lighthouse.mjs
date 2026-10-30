@@ -1,6 +1,6 @@
 // Lighthouse quality gate on real data.
 //
-// Starts (or reuses) `wrangler dev` from the repository root, runs Lighthouse with its default
+// Starts (or reuses) `wrangler dev --env offline` from the repository root, runs Lighthouse with its default
 // mobile settings (CPU slowdown calibrated to this machine, see below) on Home, an Explore field
 // an evidence report and the sky map (median of LH_RUNS runs,
 // default 3), writes HTML and JSON reports to
@@ -40,7 +40,8 @@ let server;
 if (!base) {
   base = `http://127.0.0.1:${PORT}`;
   if (!(await waitFor(`${base}/api/health`, 1000))) {
-    server = spawn("npx", ["wrangler", "dev", "--port", String(PORT), "--ip", "127.0.0.1"], {
+    // env.offline: every binding except Workers AI, which needs Cloudflare credentials.
+    server = spawn("npx", ["wrangler", "dev", "--env", "offline", "--port", String(PORT), "--ip", "127.0.0.1"], {
       cwd: join(root, ".."),
       stdio: "ignore",
       detached: true,
