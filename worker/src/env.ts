@@ -3,6 +3,8 @@ export interface Env {
   ASSETS: Fetcher;
   /** Global store for JPL known-object results (see store.ts). Optional so local tools run without it. */
   ENRICHMENT?: KVNamespace;
+  /** D1 database (see db.ts and migrations/). Optional so local tools run without it. */
+  DB?: D1Database;
 }
 
 /** Minimal cache interface (caches.default in production, an in-memory fake in tests). */

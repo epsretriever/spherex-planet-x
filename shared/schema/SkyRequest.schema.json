@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "SkyRequestStatus": {
+      "enum": [
+        "queued",
+        "processing",
+        "done",
+        "no_coverage",
+        "rejected"
+      ],
+      "title": "SkyRequestStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "request_id": {
+      "title": "Request Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/SkyRequestStatus"
+    },
+    "ra_deg": {
+      "title": "Ra Deg",
+      "type": "number"
+    },
+    "dec_deg": {
+      "title": "Dec Deg",
+      "type": "number"
+    },
+    "created_utc": {
+      "title": "Created Utc",
+      "type": "string"
+    },
+    "updated_utc": {
+      "title": "Updated Utc",
+      "type": "string"
+    },
+    "position_in_queue": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Position In Queue"
+    },
+    "field_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Set when done",
+      "title": "Field Id"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Message"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "request_id",
+    "status",
+    "ra_deg",
+    "dec_deg",
+    "created_utc",
+    "updated_utc",
+    "position_in_queue",
+    "field_id",
+    "message"
+  ],
+  "title": "SkyRequest",
+  "type": "object"
+}

@@ -1,0 +1,76 @@
+{
+  "$defs": {
+    "VoteCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "real": {
+          "title": "Real",
+          "type": "integer"
+        },
+        "artifact": {
+          "title": "Artifact",
+          "type": "integer"
+        },
+        "unsure": {
+          "title": "Unsure",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "real",
+        "artifact",
+        "unsure"
+      ],
+      "title": "VoteCounts",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "accepted": {
+      "title": "Accepted",
+      "type": "boolean"
+    },
+    "item_id": {
+      "title": "Item Id",
+      "type": "string"
+    },
+    "counts": {
+      "$ref": "#/$defs/VoteCounts"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Message"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "accepted",
+    "item_id",
+    "counts",
+    "message"
+  ],
+  "title": "VoteResult",
+  "type": "object"
+}

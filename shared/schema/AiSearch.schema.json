@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "CandidateFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Classification"
+          },
+          "title": "Classification",
+          "type": "array"
+        },
+        "rate_min_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate Min Arcsec Per Hr"
+        },
+        "rate_max_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate Max Arcsec Per Hr"
+        },
+        "distance_class": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DistanceClass"
+          },
+          "title": "Distance Class",
+          "type": "array"
+        },
+        "field_id": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Id",
+          "type": "array"
+        },
+        "min_score": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Score"
+        },
+        "include_injected": {
+          "default": false,
+          "title": "Include Injected",
+          "type": "boolean"
+        },
+        "sort": {
+          "$ref": "#/$defs/SortKey",
+          "default": "score"
+        }
+      },
+      "title": "CandidateFilter",
+      "type": "object"
+    },
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "DistanceClass": {
+      "description": "Where in the solar system an object probably is, from its parallax distance or orbit.",
+      "enum": [
+        "neo",
+        "main_belt",
+        "jupiter_trojan",
+        "centaur",
+        "tno",
+        "unknown"
+      ],
+      "title": "DistanceClass",
+      "type": "string"
+    },
+    "SortKey": {
+      "enum": [
+        "score",
+        "rate",
+        "newest",
+        "unusual"
+      ],
+      "title": "SortKey",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "query": {
+      "title": "Query",
+      "type": "string"
+    },
+    "filter": {
+      "$ref": "#/$defs/CandidateFilter"
+    },
+    "explanation_plain": {
+      "description": "What the filter does, in words",
+      "title": "Explanation Plain",
+      "type": "string"
+    },
+    "valid": {
+      "description": "False when the model's output failed schema validation",
+      "title": "Valid",
+      "type": "boolean"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Model"
+    },
+    "cached": {
+      "title": "Cached",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "query",
+    "filter",
+    "explanation_plain",
+    "valid",
+    "model",
+    "cached"
+  ],
+  "title": "AiSearch",
+  "type": "object"
+}

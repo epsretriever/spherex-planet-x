@@ -37,7 +37,7 @@ def test_envelope_carries_versions():
         pipeline_version="0.1.0+git.test", generated_utc="2026-01-01T00:00:00Z", fields=[]
     )
     dumped = fl.model_dump()
-    assert dumped["schema_version"] == "1.0"
+    assert dumped["schema_version"] == "1.1"
     assert dumped["pipeline_version"] == "0.1.0+git.test"
 
 

@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "PredictionPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "time_utc": {
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "sigma_major_arcsec": {
+          "description": "1-sigma uncertainty ellipse, semi-major axis",
+          "title": "Sigma Major Arcsec",
+          "type": "number"
+        },
+        "sigma_minor_arcsec": {
+          "title": "Sigma Minor Arcsec",
+          "type": "number"
+        },
+        "sigma_pa_deg": {
+          "description": "Position angle of the major axis, east of north",
+          "title": "Sigma Pa Deg",
+          "type": "number"
+        },
+        "vmag_estimate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vmag Estimate"
+        }
+      },
+      "required": [
+        "time_utc",
+        "mjd",
+        "ra_deg",
+        "dec_deg",
+        "sigma_major_arcsec",
+        "sigma_minor_arcsec",
+        "sigma_pa_deg"
+      ],
+      "title": "PredictionPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "object_id": {
+      "title": "Object Id",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "orbit_epoch_mjd": {
+      "title": "Orbit Epoch Mjd",
+      "type": "number"
+    },
+    "observer": {
+      "description": "Where the positions are computed for, e.g. 'geocenter'",
+      "title": "Observer",
+      "type": "string"
+    },
+    "days": {
+      "title": "Days",
+      "type": "integer"
+    },
+    "points": {
+      "items": {
+        "$ref": "#/$defs/PredictionPoint"
+      },
+      "title": "Points",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "object_id",
+    "generated_utc",
+    "orbit_epoch_mjd",
+    "observer",
+    "days",
+    "points"
+  ],
+  "title": "ObjectPrediction",
+  "type": "object"
+}

@@ -26,7 +26,7 @@ class Model(BaseModel):
 
 
 class Envelope(Model):
-    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    schema_version: Literal["1.0", "1.1"] = SCHEMA_VERSION
     pipeline_version: str = Field(
         description="Pipeline package version plus the git commit of the code that built the data"
     )
@@ -363,10 +363,11 @@ class KnownObject(Model):
     )
     observer: str | None = Field(default=None, description="Observer location used for predictions")
     query_utc: str | None = None
-    enrichment: Literal["static", "live", "cached"] = Field(
+    enrichment: Literal["static", "live", "cached", "pending"] = Field(
         default="static",
-        description="static: as written by the offline pipeline (not checked); live/cached: "
-        "filled by the Worker from JPL at request time",
+        description="static: as written by the offline pipeline (not checked); pending: the Worker "
+        "has started a JPL lookup in the background; live/cached: filled by the Worker from JPL "
+        "(live = this request, cached = a stored result)",
     )
 
 
@@ -653,6 +654,378 @@ class ErrorResponse(Model):
     )
 
 
+# ---------------------------------------------------------------------------
+# v1.1: objects (linked across visits and fields), survey, AI, sky requests, vetting votes
+# ---------------------------------------------------------------------------
+
+
+class DistanceClass(StrEnum):
+    """Where in the solar system an object probably is, from its parallax distance or orbit."""
+
+    neo = "neo"  # perihelion < 1.3 AU
+    main_belt = "main_belt"  # 1.8-4.2 AU
+    jupiter_trojan = "jupiter_trojan"  # ~5.2 AU
+    centaur = "centaur"  # between Jupiter and Neptune
+    tno = "tno"  # beyond Neptune, > 30 AU
+    unknown = "unknown"
+
+
+class OrbitStatus(StrEnum):
+    none = "none"
+    preliminary = "preliminary"  # ranging / Vaisala solution
+    refined = "refined"  # least-squares fit to all detections
+
+
+class JplOrbitComparison(Model):
+    designation: str
+    delta_a_au: float
+    delta_e: float
+    delta_i_deg: float
+    position_error_arcsec_30d: float | None = Field(
+        description="Separation of our and JPL's predicted positions 30 days after the last detection"
+    )
+
+
+class OrbitalElements(Model):
+    """Heliocentric osculating elements (J2000 ecliptic) with uncertainty."""
+
+    epoch_mjd: float = Field(description="Osculation epoch, MJD (TDB)")
+    a_au: float
+    e: float
+    i_deg: float
+    node_deg: float = Field(description="Longitude of the ascending node")
+    peri_deg: float = Field(description="Argument of perihelion")
+    mean_anomaly_deg: float
+    q_au: float = Field(description="Perihelion distance")
+    method: Literal["ranging", "least_squares"]
+    rms_arcsec: float = Field(description="Residual rms of the fit to our detections")
+    n_detections: int
+    arc_hours: float
+    covariance: list[list[float]] | None = Field(
+        default=None, description="6x6 covariance of [a, e, i, node, peri, M] (au, -, deg...)"
+    )
+    n_clones: int = Field(default=0, description="Number of sampled orbit clones published")
+    clones_url: str | None = Field(default=None, description="JSON file of sampled orbit clones")
+    jpl_comparison: JplOrbitComparison | None = Field(
+        default=None, description="Differences from JPL's orbit when JPL identified the object"
+    )
+
+
+class ObjectDetection(Detection):
+    field_id: str
+    candidate_id: str
+
+
+class ObjectHistoryEntry(Model):
+    utc: str
+    run_id: str
+    change: str = Field(description="Plain-language note, e.g. 'linked 4 new detections'")
+
+
+class ObjectSummary(Model):
+    object_id: str
+    classification: Classification
+    label_plain: str
+    summary_plain: str
+    thumbnail_url: str
+    field_ids: list[str]
+    candidate_ids: list[str]
+    n_detections: int
+    n_visits: int = Field(description="Separate visits (clusters of exposures hours apart)")
+    first_time_utc: str
+    last_time_utc: str
+    arc_hours: float
+    rate_arcsec_per_hr: float | None
+    distance_class: DistanceClass
+    distance_au_estimate: DistanceEstimate | None
+    orbit_status: OrbitStatus
+    overall_score: float
+    quality_level: QualityLevel
+    known_object_checked: bool
+    known_object_matched: bool
+    known_object_designation: str | None
+
+
+class ObjectList(Envelope):
+    build_run_id: str | None = None
+    generated_utc: str
+    total: int
+    objects: list[ObjectSummary]
+
+
+class ObjectDetail(Envelope):
+    build_run_id: str | None = None
+    object_id: str
+    classification: Classification
+    label_plain: str
+    summary_plain: str
+    thumbnail_url: str
+    field_ids: list[str]
+    candidate_ids: list[str]
+    detections: list[ObjectDetection]
+    motion: Motion
+    distance_class: DistanceClass
+    orbit_status: OrbitStatus
+    orbit: OrbitalElements | None
+    known_object: KnownObject
+    scores: Scores
+    explanation: Explanation | None
+    spectrum: Spectrum | None
+    history: list[ObjectHistoryEntry]
+    provenance: CandidateProvenance
+    disclaimer: str = CandidateDetail.model_fields["disclaimer"].default
+
+
+class PredictionPoint(Model):
+    time_utc: str
+    mjd: float
+    ra_deg: float
+    dec_deg: float
+    sigma_major_arcsec: float = Field(description="1-sigma uncertainty ellipse, semi-major axis")
+    sigma_minor_arcsec: float
+    sigma_pa_deg: float = Field(description="Position angle of the major axis, east of north")
+    vmag_estimate: float | None = None
+
+
+class ObjectPrediction(Envelope):
+    object_id: str
+    generated_utc: str
+    orbit_epoch_mjd: float
+    observer: str = Field(description="Where the positions are computed for, e.g. 'geocenter'")
+    days: int
+    points: list[PredictionPoint]
+
+
+class TileStatus(StrEnum):
+    processed = "processed"
+    pending = "pending"  # covered by SPHEREx, not processed yet
+    no_data = "no_data"  # no repeated SPHEREx visits in the releases searched
+
+
+class SurveyTile(Model):
+    tile_id: str
+    center: SkyPosition
+    ecliptic_lon_deg: float
+    ecliptic_lat_deg: float
+    size_deg: float
+    status: TileStatus
+    n_epochs: int
+    n_visits: int
+    first_time_utc: str | None
+    last_time_utc: str | None
+    last_processed_utc: str | None
+    field_id: str | None = Field(description="Field built for this tile, when processed")
+    n_candidates: int
+    m50_ab: float | None = Field(
+        default=None, description="50% completeness magnitude from injection-recovery, if measured"
+    )
+
+
+class SurveyRun(Model):
+    run_id: str
+    started_utc: str
+    finished_utc: str
+    pipeline_version: str
+    n_new_files: int
+    n_tiles_processed: int
+    n_new_objects: int
+
+
+class SurveyTotals(Model):
+    n_tiles: int
+    n_processed: int
+    area_deg2_processed: float
+    n_epochs: int
+    n_candidates: int
+    n_objects: int
+
+
+class Survey(Envelope):
+    build_run_id: str | None = None
+    generated_utc: str
+    name: str
+    description: str
+    tile_size_deg: float
+    data_releases: list[str]
+    tiles: list[SurveyTile]
+    totals: SurveyTotals
+    last_run: SurveyRun | None
+
+
+class AiSubjectKind(StrEnum):
+    candidate = "candidate"
+    object = "object"
+
+
+class AiWriteup(Envelope):
+    subject_kind: AiSubjectKind
+    subject_id: str
+    verdict: str = Field(description="One line")
+    paragraphs: list[str] = Field(description="Three short paragraphs for the public")
+    grounded_fields: list[str]
+    numeric_check: Literal["passed", "failed", "not_run"]
+    source: Literal["ai", "template"] = Field(
+        description="template when the AI output failed a check or the AI was unavailable"
+    )
+    model: str | None = Field(description="Workers AI model ID, null for template text")
+    label_plain: str = "AI-written from the measurements below"
+    cached: bool
+    generated_utc: str
+
+
+class AskRequest(Model):
+    subject_kind: AiSubjectKind
+    subject_id: str
+    question: Annotated[str, Field(min_length=1, max_length=500)]
+    session_id: Annotated[str, Field(min_length=8, max_length=64)]
+
+
+class AiAnswer(Envelope):
+    subject_kind: AiSubjectKind
+    subject_id: str
+    question: str
+    answer: str
+    citations: list[str] = Field(description="JSON paths in the subject's report the answer uses")
+    answered_from_data: bool = Field(
+        description="False when the model said the data doesn't answer the question"
+    )
+    numeric_check: Literal["passed", "failed", "not_run"]
+    model: str | None
+    cached: bool
+    generated_utc: str
+
+
+class SearchRequest(Model):
+    query: Annotated[str, Field(min_length=1, max_length=300)]
+
+
+class SortKey(StrEnum):
+    score = "score"
+    rate = "rate"
+    newest = "newest"
+    unusual = "unusual"
+
+
+class CandidateFilter(Model):
+    classification: list[Classification] = []
+    rate_min_arcsec_per_hr: float | None = None
+    rate_max_arcsec_per_hr: float | None = None
+    distance_class: list[DistanceClass] = []
+    field_id: list[str] = []
+    min_score: Annotated[float, Field(ge=0, le=1)] | None = None
+    include_injected: bool = False
+    sort: SortKey = SortKey.score
+
+
+class AiSearch(Envelope):
+    query: str
+    filter: CandidateFilter
+    explanation_plain: str = Field(description="What the filter does, in words")
+    valid: bool = Field(description="False when the model's output failed schema validation")
+    model: str | None
+    cached: bool
+
+
+class Digest(Envelope):
+    date: str
+    text: str
+    grounded_fields: list[str] = Field(description="JSON paths in the run ledger")
+    numeric_check: Literal["passed", "failed", "not_run"]
+    run_id: str | None
+    model: str | None
+    generated_utc: str
+
+
+class SkyRequestCreate(Model):
+    ra_deg: Annotated[float, Field(ge=0, lt=360)]
+    dec_deg: Annotated[float, Field(ge=-90, le=90)]
+    turnstile_token: Annotated[str, Field(min_length=1, max_length=2048)]
+    note: Annotated[str, Field(max_length=200)] | None = None
+
+
+class SkyRequestStatus(StrEnum):
+    queued = "queued"
+    processing = "processing"
+    done = "done"
+    no_coverage = "no_coverage"
+    rejected = "rejected"
+
+
+class SkyRequest(Envelope):
+    request_id: str
+    status: SkyRequestStatus
+    ra_deg: float
+    dec_deg: float
+    created_utc: str
+    updated_utc: str
+    position_in_queue: int | None
+    field_id: str | None = Field(description="Set when done")
+    message: str | None
+
+
+class VoteLabel(StrEnum):
+    real = "real"
+    artifact = "artifact"
+    unsure = "unsure"
+
+
+class VettingStamps(Model):
+    detection: ImageRef
+    reference: ImageRef = Field(description="Same sky from another visit")
+    difference: ImageRef
+
+
+class VettingItem(Envelope):
+    item_id: str
+    candidate_id: str | None
+    epoch_id: str
+    stamps: VettingStamps
+    model_score: float | None = Field(description="Real-bogus model output in [0, 1]")
+    model_version: str | None
+
+
+class VoteCreate(Model):
+    item_id: Annotated[str, Field(min_length=1, max_length=96)]
+    label: VoteLabel
+    session_id: Annotated[str, Field(min_length=8, max_length=64)]
+    turnstile_token: Annotated[str, Field(min_length=1, max_length=2048)]
+
+
+class VoteCounts(Model):
+    real: int
+    artifact: int
+    unsure: int
+
+
+class VoteResult(Envelope):
+    accepted: bool
+    item_id: str
+    counts: VoteCounts
+    message: str | None
+
+
+class ModelVersion(Model):
+    version: str
+    trained_utc: str
+    n_train_real: int
+    n_train_bogus: int
+    n_votes_used: int
+    test_precision: float
+    test_recall: float
+    test_roc_auc: float
+    promoted: bool
+
+
+class VettingStats(Envelope):
+    n_votes: int
+    n_sessions: int
+    n_items_labeled: int = Field(description="Items with >= 5 votes and >= 80% agreement")
+    agreement_with_experts: float | None = Field(
+        description="Vote agreement on items JPL confirmed or that are injected"
+    )
+    models: list[ModelVersion]
+
+
 ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "FieldList": FieldList,
     "FieldDetail": FieldDetail,
@@ -664,4 +1037,20 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "RunRequest": RunRequest,
     "RunStatus": RunStatus,
     "ErrorResponse": ErrorResponse,
+    "ObjectList": ObjectList,
+    "ObjectDetail": ObjectDetail,
+    "ObjectPrediction": ObjectPrediction,
+    "Survey": Survey,
+    "AiWriteup": AiWriteup,
+    "AskRequest": AskRequest,
+    "AiAnswer": AiAnswer,
+    "SearchRequest": SearchRequest,
+    "AiSearch": AiSearch,
+    "Digest": Digest,
+    "SkyRequestCreate": SkyRequestCreate,
+    "SkyRequest": SkyRequest,
+    "VettingItem": VettingItem,
+    "VoteCreate": VoteCreate,
+    "VoteResult": VoteResult,
+    "VettingStats": VettingStats,
 }

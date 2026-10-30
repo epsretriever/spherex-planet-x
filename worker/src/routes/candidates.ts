@@ -5,7 +5,7 @@ import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
 import { readRecord, refreshRecord } from "../store";
-import { applyKnownObject, labelPlain } from "../text";
+import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
 
@@ -84,12 +84,19 @@ candidates.get("/:candidateId", async (c) => {
   return c.json(applyKnownObject(cand, pending, false, now));
 });
 
-function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {
+export function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {
   const classification: Classification = e.matched ? "known_object" : s.classification;
   return {
     ...s,
     classification,
     label_plain: labelPlain({ classification, known_object: e.known_object }),
+    summary_plain: summaryPlainFrom({
+      classification,
+      known_object: e.known_object,
+      rate_arcsec_per_hr: s.rate_arcsec_per_hr,
+      n_detections: s.detection_count,
+      time_span_hours: s.time_span_hours,
+    }),
     known_object_checked: e.known_object.checked,
     known_object_matched: e.known_object.matched,
     known_object_designation: e.known_object.designation,

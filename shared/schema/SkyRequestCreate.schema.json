@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "ra_deg": {
+      "exclusiveMaximum": 360,
+      "minimum": 0,
+      "title": "Ra Deg",
+      "type": "number"
+    },
+    "dec_deg": {
+      "maximum": 90,
+      "minimum": -90,
+      "title": "Dec Deg",
+      "type": "number"
+    },
+    "turnstile_token": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Turnstile Token",
+      "type": "string"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    }
+  },
+  "required": [
+    "ra_deg",
+    "dec_deg",
+    "turnstile_token"
+  ],
+  "title": "SkyRequestCreate",
+  "type": "object"
+}

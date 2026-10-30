@@ -13,6 +13,9 @@ from .schemas import (
     FieldList,
     Health,
     InjectionStudy,
+    ObjectDetail,
+    ObjectList,
+    Survey,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +30,9 @@ FIXTURE_MODELS = {
     "candidate_detail.json": CandidateDetail,
     "injection_study.json": InjectionStudy,
     "health.json": Health,
+    "objects.json": ObjectList,
+    "object_detail.json": ObjectDetail,
+    "survey.json": Survey,
 }
 
 

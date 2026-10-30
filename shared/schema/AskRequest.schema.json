@@ -1,0 +1,42 @@
+{
+  "$defs": {
+    "AiSubjectKind": {
+      "enum": [
+        "candidate",
+        "object"
+      ],
+      "title": "AiSubjectKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "subject_kind": {
+      "$ref": "#/$defs/AiSubjectKind"
+    },
+    "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "question": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Question",
+      "type": "string"
+    },
+    "session_id": {
+      "maxLength": 64,
+      "minLength": 8,
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "subject_kind",
+    "subject_id",
+    "question",
+    "session_id"
+  ],
+  "title": "AskRequest",
+  "type": "object"
+}

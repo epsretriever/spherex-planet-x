@@ -1,0 +1,82 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "date": {
+      "title": "Date",
+      "type": "string"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "grounded_fields": {
+      "description": "JSON paths in the run ledger",
+      "items": {
+        "type": "string"
+      },
+      "title": "Grounded Fields",
+      "type": "array"
+    },
+    "numeric_check": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run"
+      ],
+      "title": "Numeric Check",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Run Id"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Model"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "date",
+    "text",
+    "grounded_fields",
+    "numeric_check",
+    "run_id",
+    "model",
+    "generated_utc"
+  ],
+  "title": "Digest",
+  "type": "object"
+}

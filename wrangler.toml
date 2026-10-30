@@ -25,3 +25,12 @@ binding = "ENRICHMENT"
 # Refresh stale and failed JPL results every 30 minutes (worker/src/scheduled.ts).
 [triggers]
 crons = ["*/30 * * * *"]
+
+# Sky requests, vetting votes, model versions, tracked objects, rate limits, AI usage.
+# No database_id: `wrangler deploy` creates the database on first deploy. The Worker applies
+# migrations/ itself on first use (worker/src/db.ts); `npx wrangler d1 migrations apply DB --remote`
+# does the same from the command line.
+[[d1_databases]]
+binding = "DB"
+database_name = "spherex-planet-x"
+migrations_dir = "migrations"

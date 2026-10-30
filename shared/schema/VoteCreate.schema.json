@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "VoteLabel": {
+      "enum": [
+        "real",
+        "artifact",
+        "unsure"
+      ],
+      "title": "VoteLabel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "item_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "title": "Item Id",
+      "type": "string"
+    },
+    "label": {
+      "$ref": "#/$defs/VoteLabel"
+    },
+    "session_id": {
+      "maxLength": 64,
+      "minLength": 8,
+      "title": "Session Id",
+      "type": "string"
+    },
+    "turnstile_token": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Turnstile Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "item_id",
+    "label",
+    "session_id",
+    "turnstile_token"
+  ],
+  "title": "VoteCreate",
+  "type": "object"
+}

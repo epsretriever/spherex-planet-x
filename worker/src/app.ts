@@ -6,6 +6,7 @@ import { candidates } from "./routes/candidates";
 import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
 import { health } from "./routes/health";
+import { objects, survey } from "./routes/objects";
 import { injection, runs } from "./routes/static-docs";
 
 export type AppEnv = { Bindings: Env; Variables: { deps: Deps } };
@@ -31,6 +32,8 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/injection", injection);
   app.route("/api/coverage", coverage);
   app.route("/api/runs", runs);
+  app.route("/api/objects", objects);
+  app.route("/api/survey", survey);
 
   app.notFound((c) => c.json(new ApiError(404, `no API route for ${c.req.path}`).toJSON(), 404));
   app.onError((err, c) => {

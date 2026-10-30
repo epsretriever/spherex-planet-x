@@ -1,4 +1,4 @@
-# API contract (v1.0)
+# API contract (v1.1)
 
 The contract between the backend and the frontend (`frontend/`). The backend owns it.
 
@@ -18,7 +18,7 @@ The deployed product is one Cloudflare Worker, `spherex-planet-x`, that serves b
 - **JSON Schema:** [`shared/schema/`](../shared/schema/), exported from the models with `spherex-px export-schema`. A test fails if the exports are stale. The frontend can generate TypeScript types from these files.
 - **Example responses:** [`shared/fixtures/`](../shared/fixtures/). Every fixture is a real backend response recorded from real SPHEREx data (see [Fixtures](#fixtures)), and a test validates each one against the models.
 
-Changes to the contract go into all three in the same commit. Breaking changes bump `schema_version`.
+Changes to the contract go into all three in the same commit. Breaking changes bump the major `schema_version`. Additive changes bump the minor: v1.1 added objects, the survey, AI, sky requests and vetting votes. Responses carry `schema_version: "1.1"`, and static files built before v1.1 still say `"1.0"`. Clients accept any `1.x`.
 
 ## Conventions
 
@@ -42,13 +42,24 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 |---|---|---|
 | `GET /api/health` | `Health` | Probe of each upstream (IRSA TAP, JPL SBIdent, JPL Horizons, SPHEREx S3) with a minimal **valid** request; probe results are reused for 10 minutes. Static data counts. The response itself is never cached. |
 | `GET /api/fields` | `FieldList` | Static `data/fields.json`. Each field's `candidate_counts` reflects the static (pipeline) classification. |
-| `GET /api/fields/{field_id}` | `FieldDetail` | Static `data/fields/{field_id}.json`. `movers[].classification` reflects the static classification. |
-| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | `CandidateList` | Static `data/candidates.json`, with each summary's known-object fields taken from stored enrichment results. A candidate with no stored result yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. |
+| `GET /api/fields/{field_id}` | `FieldDetail` | Static `data/fields/{field_id}.json`, with each mover's `classification` and `label_plain` taken from its candidate's stored JPL result (no upstream calls). |
+| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | `CandidateList` | Static `data/candidates.json`, with each summary's `classification`, `label_plain`, `summary_plain` and known-object fields taken from stored enrichment results. A candidate with no stored result yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. |
 | `GET /api/candidates/{candidate_id}` | `CandidateDetail` | Static `data/candidates/{candidate_id}.json`, with the stored JPL result, or `enrichment: "pending"` while the first lookup runs (see [Known-object enrichment](#known-object-enrichment)). |
 | `GET /api/injection/{study_id}` | `InjectionStudy` | Static `data/injection/{study_id}.json`. |
 | `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | **Live** IRSA TAP (`https://irsa.ipac.caltech.edu/TAP/sync`). |
 | `POST /api/runs` | `ErrorResponse` (501) | Pixel processing can't run inside a Worker. Runs are produced offline with `spherex-px run --ra ... --dec ...` and published with the static data. The endpoint returns 501 with instructions instead of pretending to queue work. |
 | `GET /api/runs/{run_id}` | `RunStatus` | Static `data/runs/{run_id}.json` for runs built offline. `field_id` points at the resulting field. |
+| `GET /api/objects` | `ObjectList` | Static `data/objects.json`, with stored JPL results folded in as for candidates. |
+| `GET /api/objects/{object_id}` | `ObjectDetail` | Static `data/objects/{object_id}.json`, with the stored JPL result of its first linked candidate, or `enrichment: "pending"` while the first lookup runs. |
+| `GET /api/objects/{object_id}/prediction?days=30` | `ObjectPrediction` | Static `data/objects/{object_id}/prediction.json`, trimmed to `days` (1–60). `404` while the object has no orbit. |
+| `GET /api/objects/{object_id}/ades.xml` | ADES XML | Minor Planet Center ADES export (build-plan row 9). `404` until then. |
+| `GET /api/survey` | `Survey` | Static `data/survey.json`: survey tiles, their status and totals. |
+| `GET /api/{candidates,objects}/{id}/writeup` | `AiWriteup` | Row 4 (Workers AI). |
+| `POST /api/ask` | `AskRequest` → `AiAnswer` | Row 4. |
+| `POST /api/search` | `SearchRequest` → `AiSearch` | Row 4. |
+| `GET /api/digest` | `Digest` | Row 11. |
+| `POST /api/requests`, `GET /api/requests/{request_id}` | `SkyRequestCreate` → `SkyRequest` | Row 9 (D1 `sky_requests`). |
+| `GET /api/vetting/next`, `POST /api/votes`, `GET /api/vetting/stats` | `VettingItem`, `VoteCreate` → `VoteResult`, `VettingStats` | Row 10 (D1 `vetting_items`, `votes`, `model_versions`). |
 | `GET /data/...` | images, JSON | Static files: WebP field images, thumbnails, 64 px stamps. URLs in responses are root-relative (`/data/...`). |
 
 **Upstream calls** (Worker): 15 s timeout, descriptive `User-Agent`, successful responses cached with the Cache API (`caches.default`) for 24 hours.
@@ -107,6 +118,7 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 
 - `detections[]`: `epoch_id`, `obs_id`, `time_utc`, `mjd`, `ra_deg`, `dec_deg`, `pos_err_arcsec`, native `x_pix`/`y_pix` (0-based detector pixels), common-grid `x_grid`/`y_grid` (for overlays), `flux_ujy`, `flux_err_ujy`, `snr`, wavelength fields, `band_index`, `flag_bits`, `flag_names`, `flagged_pixels_in_aperture`, `psf_fit_reduced_chi2`, `stamp {url, width_px: 64, height_px: 64, format, source}`, `spacecraft_geocentric_km`, `source`.
 - `motion`: `model` (`linear | parallax | none`), `n_detections`, `time_span_hours`, `rate_arcsec_per_hr`, `rate_err_arcsec_per_hr`, `position_angle_deg`, `ra_rate_arcsec_per_hr`, `dec_rate_arcsec_per_hr`, `fit_residual_rms_arcsec`, `fit_chi2`, `fit_dof`, `distance_au_estimate {best, lo, hi} | null`.
+- Plain-language text after a failed lookup: when a stored lookup could not reach JPL, `summary_plain` says the catalog couldn't be reached and the check is retried automatically. Never-checked and pending candidates keep their own wording.
 - `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`, `enrichment` (`static | live | cached | pending`).
   - `catalogs_checked` lists **only services we actually queried**: `"JPL SBIdent"` and/or `"JPL Horizons"`. The model rejects anything else, so MPC can never appear unless we start calling it and update the contract.
 - `scores`: `motion_consistency`, `snr`, `artifact_likelihood`, `overall` (all in [0, 1]), `quality_level` (`low | medium | high`), `method: "rule_based_v1"`, `definition`. **The score is a rule-based ranking, not a probability.** Nothing in the UI or text may describe it as a classifier probability. Thresholds: `high` if `overall ≥ 0.6`, `medium` if `≥ 0.3`, else `low`.
@@ -147,6 +159,35 @@ Every epoch, detection, field image and stamp carries `source`:
 
 `{study_id, generated_utc, simulated: true, field_ids, n_injected, n_recovered, mag_bins_ab, rate_bins_arcsec_per_hr, grid: [{mag_ab, rate_arcsec_per_hr, n_injected, n_recovered, fraction, ci_low, ci_high}], m50_by_rate: [{rate_arcsec_per_hr, m50_ab | null}], false_positives {n_control_runs, area_deg2, n_candidates, rate_per_deg2, ci_low_per_deg2, ci_high_per_deg2}, recovery_criteria, method_notes, example_candidate_ids}`. Intervals are Wilson 95% intervals for fractions and Poisson 95% intervals for rates.
 
+## Objects (`ObjectSummary`, `ObjectDetail`, `ObjectPrediction`)
+
+An object is one solar-system body: every detection linked to it, across visits and, once cross-field linking runs (build-plan row 6), across fields. Until then each candidate is one object, with `object_id = "obj-<candidate_id>"`.
+
+- `ObjectSummary`: `object_id`, `classification`, `label_plain`, `summary_plain`, `thumbnail_url`, `field_ids`, `candidate_ids`, `n_detections`, `n_visits` (clusters of exposures more than 30 minutes apart), `first_time_utc`, `last_time_utc`, `arc_hours`, `rate_arcsec_per_hr`, `distance_class`, `distance_au_estimate`, `orbit_status`, `overall_score`, `quality_level`, `known_object_checked`, `known_object_matched`, `known_object_designation`.
+- `ObjectDetail`: the same identity fields, plus `detections[]` (each a `Detection` with `field_id` and `candidate_id`), `motion`, `distance_class`, `orbit_status`, `orbit`, `known_object`, `scores`, `explanation`, `spectrum`, `history[] {utc, run_id, change}`, `provenance` and `disclaimer`.
+- `distance_class`: `neo` (< 1.3 AU) · `main_belt` (1.8–4.2) · `jupiter_trojan` (4.8–5.6) · `centaur` (6–30) · `tno` (> 30) · `unknown`. It comes from the parallax distance's best estimate (later the orbit). Gaps between ranges, and objects without a distance, are `unknown`.
+- `orbit_status`: `none | preliminary | refined`. `orbit` is `OrbitalElements {epoch_mjd, a_au, e, i_deg, node_deg, peri_deg, mean_anomaly_deg, q_au, method, rms_arcsec, n_detections, arc_hours, covariance (6x6, [a, e, i, node, peri, M]) | null, n_clones, clones_url, jpl_comparison {designation, delta_a_au, delta_e, delta_i_deg, position_error_arcsec_30d} | null}`, or null.
+- `ObjectPrediction {object_id, generated_utc, orbit_epoch_mjd, observer, days, points[] {time_utc, mjd, ra_deg, dec_deg, sigma_major_arcsec, sigma_minor_arcsec, sigma_pa_deg, vmag_estimate}}`.
+
+## Survey (`Survey`)
+
+`{generated_utc, name, description, tile_size_deg, data_releases, tiles[], totals {n_tiles, n_processed, area_deg2_processed, n_epochs, n_candidates, n_objects}, last_run {run_id, started_utc, finished_utc, pipeline_version, n_new_files, n_tiles_processed, n_new_objects} | null}`. Each tile is `{tile_id, center, ecliptic_lon_deg, ecliptic_lat_deg, size_deg, status: processed | pending | no_data, n_epochs, n_visits, first_time_utc, last_time_utc, last_processed_utc, field_id, n_candidates, m50_ab}`. `m50_ab` is the 50% completeness magnitude from injection-recovery, null until measured.
+
+## AI (`AiWriteup`, `AiAnswer`, `AiSearch`, `Digest`)
+
+Generated by Workers AI from the subject's JSON only (build-plan section 6), and cached by input hash.
+
+- `AiWriteup {subject_kind: candidate | object, subject_id, verdict, paragraphs[3], grounded_fields, numeric_check, source: ai | template, model, label_plain: "AI-written from the measurements below", cached, generated_utc}`. If the AI output fails the numeric check, or the AI is unavailable, the template text is returned with `source: "template"` and `model: null`.
+- `AskRequest {subject_kind, subject_id, question (1–500 chars), session_id (8–64 chars)}` → `AiAnswer {question, answer, citations (JSON paths in the subject's report), answered_from_data, numeric_check, model, cached, generated_utc}`. `answered_from_data: false` means the model said the data doesn't answer the question.
+- `SearchRequest {query (1–300 chars)}` → `AiSearch {query, filter: CandidateFilter, explanation_plain, valid, model, cached}`. `CandidateFilter {classification[], rate_min_arcsec_per_hr, rate_max_arcsec_per_hr, distance_class[], field_id[], min_score, include_injected, sort: score | rate | newest | unusual}`. The frontend shows the applied filter as editable chips. `valid: false` means the model's output failed schema validation and the filter is empty.
+- `Digest {date, text, grounded_fields (JSON paths in the run ledger), numeric_check, run_id, model, generated_utc}`.
+
+## Sky requests and vetting votes (D1)
+
+- `SkyRequestCreate {ra_deg, dec_deg, turnstile_token, note?}` → `SkyRequest {request_id, status: queued | processing | done | no_coverage | rejected, ra_deg, dec_deg, created_utc, updated_utc, position_in_queue, field_id, message}`.
+- `VettingItem {item_id, candidate_id, epoch_id, stamps {detection, reference, difference} (ImageRef each), model_score, model_version}`. `VoteCreate {item_id, label: real | artifact | unsure, session_id, turnstile_token}` → `VoteResult {accepted, item_id, counts {real, artifact, unsure}, message}`. `VettingStats {n_votes, n_sessions, n_items_labeled (>= 5 votes and >= 80% agreement), agreement_with_experts, models[] {version, trained_utc, n_train_real, n_train_bogus, n_votes_used, test_precision, test_recall, test_roc_auc, promoted}}`.
+- Storage: D1 database `spherex-planet-x` (binding `DB`), schema in `migrations/`. Tables: `sky_requests`, `vetting_items`, `votes` (one vote per session per item), `model_versions`, `tracked_objects`, `rate_limits`, `ai_usage`, plus `schema_migrations`. Visitor identifiers are stored only as salted SHA-256 hashes. The Worker applies the migrations itself on first use (`worker/src/db.ts`, kept identical to `migrations/` by a test).
+
 ## Health, coverage and runs
 
 - `Health {status: ok | degraded, checked_utc, build_run_id, fields_loaded, candidates_loaded, upstream: [{name, url, reachable, http_status, latency_ms, detail, probed_utc, cached}]}`. `reachable` is true only when the upstream answered a minimal valid request with HTTP 200 and the expected body: a VOSI availability document for IRSA TAP, JSON with `signature` for JPL SBIdent (a one-arcminute field-of-view query) and Horizons, and a bucket listing for S3. An HTTP 400 or an error page is not reachable. `probed_utc` and `cached` say when the result was measured and whether it was reused (up to 10 minutes). `status` is `ok` when every upstream is reachable and static data is loaded.
@@ -165,6 +206,12 @@ Every epoch, detection, field image and stamp carries `source`:
 | `data/candidates/{candidate_id}/{epoch_id}.webp`, `thumb.webp` | 64 px stamps |
 | `data/injection/{study_id}.json` | `InjectionStudy` |
 | `data/runs/{run_id}.json` | `RunStatus` |
+| `data/objects.json` | `ObjectList` |
+| `data/objects/{object_id}.json` | `ObjectDetail` |
+| `data/objects/{object_id}/prediction.json` | `ObjectPrediction` (once the object has an orbit) |
+| `data/survey.json` | `Survey` |
+
+`fields.json`, `candidates.json`, `objects.json` and `survey.json` always carry the `pipeline_version` and `build_run_id` of the files they list. The Worker keys stored JPL results by `pipeline_version`, so publishing refuses to mix versions.
 
 ## Fixtures
 

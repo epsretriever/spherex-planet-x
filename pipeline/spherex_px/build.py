@@ -653,7 +653,18 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     by_field: dict[str, list[S.CandidateDetail]] = {}
     for c in cands:
         by_field.setdefault(c.field_id, []).append(c)
-    version = pipeline_version(require_clean=True)
+    # Lists carry the version and run of the data they list, not of whoever ran publish:
+    # the Worker keys stored JPL results by pipeline_version, so a list and its detail files
+    # must agree.
+    versions = {f.pipeline_version for f in fields} | {c.pipeline_version for c in cands}
+    if len(versions) > 1:
+        raise ValueError(
+            f"published data mixes pipeline versions {sorted(versions)}; rebuild every field "
+            "with one pipeline commit"
+        )
+    version = versions.pop() if versions else pipeline_version(require_clean=True)
+    runs = {f.build_run_id for f in fields if f.build_run_id}
+    run_id = sorted(runs)[-1] if runs else build_run_id()
     now = utc_now()
     order = {"showcase": 0, "run": 1}
     fields.sort(key=lambda f: (order.get(f.origin, 2), f.field_id))
@@ -661,7 +672,7 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
         out_dir / "fields.json",
         S.FieldList(
             pipeline_version=version,
-            build_run_id=build_run_id(),
+            build_run_id=run_id,
             generated_utc=now,
             fields=[field_summary_of(f, by_field.get(f.field_id, [])) for f in fields],
         ),
@@ -673,12 +684,15 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
         out_dir / "candidates.json",
         S.CandidateList(
             pipeline_version=version,
-            build_run_id=build_run_id(),
+            build_run_id=run_id,
             generated_utc=now,
             total=len(summaries),
             candidates=summaries,
         ),
     )
+    from .objects import write_objects_and_survey
+
+    write_objects_and_survey(out_dir, fields, cands, version, run_id, now)
     return len(fields), len(cands)
 
 

@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "AiSubjectKind": {
+      "enum": [
+        "candidate",
+        "object"
+      ],
+      "title": "AiSubjectKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "subject_kind": {
+      "$ref": "#/$defs/AiSubjectKind"
+    },
+    "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "question": {
+      "title": "Question",
+      "type": "string"
+    },
+    "answer": {
+      "title": "Answer",
+      "type": "string"
+    },
+    "citations": {
+      "description": "JSON paths in the subject's report the answer uses",
+      "items": {
+        "type": "string"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "answered_from_data": {
+      "description": "False when the model said the data doesn't answer the question",
+      "title": "Answered From Data",
+      "type": "boolean"
+    },
+    "numeric_check": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run"
+      ],
+      "title": "Numeric Check",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Model"
+    },
+    "cached": {
+      "title": "Cached",
+      "type": "boolean"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "subject_kind",
+    "subject_id",
+    "question",
+    "answer",
+    "citations",
+    "answered_from_data",
+    "numeric_check",
+    "model",
+    "cached",
+    "generated_utc"
+  ],
+  "title": "AiAnswer",
+  "type": "object"
+}

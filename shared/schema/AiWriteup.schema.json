@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "AiSubjectKind": {
+      "enum": [
+        "candidate",
+        "object"
+      ],
+      "title": "AiSubjectKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "subject_kind": {
+      "$ref": "#/$defs/AiSubjectKind"
+    },
+    "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "verdict": {
+      "description": "One line",
+      "title": "Verdict",
+      "type": "string"
+    },
+    "paragraphs": {
+      "description": "Three short paragraphs for the public",
+      "items": {
+        "type": "string"
+      },
+      "title": "Paragraphs",
+      "type": "array"
+    },
+    "grounded_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Grounded Fields",
+      "type": "array"
+    },
+    "numeric_check": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_run"
+      ],
+      "title": "Numeric Check",
+      "type": "string"
+    },
+    "source": {
+      "description": "template when the AI output failed a check or the AI was unavailable",
+      "enum": [
+        "ai",
+        "template"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Workers AI model ID, null for template text",
+      "title": "Model"
+    },
+    "label_plain": {
+      "default": "AI-written from the measurements below",
+      "title": "Label Plain",
+      "type": "string"
+    },
+    "cached": {
+      "title": "Cached",
+      "type": "boolean"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "subject_kind",
+    "subject_id",
+    "verdict",
+    "paragraphs",
+    "grounded_fields",
+    "numeric_check",
+    "source",
+    "model",
+    "cached",
+    "generated_utc"
+  ],
+  "title": "AiWriteup",
+  "type": "object"
+}

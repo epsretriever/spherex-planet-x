@@ -61,6 +61,14 @@ if (real.length > 0) {
   save("candidate_detail.json", `/api/candidates/${top.candidate_id}`, await get(`/api/candidates/${top.candidate_id}`));
 }
 
+const objects = await get("/api/objects");
+save("objects.json", "/api/objects", objects);
+if (objects.body.objects.length > 0) {
+  const top = objects.body.objects.reduce((a, b) => (b.n_detections > a.n_detections ? b : a));
+  save("object_detail.json", `/api/objects/${top.object_id}`, await get(`/api/objects/${top.object_id}`));
+}
+save("survey.json", "/api/survey", await get("/api/survey"));
+
 const health = await get("/api/health");
 save("health.json", "/api/health", health);
 

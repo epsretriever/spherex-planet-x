@@ -610,11 +610,12 @@
         },
         "enrichment": {
           "default": "static",
-          "description": "static: as written by the offline pipeline (not checked); live/cached: filled by the Worker from JPL at request time",
+          "description": "static: as written by the offline pipeline (not checked); pending: the Worker has started a JPL lookup in the background; live/cached: filled by the Worker from JPL (live = this request, cached = a stored result)",
           "enum": [
             "static",
             "live",
-            "cached"
+            "cached",
+            "pending"
           ],
           "title": "Enrichment",
           "type": "string"
@@ -1150,8 +1151,11 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
       "title": "Schema Version",
       "type": "string"
     },

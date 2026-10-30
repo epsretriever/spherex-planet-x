@@ -34,7 +34,7 @@ interface Part {
   fields: string[];
 }
 
-function motionParts(c: CandidateDetail): Part[] {
+function motionParts(c: Pick<CandidateDetail, "motion" | "detections">): Part[] {
   const m = c.motion;
   const parts: Part[] = [];
   parts.push({
@@ -74,11 +74,17 @@ function motionParts(c: CandidateDetail): Part[] {
   return parts;
 }
 
+/** A stored lookup that ran but could not reach JPL (as opposed to one never attempted or in progress). */
+export const checkFailed = (k: KnownObject): boolean =>
+  !k.checked && k.enrichment !== "pending" && k.enrichment !== "static" && k.not_checked_reason !== null;
+
 function knownParts(k: KnownObject): Part[] {
   if (!k.checked) {
     return [
       {
-        text: "It has not been checked against JPL's small-body catalog yet, so it may simply be a known asteroid.",
+        text: checkFailed(k)
+          ? "JPL's small-body catalog could not be reached for it yet, so it may simply be a known asteroid; the check is retried automatically."
+          : "It has not been checked against JPL's small-body catalog yet, so it may simply be a known asteroid.",
         fields: ["known_object.checked"],
       },
     ];
@@ -123,7 +129,10 @@ const CLOSERS: Record<Classification, string> = {
   injected: "This is a simulated object that we inserted into real images to test the pipeline.",
 };
 
-export function buildExplanation(c: CandidateDetail, generatedUtc: string): Explanation {
+/** The parts of a candidate or object report an explanation is built from. */
+export type ExplainInput = Pick<CandidateDetail, "classification" | "known_object" | "motion" | "detections">;
+
+export function buildExplanation(c: ExplainInput, generatedUtc: string): Explanation {
   const parts = [...motionParts(c), ...(c.classification === "injected" ? [] : knownParts(c.known_object))];
   const closer = CLOSERS[c.classification];
   const text = [...parts.map((p) => p.text), ...(closer ? [closer] : [])].join(" ");
@@ -171,23 +180,42 @@ export function checkNumbers(text: string, grounded: string[], doc: unknown): bo
   return true;
 }
 
-export function summaryPlain(c: CandidateDetail): string {
-  const m = c.motion;
-  const span = m.time_span_hours >= 48 ? `${fmt(m.time_span_hours / 24, 1)} days` : `${fmt(m.time_span_hours, 1)} hours`;
+/** What a plain-language summary needs; available on detail and list records alike. */
+export interface SummaryInput {
+  classification: Classification;
+  known_object: KnownObject;
+  rate_arcsec_per_hr: number | null;
+  n_detections: number;
+  time_span_hours: number;
+}
+
+export function summaryPlainFrom(x: SummaryInput): string {
+  const span = x.time_span_hours >= 48 ? `${fmt(x.time_span_hours / 24, 1)} days` : `${fmt(x.time_span_hours, 1)} hours`;
   const motion =
-    m.rate_arcsec_per_hr !== null
-      ? `Moves about ${fmt(m.rate_arcsec_per_hr, m.rate_arcsec_per_hr >= 10 ? 0 : 1)} arcseconds per hour across ${m.n_detections} images over ${span}.`
-      : `Seen in ${m.n_detections} images over ${span}.`;
-  const k = c.known_object;
+    x.rate_arcsec_per_hr !== null
+      ? `Moves about ${fmt(x.rate_arcsec_per_hr, x.rate_arcsec_per_hr >= 10 ? 0 : 1)} arcseconds per hour across ${x.n_detections} images over ${span}.`
+      : `Seen in ${x.n_detections} images over ${span}.`;
+  const k = x.known_object;
   let tail: string;
-  if (c.classification === "injected") tail = "This is a simulated object inserted into real SPHEREx images.";
+  if (x.classification === "injected") tail = "This is a simulated object inserted into real SPHEREx images.";
   else if (!k.checked && k.enrichment === "pending") tail = "JPL's catalog of known asteroids and comets is being checked now.";
+  else if (checkFailed(k)) tail = "JPL's catalog of known asteroids and comets couldn't be reached; the check is retried automatically.";
   else if (!k.checked) tail = "Not yet checked against JPL's catalog of known asteroids and comets.";
   else if (k.matched && k.designation) tail = `It matches the known ${isComet(k.designation) ? "comet" : "asteroid"} ${k.designation}.`;
-  else if (c.classification === "likely_artifact") tail = "It failed a quality check and is most likely an artifact.";
-  else if (c.classification === "unconfirmed_pair") tail = "Only two sightings, so the motion is unconfirmed.";
+  else if (x.classification === "likely_artifact") tail = "It failed a quality check and is most likely an artifact.";
+  else if (x.classification === "unconfirmed_pair") tail = "Only two sightings, so the motion is unconfirmed.";
   else tail = "It does not match any known object we checked.";
   return `${motion} ${tail}`;
+}
+
+export function summaryPlain(c: Pick<CandidateDetail, "classification" | "known_object" | "motion">): string {
+  return summaryPlainFrom({
+    classification: c.classification,
+    known_object: c.known_object,
+    rate_arcsec_per_hr: c.motion.rate_arcsec_per_hr,
+    n_detections: c.motion.n_detections,
+    time_span_hours: c.motion.time_span_hours,
+  });
 }
 
 /** Update the two catalog-related error sources from the known_object block. */

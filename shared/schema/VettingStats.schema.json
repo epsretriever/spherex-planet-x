@@ -1,0 +1,117 @@
+{
+  "$defs": {
+    "ModelVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "title": "Version",
+          "type": "string"
+        },
+        "trained_utc": {
+          "title": "Trained Utc",
+          "type": "string"
+        },
+        "n_train_real": {
+          "title": "N Train Real",
+          "type": "integer"
+        },
+        "n_train_bogus": {
+          "title": "N Train Bogus",
+          "type": "integer"
+        },
+        "n_votes_used": {
+          "title": "N Votes Used",
+          "type": "integer"
+        },
+        "test_precision": {
+          "title": "Test Precision",
+          "type": "number"
+        },
+        "test_recall": {
+          "title": "Test Recall",
+          "type": "number"
+        },
+        "test_roc_auc": {
+          "title": "Test Roc Auc",
+          "type": "number"
+        },
+        "promoted": {
+          "title": "Promoted",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "version",
+        "trained_utc",
+        "n_train_real",
+        "n_train_bogus",
+        "n_votes_used",
+        "test_precision",
+        "test_recall",
+        "test_roc_auc",
+        "promoted"
+      ],
+      "title": "ModelVersion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "n_votes": {
+      "title": "N Votes",
+      "type": "integer"
+    },
+    "n_sessions": {
+      "title": "N Sessions",
+      "type": "integer"
+    },
+    "n_items_labeled": {
+      "description": "Items with >= 5 votes and >= 80% agreement",
+      "title": "N Items Labeled",
+      "type": "integer"
+    },
+    "agreement_with_experts": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Vote agreement on items JPL confirmed or that are injected",
+      "title": "Agreement With Experts"
+    },
+    "models": {
+      "items": {
+        "$ref": "#/$defs/ModelVersion"
+      },
+      "title": "Models",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "n_votes",
+    "n_sessions",
+    "n_items_labeled",
+    "agreement_with_experts",
+    "models"
+  ],
+  "title": "VettingStats",
+  "type": "object"
+}

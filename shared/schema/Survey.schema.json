@@ -1,0 +1,314 @@
+{
+  "$defs": {
+    "SkyPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    },
+    "SurveyRun": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "started_utc": {
+          "title": "Started Utc",
+          "type": "string"
+        },
+        "finished_utc": {
+          "title": "Finished Utc",
+          "type": "string"
+        },
+        "pipeline_version": {
+          "title": "Pipeline Version",
+          "type": "string"
+        },
+        "n_new_files": {
+          "title": "N New Files",
+          "type": "integer"
+        },
+        "n_tiles_processed": {
+          "title": "N Tiles Processed",
+          "type": "integer"
+        },
+        "n_new_objects": {
+          "title": "N New Objects",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "started_utc",
+        "finished_utc",
+        "pipeline_version",
+        "n_new_files",
+        "n_tiles_processed",
+        "n_new_objects"
+      ],
+      "title": "SurveyRun",
+      "type": "object"
+    },
+    "SurveyTile": {
+      "additionalProperties": false,
+      "properties": {
+        "tile_id": {
+          "title": "Tile Id",
+          "type": "string"
+        },
+        "center": {
+          "$ref": "#/$defs/SkyPosition"
+        },
+        "ecliptic_lon_deg": {
+          "title": "Ecliptic Lon Deg",
+          "type": "number"
+        },
+        "ecliptic_lat_deg": {
+          "title": "Ecliptic Lat Deg",
+          "type": "number"
+        },
+        "size_deg": {
+          "title": "Size Deg",
+          "type": "number"
+        },
+        "status": {
+          "$ref": "#/$defs/TileStatus"
+        },
+        "n_epochs": {
+          "title": "N Epochs",
+          "type": "integer"
+        },
+        "n_visits": {
+          "title": "N Visits",
+          "type": "integer"
+        },
+        "first_time_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Time Utc"
+        },
+        "last_time_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Time Utc"
+        },
+        "last_processed_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Processed Utc"
+        },
+        "field_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Field built for this tile, when processed",
+          "title": "Field Id"
+        },
+        "n_candidates": {
+          "title": "N Candidates",
+          "type": "integer"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "50% completeness magnitude from injection-recovery, if measured",
+          "title": "M50 Ab"
+        }
+      },
+      "required": [
+        "tile_id",
+        "center",
+        "ecliptic_lon_deg",
+        "ecliptic_lat_deg",
+        "size_deg",
+        "status",
+        "n_epochs",
+        "n_visits",
+        "first_time_utc",
+        "last_time_utc",
+        "last_processed_utc",
+        "field_id",
+        "n_candidates"
+      ],
+      "title": "SurveyTile",
+      "type": "object"
+    },
+    "SurveyTotals": {
+      "additionalProperties": false,
+      "properties": {
+        "n_tiles": {
+          "title": "N Tiles",
+          "type": "integer"
+        },
+        "n_processed": {
+          "title": "N Processed",
+          "type": "integer"
+        },
+        "area_deg2_processed": {
+          "title": "Area Deg2 Processed",
+          "type": "number"
+        },
+        "n_epochs": {
+          "title": "N Epochs",
+          "type": "integer"
+        },
+        "n_candidates": {
+          "title": "N Candidates",
+          "type": "integer"
+        },
+        "n_objects": {
+          "title": "N Objects",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "n_tiles",
+        "n_processed",
+        "area_deg2_processed",
+        "n_epochs",
+        "n_candidates",
+        "n_objects"
+      ],
+      "title": "SurveyTotals",
+      "type": "object"
+    },
+    "TileStatus": {
+      "enum": [
+        "processed",
+        "pending",
+        "no_data"
+      ],
+      "title": "TileStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Build Run Id"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "tile_size_deg": {
+      "title": "Tile Size Deg",
+      "type": "number"
+    },
+    "data_releases": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Data Releases",
+      "type": "array"
+    },
+    "tiles": {
+      "items": {
+        "$ref": "#/$defs/SurveyTile"
+      },
+      "title": "Tiles",
+      "type": "array"
+    },
+    "totals": {
+      "$ref": "#/$defs/SurveyTotals"
+    },
+    "last_run": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SurveyRun"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "name",
+    "description",
+    "tile_size_deg",
+    "data_releases",
+    "tiles",
+    "totals",
+    "last_run"
+  ],
+  "title": "Survey",
+  "type": "object"
+}

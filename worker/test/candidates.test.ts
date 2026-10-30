@@ -169,7 +169,7 @@ describe("GET /api/candidates/:id enrichment", () => {
     expect(c.known_object.checked).toBe(false);
     expect(c.known_object.catalogs_checked).toEqual([]);
     expect(c.known_object.not_checked_reason).toContain("503");
-    expect(c.summary_plain).toContain("Not yet checked");
+    expect(c.summary_plain).toContain("couldn't be reached; the check is retried automatically");
     // The failure is stored with an expiry so it is retried, never kept forever.
     const failed = [...kv.store.entries()].find(([k]) => k.startsWith("enrich:"))!;
     expect(failed[1].ttl).toBeGreaterThan(0);

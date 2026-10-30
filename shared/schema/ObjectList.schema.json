@@ -1,0 +1,260 @@
+{
+  "$defs": {
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "DistanceClass": {
+      "description": "Where in the solar system an object probably is, from its parallax distance or orbit.",
+      "enum": [
+        "neo",
+        "main_belt",
+        "jupiter_trojan",
+        "centaur",
+        "tno",
+        "unknown"
+      ],
+      "title": "DistanceClass",
+      "type": "string"
+    },
+    "DistanceEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "best": {
+          "title": "Best",
+          "type": "number"
+        },
+        "lo": {
+          "title": "Lo",
+          "type": "number"
+        },
+        "hi": {
+          "title": "Hi",
+          "type": "number"
+        }
+      },
+      "required": [
+        "best",
+        "lo",
+        "hi"
+      ],
+      "title": "DistanceEstimate",
+      "type": "object"
+    },
+    "ObjectSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        },
+        "summary_plain": {
+          "title": "Summary Plain",
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "title": "Thumbnail Url",
+          "type": "string"
+        },
+        "field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Ids",
+          "type": "array"
+        },
+        "candidate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidate Ids",
+          "type": "array"
+        },
+        "n_detections": {
+          "title": "N Detections",
+          "type": "integer"
+        },
+        "n_visits": {
+          "description": "Separate visits (clusters of exposures hours apart)",
+          "title": "N Visits",
+          "type": "integer"
+        },
+        "first_time_utc": {
+          "title": "First Time Utc",
+          "type": "string"
+        },
+        "last_time_utc": {
+          "title": "Last Time Utc",
+          "type": "string"
+        },
+        "arc_hours": {
+          "title": "Arc Hours",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "distance_class": {
+          "$ref": "#/$defs/DistanceClass"
+        },
+        "distance_au_estimate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistanceEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "orbit_status": {
+          "$ref": "#/$defs/OrbitStatus"
+        },
+        "overall_score": {
+          "title": "Overall Score",
+          "type": "number"
+        },
+        "quality_level": {
+          "$ref": "#/$defs/QualityLevel"
+        },
+        "known_object_checked": {
+          "title": "Known Object Checked",
+          "type": "boolean"
+        },
+        "known_object_matched": {
+          "title": "Known Object Matched",
+          "type": "boolean"
+        },
+        "known_object_designation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Known Object Designation"
+        }
+      },
+      "required": [
+        "object_id",
+        "classification",
+        "label_plain",
+        "summary_plain",
+        "thumbnail_url",
+        "field_ids",
+        "candidate_ids",
+        "n_detections",
+        "n_visits",
+        "first_time_utc",
+        "last_time_utc",
+        "arc_hours",
+        "rate_arcsec_per_hr",
+        "distance_class",
+        "distance_au_estimate",
+        "orbit_status",
+        "overall_score",
+        "quality_level",
+        "known_object_checked",
+        "known_object_matched",
+        "known_object_designation"
+      ],
+      "title": "ObjectSummary",
+      "type": "object"
+    },
+    "OrbitStatus": {
+      "enum": [
+        "none",
+        "preliminary",
+        "refined"
+      ],
+      "title": "OrbitStatus",
+      "type": "string"
+    },
+    "QualityLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Build Run Id"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "total": {
+      "title": "Total",
+      "type": "integer"
+    },
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/ObjectSummary"
+      },
+      "title": "Objects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "total",
+    "objects"
+  ],
+  "title": "ObjectList",
+  "type": "object"
+}
