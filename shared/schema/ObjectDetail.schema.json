@@ -859,6 +859,44 @@
           ],
           "default": null,
           "description": "Differences from JPL's orbit when JPL identified the object"
+        },
+        "helio_distance_au": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistanceEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distance from the Sun at the epoch: median and 5-95% range of the clones"
+        },
+        "n_ranging_orbits": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Sampled orbits that fit the detections (statistical ranging)",
+          "title": "N Ranging Orbits"
+        },
+        "reported_orbit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Which of the orbits that fit is reported, in plain words",
+          "title": "Reported Orbit"
         }
       },
       "required": [

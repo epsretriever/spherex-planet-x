@@ -720,6 +720,61 @@ class OrbitalElements(Model):
     jpl_comparison: JplOrbitComparison | None = Field(
         default=None, description="Differences from JPL's orbit when JPL identified the object"
     )
+    helio_distance_au: DistanceEstimate | None = Field(
+        default=None,
+        description="Distance from the Sun at the epoch: median and 5-95% range of the clones",
+    )
+    n_ranging_orbits: int | None = Field(
+        default=None, description="Sampled orbits that fit the detections (statistical ranging)"
+    )
+    reported_orbit: str | None = Field(
+        default=None, description="Which of the orbits that fit is reported, in plain words"
+    )
+
+
+class OrbitValidationRow(Model):
+    population: str
+    n: int
+    distance_in_5_95_interval: float = Field(description="Fraction with the true distance inside")
+    distance_rel_error_median: float
+    distance_class_correct: float
+    a_rel_error_median: float
+    e_abs_error_median: float
+    i_abs_error_deg_median: float
+    prediction_30d_error_arcsec_median: float
+    prediction_30d_inside_2sigma: float
+    prediction_30d_inside_3sigma: float
+    refined_fraction: float
+
+
+class OrbitValidation(Envelope):
+    """Orbit fitting tested on simulated asteroids seen with SPHEREx's real geometry."""
+
+    generated_utc: str
+    simulated: Literal[True] = True
+    method: str
+    geometry_from: list[str] = Field(description="Candidates whose times and positions were used")
+    per_population: int
+    seed: int
+    rows: list[OrbitValidationRow]
+
+
+class CloneElements(Model):
+    a_au: float
+    e: float
+    i_deg: float
+    node_deg: float
+    peri_deg: float
+    mean_anomaly_deg: float
+
+
+class OrbitClones(Envelope):
+    """Sampled orbits consistent with the detections (the uncertainty cloud)."""
+
+    object_id: str
+    epoch_mjd: float = Field(description="Osculation epoch, MJD (TDB)")
+    frame: str
+    clones: list[CloneElements]
 
 
 class ObjectDetection(Detection):
@@ -816,6 +871,9 @@ class ObjectPrediction(Envelope):
     observer: str = Field(description="Where the positions are computed for, e.g. 'geocenter'")
     days: int
     points: list[PredictionPoint]
+    note_plain: str | None = Field(
+        default=None, description="How far the orbit can be trusted, from the clones' spread"
+    )
 
 
 class TileStatus(StrEnum):
@@ -1083,6 +1141,8 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "ObjectList": ObjectList,
     "ObjectDetail": ObjectDetail,
     "ObjectPrediction": ObjectPrediction,
+    "OrbitClones": OrbitClones,
+    "OrbitValidation": OrbitValidation,
     "Survey": Survey,
     "AiWriteup": AiWriteup,
     "AskRequest": AskRequest,

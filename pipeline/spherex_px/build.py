@@ -712,6 +712,14 @@ def build_field(
     write_json(out_dir / "fields" / f"{spec.field_id}.json", detail)
     for c in cands:
         write_json(out_dir / "candidates" / f"{c.candidate_id}.json", c)
+    # Fit orbits here, where the survey spreads the work over many machines; publish reuses them.
+    from .orbits import orbit_for
+
+    for c in cands:
+        try:
+            orbit_for(out_dir, c)
+        except Exception:  # an orbit failure must not lose the field
+            log.exception("%s: orbit fit failed", c.candidate_id)
     return detail, cands
 
 

@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "OrbitValidationRow": {
+      "additionalProperties": false,
+      "properties": {
+        "population": {
+          "title": "Population",
+          "type": "string"
+        },
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "distance_in_5_95_interval": {
+          "description": "Fraction with the true distance inside",
+          "title": "Distance In 5 95 Interval",
+          "type": "number"
+        },
+        "distance_rel_error_median": {
+          "title": "Distance Rel Error Median",
+          "type": "number"
+        },
+        "distance_class_correct": {
+          "title": "Distance Class Correct",
+          "type": "number"
+        },
+        "a_rel_error_median": {
+          "title": "A Rel Error Median",
+          "type": "number"
+        },
+        "e_abs_error_median": {
+          "title": "E Abs Error Median",
+          "type": "number"
+        },
+        "i_abs_error_deg_median": {
+          "title": "I Abs Error Deg Median",
+          "type": "number"
+        },
+        "prediction_30d_error_arcsec_median": {
+          "title": "Prediction 30D Error Arcsec Median",
+          "type": "number"
+        },
+        "prediction_30d_inside_2sigma": {
+          "title": "Prediction 30D Inside 2Sigma",
+          "type": "number"
+        },
+        "prediction_30d_inside_3sigma": {
+          "title": "Prediction 30D Inside 3Sigma",
+          "type": "number"
+        },
+        "refined_fraction": {
+          "title": "Refined Fraction",
+          "type": "number"
+        }
+      },
+      "required": [
+        "population",
+        "n",
+        "distance_in_5_95_interval",
+        "distance_rel_error_median",
+        "distance_class_correct",
+        "a_rel_error_median",
+        "e_abs_error_median",
+        "i_abs_error_deg_median",
+        "prediction_30d_error_arcsec_median",
+        "prediction_30d_inside_2sigma",
+        "prediction_30d_inside_3sigma",
+        "refined_fraction"
+      ],
+      "title": "OrbitValidationRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Orbit fitting tested on simulated asteroids seen with SPHEREx's real geometry.",
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "simulated": {
+      "const": true,
+      "default": true,
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "method": {
+      "title": "Method",
+      "type": "string"
+    },
+    "geometry_from": {
+      "description": "Candidates whose times and positions were used",
+      "items": {
+        "type": "string"
+      },
+      "title": "Geometry From",
+      "type": "array"
+    },
+    "per_population": {
+      "title": "Per Population",
+      "type": "integer"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/OrbitValidationRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "method",
+    "geometry_from",
+    "per_population",
+    "seed",
+    "rows"
+  ],
+  "title": "OrbitValidation",
+  "type": "object"
+}

@@ -16,6 +16,7 @@ import astropy.units as u
 from astropy.coordinates import BarycentricMeanEcliptic, SkyCoord
 
 from . import schemas as S
+from .orbits import clones_doc, distance_class_of, orbit_for, orbital_elements, prediction_doc
 
 # Distance classes from a heliocentric-ish distance estimate (AU). Parallax distances are from
 # the observer, so only well-separated ranges are classified; everything else is "unknown".
@@ -49,7 +50,9 @@ def object_id_for(candidate_id: str) -> str:
     return f"obj-{candidate_id}"
 
 
-def object_from_candidate(c: S.CandidateDetail, build_run_id: str | None) -> S.ObjectDetail:
+def object_from_candidate(
+    c: S.CandidateDetail, build_run_id: str | None, orbit=None
+) -> S.ObjectDetail:
     dets = [
         S.ObjectDetection(**d.model_dump(), field_id=c.field_id, candidate_id=c.candidate_id)
         for d in c.detections
@@ -67,9 +70,11 @@ def object_from_candidate(c: S.CandidateDetail, build_run_id: str | None) -> S.O
         candidate_ids=[c.candidate_id],
         detections=dets,
         motion=c.motion,
-        distance_class=distance_class(c.motion.distance_au_estimate),
-        orbit_status=S.OrbitStatus.none,
-        orbit=None,
+        distance_class=(
+            distance_class_of(orbit) if orbit else distance_class(c.motion.distance_au_estimate)
+        ),
+        orbit_status=S.OrbitStatus(orbit.status) if orbit else S.OrbitStatus.none,
+        orbit=orbital_elements(orbit, object_id_for(c.candidate_id)) if orbit else None,
         known_object=c.known_object,
         scores=c.scores,
         explanation=c.explanation,
@@ -233,6 +238,21 @@ def build_survey(
     )
 
 
+def fit_orbits(out_dir: Path, cands: list[S.CandidateDetail], workers: int | None = None) -> dict:
+    """Cached orbits for every candidate, fitting the missing ones in parallel."""
+    import multiprocessing as mp
+    import os
+
+    from .orbits import orbit_path
+
+    missing = [c for c in cands if not orbit_path(out_dir, c.candidate_id).exists()]
+    if len(missing) > 1:
+        n = min(workers or os.cpu_count() or 1, len(missing))
+        with mp.get_context("fork").Pool(n) as pool:
+            pool.starmap(orbit_for, [(out_dir, c) for c in missing])
+    return {c.candidate_id: r for c in cands if (r := orbit_for(out_dir, c)) is not None}
+
+
 def write_objects_and_survey(
     out_dir: Path,
     fields: list[S.FieldDetail],
@@ -241,15 +261,35 @@ def write_objects_and_survey(
     run_id: str | None,
     now: str,
 ) -> tuple[int, int]:
+    import shutil
+    from datetime import UTC, datetime
+
     from .build import write_json
 
     obj_dir = out_dir / "objects"
     if obj_dir.exists():
         for p in obj_dir.glob("*.json"):
             p.unlink()
-    objects = [object_from_candidate(c, run_id) for c in cands if c.classification != "injected"]
-    for o in objects:
+        for p in obj_dir.iterdir():
+            if p.is_dir():
+                shutil.rmtree(p)
+    real = [c for c in cands if c.classification != "injected"]
+    orbits = fit_orbits(out_dir, real)
+    stamp = datetime.fromisoformat(now.replace("Z", "+00:00")) if now else datetime.now(UTC)
+    objects = []
+    for c in real:
+        orbit = orbits.get(c.candidate_id)
+        o = object_from_candidate(c, run_id, orbit)
+        objects.append(o)
         write_json(obj_dir / f"{o.object_id}.json", o)
+        if orbit:
+            write_json(
+                obj_dir / o.object_id / "clones.json", clones_doc(orbit, o.object_id, version)
+            )
+            write_json(
+                obj_dir / o.object_id / "prediction.json",
+                prediction_doc(orbit, o.object_id, version, stamp),
+            )
     summaries = sorted(
         (summary_of_object(o) for o in objects), key=lambda s: (-s.overall_score, s.object_id)
     )
