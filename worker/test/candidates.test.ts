@@ -160,6 +160,15 @@ describe("GET /api/candidates/:id enrichment", () => {
     expect(c.error_sources.find((e: { id: string }) => e.id === "catalog_gap").status).toBe("unknown");
   });
 
+  it("never calls a candidate unmatched when Horizons could not refine a nearby object", async () => {
+    const sbOnly: FetchHandler = (url, init) =>
+      url.hostname === "ssd.jpl.nasa.gov" ? new Response("busy", { status: 503 }) : jpl(2)(url, init);
+    const { c } = await lookUp(makeClient({ files, upstream: sbOnly }));
+    expect(c.known_object.checked).toBe(false);
+    expect(c.known_object.not_checked_reason).toContain("JPL Horizons did not answer");
+    expect(c.summary_plain).not.toContain("does not match any known object");
+  });
+
   it("returns the report with checked=false when JPL is down, and retries later", async () => {
     const kv = new MemoryKv();
     const { res, c } = await lookUp(makeClient({ files, kv, upstream: () => new Response("down", { status: 503 }) }));
