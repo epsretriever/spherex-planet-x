@@ -36,11 +36,30 @@ export interface AiContext {
 const MAX_PARAGRAPH = 700;
 const MAX_ANSWER = 900;
 
-/** Does every cited path resolve, and does every number in `text` match a cited value? */
+/** Every leaf path in `doc` (dot notation, [i] for arrays), for numbers and digit-bearing strings. */
+function leafPaths(doc: unknown, prefix = "", out: string[] = [], depth = 0): string[] {
+  if (depth > 6 || out.length > 2000) return out;
+  if (typeof doc === "number" || (typeof doc === "string" && /\d/.test(doc))) {
+    if (prefix) out.push(prefix);
+  } else if (Array.isArray(doc)) {
+    doc.forEach((v, i) => leafPaths(v, `${prefix}[${i}]`, out, depth + 1));
+  } else if (doc && typeof doc === "object") {
+    for (const [k, v] of Object.entries(doc)) leafPaths(v, prefix ? `${prefix}.${k}` : k, out, depth + 1);
+  }
+  return out;
+}
+
+/**
+ * Is every number in `text` a value from the report? The model's own citations are tried first;
+ * if they are incomplete (models often cite loosely), every value in the report is accepted,
+ * which still rejects any number that is not in the data. Strings with digits (designations,
+ * dates, field names) are removed before numbers are checked.
+ */
 export function grounded(text: string, paths: string[], doc: unknown): boolean {
-  if (paths.length === 0) return !/\d/.test(text);
-  if (paths.some((p) => resolvePath(doc, p) === undefined)) return false;
-  return checkNumbers(text, paths, doc);
+  const cited = paths.filter((p) => resolvePath(doc, p) !== undefined);
+  if (cited.length > 0 && checkNumbers(text, cited, doc)) return true;
+  if (!/\d/.test(text)) return true;
+  return checkNumbers(text, leafPaths(doc), doc);
 }
 
 // --------------------------------------------------------------------------- write-up
