@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
+import type { Deps, Env } from "../env";
 import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type CandidateSummary, type Classification } from "../contract";
 import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
-import { readRecord, refreshRecord } from "../store";
+import { pageParams, paginate } from "../paging";
+import { readRecord, readRecords, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
@@ -23,27 +25,26 @@ candidates.get("/", async (c) => {
   }
   const includeInjected = c.req.query("include_injected") === "true" || classes.includes("injected");
 
+  const paging = pageParams((n) => c.req.query(n));
+
   const list = await requireStaticJson<CandidateList>(c.env, "candidates.json", "candidate list");
   const deps = c.get("deps");
-  // Fold in stored JPL results (no upstream calls from the list view).
-  let warming = false;
-  const enriched = await Promise.all(
-    list.candidates.map(async (s): Promise<CandidateSummary> => {
-      if (s.classification === "injected") return s;
-      const ref = { candidate_id: s.candidate_id, pipeline_version: list.pipeline_version };
-      const rec = await readRecord(deps, ref);
-      if (!rec && !warming) {
-        // Start one background lookup so the list fills in even before the cron runs.
-        warming = true;
-        deps.waitUntil(
-          requireStaticJson<CandidateDetail>(c.env, `candidates/${s.candidate_id}.json`, "candidate")
-            .then((cand) => refreshRecord(deps, cand))
-            .catch((err) => console.error(`background JPL lookup for ${s.candidate_id}:`, err)),
-        );
-      }
-      return rec ? applyToSummary(s, rec.enrichment) : s;
-    }),
-  );
+  // Fold in stored JPL results (one store query; no upstream calls from the list view).
+  const real = list.candidates.filter((s) => s.classification !== "injected");
+  const recs = await readRecords(deps, list.pipeline_version, real.map((s) => s.candidate_id));
+  const missing = real.find((s) => !recs.has(s.candidate_id));
+  if (missing) {
+    // Start one background lookup so the list fills in even before the cron runs.
+    deps.waitUntil(
+      requireStaticJson<CandidateDetail>(c.env, `candidates/${missing.candidate_id}.json`, "candidate")
+        .then((cand) => refreshRecord(deps, cand))
+        .catch((err) => console.error(`background JPL lookup for ${missing.candidate_id}:`, err)),
+    );
+  }
+  const enriched = list.candidates.map((s) => {
+    const rec = s.classification === "injected" ? undefined : recs.get(s.candidate_id);
+    return rec ? applyToSummary(s, rec.enrichment) : s;
+  });
   const filtered = enriched.filter(
     (s) =>
       (fieldId === undefined || s.field_id === fieldId) &&
@@ -51,7 +52,15 @@ candidates.get("/", async (c) => {
       (minScore === null || s.overall_score >= minScore) &&
       (includeInjected || s.classification !== "injected"),
   );
-  const body: CandidateList = { ...list, total: filtered.length, candidates: filtered };
+  const page = paginate(filtered, paging);
+  const body: CandidateList = {
+    ...list,
+    total: page.total,
+    offset: page.offset,
+    limit: page.limit,
+    next_offset: page.next_offset,
+    candidates: page.items,
+  };
   c.header("Cache-Control", "public, max-age=60");
   return c.json(body);
 });
@@ -59,18 +68,33 @@ candidates.get("/", async (c) => {
 candidates.get("/:candidateId", async (c) => {
   const id = c.req.param("candidateId");
   if (!ID_RE.test(id)) throw badRequest("invalid candidate_id");
-  const cand = await requireStaticJson<CandidateDetail>(c.env, `candidates/${id}.json`, `candidate '${id}'`);
-  const deps = c.get("deps");
+  const { detail, cacheControl } = await loadCandidate(c.env, c.get("deps"), id);
+  c.header("Cache-Control", cacheControl);
+  return c.json(detail);
+});
+
+/**
+ * A candidate report with the stored JPL result applied, as the detail route serves it. When no
+ * result is stored yet, starts the lookup in the background and reports it as pending.
+ */
+export async function loadCandidate(
+  env: Env,
+  deps: Deps,
+  id: string,
+): Promise<{ detail: CandidateDetail; cacheControl: string; pending: boolean }> {
+  const cand = await requireStaticJson<CandidateDetail>(env, `candidates/${id}.json`, `candidate '${id}'`);
   const now = deps.now().toISOString();
   if (cand.classification === "injected") {
-    c.header("Cache-Control", "public, max-age=300");
-    return c.json(applyKnownObject(cand, cand.known_object, false, now));
+    return { detail: applyKnownObject(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
   }
   const rec = await readRecord(deps, cand);
   if (rec) {
     const e: Enrichment = { ...rec.enrichment, known_object: { ...rec.enrichment.known_object, enrichment: "cached" } };
-    c.header("Cache-Control", rec.status === "checked" ? "public, max-age=300" : "no-store");
-    return c.json(applyKnownObject(cand, e.known_object, e.matched, now));
+    return {
+      detail: applyKnownObject(cand, e.known_object, e.matched, now),
+      cacheControl: rec.status === "checked" ? "public, max-age=300" : "no-store",
+      pending: false,
+    };
   }
   // Nothing stored yet: answer now and look JPL up in the background. The client polls.
   deps.waitUntil(
@@ -80,9 +104,8 @@ candidates.get("/:candidateId", async (c) => {
     ...notCheckedKnownObject("Checking JPL's catalog of known asteroids and comets now. This takes up to a minute the first time.", cand.known_object),
     enrichment: "pending" as const,
   };
-  c.header("Cache-Control", "no-store");
-  return c.json(applyKnownObject(cand, pending, false, now));
-});
+  return { detail: applyKnownObject(cand, pending, false, now), cacheControl: "no-store", pending: true };
+}
 
 export function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {
   const classification: Classification = e.matched ? "known_object" : s.classification;

@@ -17,16 +17,18 @@ enabled = true
 # top level and apply to previews too.
 [previews]
 
-# JPL known-object results, stored globally so visitors never wait on JPL (worker/src/store.ts).
+# Workers AI output cache (worker/src/ai/core.ts), and JPL known-object results written before
+# they moved to D1 (read and copied into D1 until they expire; worker/src/store.ts).
 # No id: `wrangler deploy` creates the namespace on first deploy.
 [[kv_namespaces]]
 binding = "ENRICHMENT"
 
-# Refresh stale and failed JPL results every 30 minutes (worker/src/scheduled.ts).
+# Refresh stale and failed JPL results every 10 minutes (worker/src/scheduled.ts).
 [triggers]
 crons = ["*/10 * * * *"]
 
-# Sky requests, vetting votes, model versions, tracked objects, rate limits, AI usage.
+# JPL known-object results and lookup locks, sky requests, vetting votes, model versions,
+# tracked objects, rate limits, AI usage.
 # No database_id: `wrangler deploy` creates the database on first deploy. The Worker applies
 # migrations/ itself on first use (worker/src/db.ts); `npx wrangler d1 migrations apply DB --remote`
 # does the same from the command line.
@@ -34,3 +36,30 @@ crons = ["*/10 * * * *"]
 binding = "DB"
 database_name = "spherex-planet-x"
 migrations_dir = "migrations"
+
+# Workers AI: analyst write-ups, "Ask about this object" and natural-language search
+# (worker/src/ai/). Daily call caps in worker/src/ai/core.ts keep usage inside the free
+# 10,000 neurons/day; without the binding every AI feature falls back to template text.
+# Workers AI has no local mode: `npx wrangler dev` reaches the real model and needs
+# `npx wrangler login`. Without Cloudflare credentials use `npm run dev:offline` (env.offline below).
+[ai]
+binding = "AI"
+
+[vars]
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+
+# Local development without Cloudflare credentials: every binding except Workers AI, which is
+# remote-only (the AI features then return their template text). `npm run dev:offline`.
+# Named environments do not inherit bindings, so they are repeated here.
+[env.offline]
+
+[[env.offline.kv_namespaces]]
+binding = "ENRICHMENT"
+
+[[env.offline.d1_databases]]
+binding = "DB"
+database_name = "spherex-planet-x"
+migrations_dir = "migrations"
+
+[env.offline.vars]
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"

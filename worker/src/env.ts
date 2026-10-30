@@ -5,6 +5,12 @@ export interface Env {
   ENRICHMENT?: KVNamespace;
   /** D1 database (see db.ts and migrations/). Optional so local tools run without it. */
   DB?: D1Database;
+  /** Workers AI (see ai/). Optional: without it every AI feature falls back to deterministic text. */
+  AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
+  /** Text model id for Workers AI; defaults to ai/core.ts DEFAULT_MODEL. */
+  AI_MODEL?: string;
+  /** Salt for hashing visitor session ids and IP addresses before they are stored. */
+  HASH_SALT?: string;
 }
 
 /** Minimal cache interface (caches.default in production, an in-memory fake in tests). */
@@ -34,6 +40,8 @@ export interface Deps {
   fetch: typeof fetch;
   cache: CacheLike | null;
   kv: KvLike | null;
+  /** D1 (the DB binding): JPL results and locks (store.ts). Null in local tools without D1. */
+  db: D1Database | null;
   budget: Budget;
   /** Keep work running after the response is sent (ExecutionContext.waitUntil). */
   waitUntil: (work: Promise<unknown>) => void;
@@ -44,6 +52,7 @@ export const defaultDeps = (env?: Env, ctx?: Pick<ExecutionContext, "waitUntil">
   fetch: (input, init) => fetch(input, init),
   cache: typeof caches !== "undefined" ? (caches as unknown as { default: CacheLike }).default : null,
   kv: env?.ENRICHMENT ?? null,
+  db: env?.DB ?? null,
   budget: { remaining: SUBREQUEST_BUDGET },
   waitUntil: ctx ? (work) => ctx.waitUntil(work) : (work) => void work.catch(() => undefined),
   now: () => new Date(),

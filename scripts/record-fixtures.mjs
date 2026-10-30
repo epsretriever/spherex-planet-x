@@ -18,8 +18,8 @@ const args = process.argv.slice(2);
 const at = args.indexOf("--base");
 const base = (at >= 0 && args[at + 1] ? args[at + 1] : "http://127.0.0.1:8787").replace(/\/$/, "");
 
-async function get(path) {
-  const res = await fetch(base + path, { headers: { Accept: "application/json" } });
+async function get(path, init = {}) {
+  const res = await fetch(base + path, { ...init, headers: { Accept: "application/json", ...init.headers } });
   const text = await res.text();
   let body;
   try {
@@ -31,10 +31,13 @@ async function get(path) {
   return { status: res.status, body };
 }
 
+const post = (path, body) =>
+  get(path, { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
+
 const manifest = { recorded_utc: new Date().toISOString(), base, files: {} };
-function save(name, path, rec) {
+function save(name, path, rec, request) {
   writeFileSync(join(out, name), `${JSON.stringify(rec.body, null, 2)}\n`);
-  manifest.files[name] = { path, status: rec.status };
+  manifest.files[name] = request ? { path, status: rec.status, request } : { path, status: rec.status };
   console.log(`${name}  <-  ${path}`);
 }
 
@@ -59,7 +62,21 @@ const real = cands.body.candidates.filter((c) => c.classification !== "injected"
 if (real.length > 0) {
   const top = real.reduce((a, b) => (b.detection_count > a.detection_count ? b : a));
   save("candidate_detail.json", `/api/candidates/${top.candidate_id}`, await get(`/api/candidates/${top.candidate_id}`));
+
+  // Workers AI: a write-up, a question and a search, exactly as served (AI text or the template
+  // fallback; `source` and `model` in each response say which).
+  const w = `/api/candidates/${top.candidate_id}/writeup`;
+  save("ai_writeup.json", w, await get(w));
+  const q = {
+    subject_kind: "candidate",
+    subject_id: top.candidate_id,
+    question: "How fast is it moving, and does it match a known asteroid?",
+    session_id: "fixture-recorder",
+  };
+  save("ai_answer.json", "/api/ask", await post("/api/ask", q), q);
 }
+const s = { query: "slow unexplained objects, most reliable first" };
+save("ai_search.json", "/api/search", await post("/api/search", s), s);
 
 const objects = await get("/api/objects");
 save("objects.json", "/api/objects", objects);

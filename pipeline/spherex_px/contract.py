@@ -7,6 +7,9 @@ from pathlib import Path
 
 from .schemas import (
     ALL_RESPONSE_MODELS,
+    AiAnswer,
+    AiSearch,
+    AiWriteup,
     CandidateDetail,
     CandidateList,
     FieldDetail,
@@ -33,6 +36,9 @@ FIXTURE_MODELS = {
     "objects.json": ObjectList,
     "object_detail.json": ObjectDetail,
     "survey.json": Survey,
+    "ai_writeup.json": AiWriteup,
+    "ai_answer.json": AiAnswer,
+    "ai_search.json": AiSearch,
 }
 
 

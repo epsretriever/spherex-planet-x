@@ -88,7 +88,17 @@ export interface FieldSummary {
   origin: "showcase" | "run";
 }
 
-export interface FieldList extends Envelope {
+/** Paging of a list response (`?limit=&offset=`). Static files carry the whole list. */
+export interface Page {
+  /** Items matching the filters, before paging. */
+  total?: number;
+  offset?: number;
+  limit?: number | null;
+  /** Offset of the next page, or null on the last page. */
+  next_offset?: number | null;
+}
+
+export interface FieldList extends Envelope, Page {
   build_run_id?: string | null;
   generated_utc: string;
   fields: FieldSummary[];
@@ -241,7 +251,7 @@ export interface CandidateSummary {
   known_object_designation: string | null;
 }
 
-export interface CandidateList extends Envelope {
+export interface CandidateList extends Envelope, Page {
   build_run_id?: string | null;
   generated_utc: string;
   total: number;
@@ -373,9 +383,11 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Other objects matched to the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker. */
+  also_seen_as?: string[];
 }
 
-export interface ObjectList extends Envelope {
+export interface ObjectList extends Envelope, Page {
   build_run_id?: string | null;
   generated_utc: string;
   total: number;
@@ -391,6 +403,8 @@ export interface ObjectDetail extends Envelope {
   thumbnail_url: string;
   field_ids: string[];
   candidate_ids: string[];
+  /** Other objects matched to the same JPL designation. */
+  also_seen_as?: string[];
   detections: ObjectDetection[];
   motion: Motion;
   distance_class: DistanceClass;
@@ -459,6 +473,8 @@ export interface Survey extends Envelope {
     n_epochs: number;
     n_candidates: number;
     n_objects: number;
+    /** Distinct JPL designations among matched objects (from stored JPL results; added by the Worker). */
+    n_known_objects?: number | null;
   };
   last_run: {
     run_id: string;
@@ -506,6 +522,10 @@ export interface AiAnswer extends Envelope {
   model: string | null;
   cached: boolean;
   generated_utc: string;
+}
+
+export interface SearchRequest {
+  query: string;
 }
 
 export type SortKey = "score" | "rate" | "newest" | "unusual";

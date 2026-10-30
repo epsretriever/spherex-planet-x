@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Visual QA on REAL data: the static export plus the Worker, run locally with `wrangler dev`
+ * Visual QA on REAL data: the static export plus the Worker, run locally with `wrangler dev --env offline`
  * from the repository root, serving the pipeline's published files in public/data/.
  * Build first (`npm run build` at the root), then `npm run test:real` here.
  */
@@ -26,7 +26,9 @@ export default defineConfig({
     { name: "desktop-1280", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } } },
   ],
   webServer: {
-    command: `npx wrangler dev --port ${PORT} --ip 127.0.0.1`,
+    // env.offline: every binding except Workers AI, which needs Cloudflare credentials (AI panels
+    // then show their template text).
+    command: `npx wrangler dev --env offline --port ${PORT} --ip 127.0.0.1`,
     cwd: "..",
     url: `http://127.0.0.1:${PORT}/api/health`,
     reuseExistingServer: !process.env.CI,
