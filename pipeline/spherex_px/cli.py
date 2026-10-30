@@ -145,6 +145,22 @@ def _survey_ledger(args: argparse.Namespace) -> int:
     return 0
 
 
+def _orbit_validation(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .orbit_validation import run
+
+    doc = run(Path(args.out) if args.out else DEFAULT_OUT, args.candidates, args.per_population)
+    for r in doc.rows:
+        print(
+            f"{r.population:15s} n={r.n:3d} distance in 5-95%: {r.distance_in_5_95_interval:.2f}  "
+            f"class right: {r.distance_class_correct:.2f}  30-day inside 3 sigma: "
+            f"{r.prediction_30d_inside_3sigma:.2f}"
+        )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -187,6 +203,18 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
     sl.set_defaults(func=_survey_ledger)
+    ov = sub.add_parser(
+        "orbit-validation", help="test orbit fitting on simulated asteroids (SPHEREx geometry)"
+    )
+    ov.add_argument(
+        "--candidates",
+        nargs="+",
+        default=["aquarius-a-c01", "aquarius-b-c01"],
+        help="candidates whose observing times and positions are reused",
+    )
+    ov.add_argument("--per-population", type=int, default=12)
+    ov.add_argument("--out")
+    ov.set_defaults(func=_orbit_validation)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

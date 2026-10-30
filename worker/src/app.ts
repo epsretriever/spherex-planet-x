@@ -8,7 +8,7 @@ import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
 import { health } from "./routes/health";
 import { objects, survey } from "./routes/objects";
-import { injection, runs } from "./routes/static-docs";
+import { injection, runs, validation } from "./routes/static-docs";
 
 export type AppEnv = { Bindings: Env; Variables: { deps: Deps } };
 
@@ -35,6 +35,7 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/runs", runs);
   app.route("/api/objects", objects);
   app.route("/api/survey", survey);
+  app.route("/api/validation", validation);
   app.route("/api/candidates", candidateWriteups);
   app.route("/api/objects", objectWriteups);
   app.route("/api/ask", askRoute);

@@ -354,6 +354,44 @@ export interface OrbitalElements {
   n_clones: number;
   clones_url: string | null;
   jpl_comparison: JplOrbitComparison | null;
+  /** Distance from the Sun at the epoch: median and 5-95% range of the clones. */
+  helio_distance_au?: DistanceEstimate | null;
+  /** Sampled orbits that fit the detections (statistical ranging). */
+  n_ranging_orbits?: number | null;
+  /** Which of the orbits that fit is reported, in plain words. */
+  reported_orbit?: string | null;
+}
+
+/** objects/{id}/clones.json: orbits consistent with the detections (the uncertainty cloud). */
+export interface OrbitClones extends Envelope {
+  object_id: string;
+  epoch_mjd: number;
+  frame: string;
+  clones: { a_au: number; e: number; i_deg: number; node_deg: number; peri_deg: number; mean_anomaly_deg: number }[];
+}
+
+/** validation/orbits.json: orbit fitting tested on simulated asteroids with SPHEREx's real geometry. */
+export interface OrbitValidation extends Envelope {
+  generated_utc: string;
+  simulated: true;
+  method: string;
+  geometry_from: string[];
+  per_population: number;
+  seed: number;
+  rows: {
+    population: string;
+    n: number;
+    distance_in_5_95_interval: number;
+    distance_rel_error_median: number;
+    distance_class_correct: number;
+    a_rel_error_median: number;
+    e_abs_error_median: number;
+    i_abs_error_deg_median: number;
+    prediction_30d_error_arcsec_median: number;
+    prediction_30d_inside_2sigma: number;
+    prediction_30d_inside_3sigma: number;
+    refined_fraction: number;
+  }[];
 }
 
 export interface ObjectDetection extends Detection {
@@ -437,6 +475,8 @@ export interface ObjectPrediction extends Envelope {
   observer: string;
   days: number;
   points: PredictionPoint[];
+  /** How far the orbit can be trusted, from the clones' spread. */
+  note_plain?: string | null;
 }
 
 export type TileStatus = "processed" | "empty" | "failed" | "pending" | "no_data";
