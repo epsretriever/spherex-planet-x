@@ -84,3 +84,28 @@ test("an unpublished field list reads as empty, not broken", async ({ page }) =>
   await page.goto("/explore/");
   await expect(page.getByRole("heading", { name: "No patches of sky yet" })).toBeVisible();
 });
+
+test("the pair picker states the gap; the no-data legend shows only when an image has uncovered areas", async ({ page }) => {
+  await page.goto(`/explore/field/?id=${SYNTHETIC.FIELD_ID}`);
+  await expect(page.getByText(/^\d+ hours apart$/).first()).toBeVisible();
+  await expect(page.getByText(/outside SPHEREx's view/)).toHaveCount(0);
+  // The t1 → t3 pair includes the image with a transparent corner.
+  await page.getByRole("combobox", { name: "Compare" }).selectOption({ index: 1 });
+  await expect(page.getByText(/Hatched areas are outside SPHEREx's view/)).toBeVisible();
+});
+
+test("navigation: inline links on wide screens, a menu on narrow ones", async ({ page }, info) => {
+  await page.goto("/");
+  const menu = page.getByRole("button", { name: "Menu" });
+  if (info.project.name === "desktop") {
+    await expect(menu).toBeHidden();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Detective" }).click();
+  } else {
+    await menu.click();
+    const sheet = page.getByRole("dialog", { name: "Sections" });
+    await expect(sheet.getByRole("link", { name: /Explore/ })).toBeVisible();
+    await sheet.getByRole("link", { name: /Detective/ }).click();
+    await expect(sheet).toBeHidden();
+  }
+  await expect(page).toHaveURL(/\/detective\/$/);
+});

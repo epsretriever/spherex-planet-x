@@ -323,17 +323,20 @@ function skyImage(epochIndex: number, w = W, h = H, center?: { x: number; y: num
   const sources = [...STARS, ...dots];
   const ox = center ? center.x - w / 2 : 0;
   const oy = center ? center.y - h / 2 : 0;
+  // The third date has a corner outside the detector: transparent, as real field images are.
+  const noData = epochIndex === 2 && !center;
   return encodePng(w, h, (px, py) => {
     const x = px + ox;
     const y = py + oy;
+    if (noData && x + y < 50) return [0, 0, 0, 0];
     let v = 14 + noise() * 16;
     for (const st of sources) {
       const d2 = (x - st.x) ** 2 + (y - st.y) ** 2;
       if (d2 < 25) v += st.a * Math.exp(-d2 / (2 * st.s * st.s));
     }
     const c = Math.min(255, Math.round(v));
-    return [c, c, c];
-  });
+    return noData ? [c, c, c, 255] : [c, c, c];
+  }, noData);
 }
 
 const json = (route: Route, body: unknown, status = 200) =>

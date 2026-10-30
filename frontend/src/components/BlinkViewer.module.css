@@ -143,7 +143,8 @@
   overflow: hidden;
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
-  background: #000;
+  /* Shows through transparent no-data pixels: "outside SPHEREx's view". */
+  background: var(--no-data);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6), 0 24px 64px -24px rgb(207 68 70 / 0.35);
   touch-action: pan-y;
   user-select: none;
@@ -580,4 +581,28 @@
   border-radius: var(--radius);
   text-align: center;
   color: var(--text-muted);
+}
+
+.pairFacts {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.noDataSwatch {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+  background: var(--no-data);
 }

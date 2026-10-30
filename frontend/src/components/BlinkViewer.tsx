@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { assetUrl } from "@/lib/api";
-import { buildSequences, canRender } from "@/lib/blink";
+import { buildSequences, canRender, formatGap, type Sequence } from "@/lib/blink";
 import type { BlinkPair, Epoch, GridWcs, Mover } from "@/lib/contract";
-import { formatInterval, formatRate, formatUtcDate, formatUtcShortDate, formatWavelength } from "@/lib/format";
+import { formatInterval, formatRate, formatUtcDate, formatUtcShortDate, formatUtcTime, formatWavelength } from "@/lib/format";
 import { gridToImage } from "@/lib/grid";
 import { CLASSIFICATIONS } from "@/lib/labels";
 import { candidateHref } from "@/lib/routes";
+import { useHasTransparency } from "@/lib/useHasTransparency";
 import { useImagePreload } from "@/lib/useImagePreload";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { ClassificationBadge } from "./ClassificationBadge";
@@ -122,6 +123,7 @@ export function BlinkViewer({
 
   const urls = useMemo(() => frames.filter(canRender).map((f) => assetUrl(f.image.url)), [frames]);
   const preload = useImagePreload(urls);
+  const hasNoData = useHasTransparency(urls);
   const ready = preload.done;
 
   const n = frames.length;
@@ -254,8 +256,7 @@ export function BlinkViewer({
             >
               {sequences.map((s) => (
                 <option key={s.key} value={s.key}>
-                  {s.label}
-                  {s.lambdaMatched === true ? " · same wavelength" : s.lambdaMatched === false ? " · different wavelengths" : ""}
+                  {optionLabel(s)}
                 </option>
               ))}
             </select>
@@ -278,6 +279,17 @@ export function BlinkViewer({
           ))}
         </div>
       </div>
+
+      {sequence.gapHours !== null && (
+        <p className={styles.pairFacts}>
+          <span className="mono">{formatGap(sequence.gapHours)}</span>
+          {sequence.displacementArcsec !== null && (
+            <>
+              {" · "}the moving object shifts <span className="mono">{Math.round(sequence.displacementArcsec)}″</span> between them
+            </>
+          )}
+        </p>
+      )}
 
       <WavelengthNote lambdaMatched={sequence.lambdaMatched} labelPlain={sequence.labelPlain} />
 
@@ -506,6 +518,13 @@ export function BlinkViewer({
         </div>
       )}
 
+      {hasNoData && (
+        <p className={styles.legend}>
+          <span className={styles.noDataSwatch} aria-hidden="true" />
+          Hatched areas are outside SPHEREx&apos;s view: the detector didn&apos;t cover that part of the patch in that image.
+        </p>
+      )}
+
       <p className={styles.caption}>
         {n > 1 ? (
           <>
@@ -704,4 +723,16 @@ function MoverSheet({
       )}
     </Sheet>
   );
+}
+
+/** Short picker text: "Jun 3, 08:03 → 21:11 · 13 h · same λ". The full detail shows below the picker. */
+function optionLabel(s: Sequence): string {
+  if (s.gapHours === null || s.epochs.length !== 2) return s.label;
+  const [a, b] = s.epochs as [Epoch, Epoch];
+  const sameDay = formatUtcDate(a.time_utc) === formatUtcDate(b.time_utc);
+  const dates = sameDay
+    ? `${formatUtcShortDate(a.time_utc)}, ${formatUtcTime(a.time_utc).replace(" UTC", "")} → ${formatUtcTime(b.time_utc).replace(" UTC", "")}`
+    : `${formatUtcShortDate(a.time_utc)} → ${formatUtcShortDate(b.time_utc)}`;
+  const gap = s.gapHours < 48 ? `${Math.round(s.gapHours)} h` : `${(s.gapHours / 24).toFixed(1)} d`;
+  return `${dates} · ${gap}${s.lambdaMatched ? " · same λ" : ""}`;
 }
