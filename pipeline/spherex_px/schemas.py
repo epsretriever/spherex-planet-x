@@ -868,7 +868,9 @@ class AiWriteup(Envelope):
         description="template when the AI output failed a check or the AI was unavailable"
     )
     model: str | None = Field(description="Workers AI model ID, null for template text")
-    label_plain: str = "AI-written from the measurements below"
+    label_plain: str = Field(
+        description='"AI-written from the measurements below", or "Written from the measurements below" for template text'
+    )
     cached: bool
     generated_utc: str
 
