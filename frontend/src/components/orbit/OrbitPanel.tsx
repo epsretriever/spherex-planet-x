@@ -103,6 +103,12 @@ export function OrbitPanel({ object, label }: { object: ObjectDetail; label: str
         </li>
       </ul>
 
+      {object.orbit_status === "preliminary" && (
+        <p className={reportStyles.note} role="note">
+          Preliminary orbit: from a short stretch of sightings, many orbits fit. The elements below are one that fits, not a measurement;
+          the distance range and the cloud show what the data actually pins down.
+        </p>
+      )}
       <div className={styles.cols}>
         <div className={reportStyles.tableWrap}>
           <table className={reportStyles.table}>
