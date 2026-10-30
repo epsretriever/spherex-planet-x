@@ -49,7 +49,7 @@ export class MemoryKv implements KvLike {
 export type FetchHandler = (url: URL, init?: RequestInit) => Response | Promise<Response>;
 
 export function makeClient(
-  opts: { files?: Record<string, unknown>; upstream?: FetchHandler; cache?: MemoryCache; kv?: MemoryKv | null } = {},
+  opts: { files?: Record<string, unknown>; upstream?: FetchHandler; cache?: MemoryCache; kv?: MemoryKv | null; db?: D1Database | null } = {},
 ) {
   const calls: string[] = [];
   const cache = opts.cache ?? new MemoryCache();
@@ -64,13 +64,14 @@ export function makeClient(
     }) as typeof fetch,
     cache,
     kv,
+    db: opts.db ?? null,
     budget: { remaining: SUBREQUEST_BUDGET },
     waitUntil: (work) => void background.push(work),
     now: () => new Date("2026-10-29T12:00:00Z"),
   };
   // A fresh budget per request, like a real invocation.
   const app = createApp(() => ({ ...deps, budget: { remaining: SUBREQUEST_BUDGET } }));
-  const env: Env = { ASSETS: fakeAssets(opts.files ?? {}) };
+  const env: Env = { ASSETS: fakeAssets(opts.files ?? {}), ...(opts.db ? { DB: opts.db } : {}) };
   const get = (path: string, init?: RequestInit) => app.request(path, init, env);
   /** Wait for work started with waitUntil (background JPL lookups). */
   const settle = async () => {

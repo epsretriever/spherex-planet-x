@@ -10,6 +10,7 @@ function deps(handler: (url: string, init?: RequestInit) => Promise<Response>): 
     fetch: handler as typeof fetch,
     cache: new MemoryCache(),
     kv: null,
+  db: null,
     budget: { remaining: 40 },
     waitUntil: () => undefined,
     now: () => new Date(),

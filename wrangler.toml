@@ -17,16 +17,18 @@ enabled = true
 # top level and apply to previews too.
 [previews]
 
-# JPL known-object results, stored globally so visitors never wait on JPL (worker/src/store.ts).
+# Workers AI output cache (worker/src/ai/core.ts), and JPL known-object results written before
+# they moved to D1 (read and copied into D1 until they expire; worker/src/store.ts).
 # No id: `wrangler deploy` creates the namespace on first deploy.
 [[kv_namespaces]]
 binding = "ENRICHMENT"
 
-# Refresh stale and failed JPL results every 30 minutes (worker/src/scheduled.ts).
+# Refresh stale and failed JPL results every 10 minutes (worker/src/scheduled.ts).
 [triggers]
 crons = ["*/10 * * * *"]
 
-# Sky requests, vetting votes, model versions, tracked objects, rate limits, AI usage.
+# JPL known-object results and lookup locks, sky requests, vetting votes, model versions,
+# tracked objects, rate limits, AI usage.
 # No database_id: `wrangler deploy` creates the database on first deploy. The Worker applies
 # migrations/ itself on first use (worker/src/db.ts); `npx wrangler d1 migrations apply DB --remote`
 # does the same from the command line.

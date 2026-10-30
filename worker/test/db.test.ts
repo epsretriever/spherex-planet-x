@@ -19,6 +19,7 @@ describe("D1 schema", () => {
     const s = statements(MIGRATIONS[0]!.sql);
     expect(s.every((x) => !x.startsWith("--"))).toBe(true);
     expect(s.filter((x) => x.startsWith("CREATE TABLE")).length).toBe(7);
+    expect(statements(MIGRATIONS[1]!.sql).filter((x) => x.startsWith("CREATE TABLE")).length).toBe(2);
   });
 
   it("creates every table, is idempotent, and enforces constraints", async () => {
@@ -30,6 +31,8 @@ describe("D1 schema", () => {
       .filter((n) => n !== "sqlite_sequence");
     expect(tables).toEqual([
       "ai_usage",
+      "enrichment",
+      "locks",
       "model_versions",
       "rate_limits",
       "schema_migrations",
@@ -38,7 +41,7 @@ describe("D1 schema", () => {
       "vetting_items",
       "votes",
     ]);
-    expect((db.prepare("SELECT id FROM schema_migrations").all() as { id: string }[]).map((r) => r.id)).toEqual(["0001_init"]);
+    expect((db.prepare("SELECT id FROM schema_migrations").all() as { id: string }[]).map((r) => r.id)).toEqual(["0001_init", "0002_enrichment"]);
     const now = "2026-10-30T00:00:00Z";
     expect(() =>
       db.prepare("INSERT INTO sky_requests (request_id, ra_deg, dec_deg, client_hash, created_utc, updated_utc) VALUES (?,?,?,?,?,?)").run("r1", 400, 0, "h", now, now),

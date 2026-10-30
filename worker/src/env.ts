@@ -40,6 +40,8 @@ export interface Deps {
   fetch: typeof fetch;
   cache: CacheLike | null;
   kv: KvLike | null;
+  /** D1 (the DB binding): JPL results and locks (store.ts). Null in local tools without D1. */
+  db: D1Database | null;
   budget: Budget;
   /** Keep work running after the response is sent (ExecutionContext.waitUntil). */
   waitUntil: (work: Promise<unknown>) => void;
@@ -50,6 +52,7 @@ export const defaultDeps = (env?: Env, ctx?: Pick<ExecutionContext, "waitUntil">
   fetch: (input, init) => fetch(input, init),
   cache: typeof caches !== "undefined" ? (caches as unknown as { default: CacheLike }).default : null,
   kv: env?.ENRICHMENT ?? null,
+  db: env?.DB ?? null,
   budget: { remaining: SUBREQUEST_BUDGET },
   waitUntil: ctx ? (work) => ctx.waitUntil(work) : (work) => void work.catch(() => undefined),
   now: () => new Date(),
