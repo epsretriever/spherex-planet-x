@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { candidateHref } from "@/components/CandidateCard";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
+import { QualityMeter } from "@/components/QualityMeter";
 import { ErrorState } from "@/components/DataState";
-import { ReportSkeleton } from "@/components/Skeletons";
+import { Deferred } from "@/components/Deferred";
+import { WhenVisible } from "@/components/WhenVisible";
+import { ReportSkeleton, ViewerSkeleton } from "@/components/Skeletons";
 import { ErrorSourcesPanel } from "@/components/report/ErrorSourcesPanel";
 import { ExplanationPanel } from "@/components/report/ExplanationPanel";
 import { FieldContext } from "@/components/report/FieldContext";
@@ -23,10 +26,11 @@ import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { SourceDrawer, type SourceSubject } from "@/components/SourceDrawer";
 import { getCandidate, getCandidates } from "@/lib/api";
 import type { CandidateDetail } from "@/lib/contract";
-import { formatHours, formatRate } from "@/lib/format";
-import { CLASSIFICATIONS } from "@/lib/labels";
+import { formatAgo, formatHours, formatRate } from "@/lib/format";
+import type { ObjectName } from "@/lib/names";
 import { SITE_NAME } from "@/lib/site";
 import { useData } from "@/lib/useData";
+import { useObjectNames } from "@/lib/useObjectNames";
 import styles from "./CandidateReport.module.css";
 
 const DISCLAIMER =
@@ -40,11 +44,12 @@ export function CandidateReport() {
   const id = useSearchParams().get("id");
   const state = useData(id ? `candidate:${id}` : null, (signal) => getCandidate(id!, signal));
   const [fresh, setFresh] = useState<CandidateDetail | null>(null);
+  const { nameFor } = useObjectNames();
   const shown = fresh && fresh.candidate_id === id ? fresh : state.status === "ok" ? state.data : null;
 
   useEffect(() => {
-    if (shown) document.title = `${shown.candidate_id} · ${SITE_NAME}`;
-  }, [shown]);
+    if (shown) document.title = `${nameFor({ candidate_id: shown.candidate_id, classification: shown.classification, designation: shown.known_object.designation }).title} · ${SITE_NAME}`;
+  }, [shown, nameFor]);
 
   // The Worker answers at once and checks JPL in the background; poll until the result lands.
   const pending = shown?.known_object.enrichment === "pending";
@@ -91,13 +96,14 @@ export function CandidateReport() {
       </>
     );
   }
-  return <Report c={shown ?? state.data} />;
+  const c = shown ?? state.data;
+  return <Report c={c} name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object.designation })} nameFor={nameFor} />;
 }
 
 function Crumbs() {
   return (
     <nav aria-label="Breadcrumb" className={styles.crumbs}>
-      <Link href="/detective/">← All candidates</Link>
+      <Link href="/detective/" prefetch={false}>← All candidates</Link>
     </nav>
   );
 }
@@ -115,7 +121,9 @@ const SECTIONS = [
   ["provenance", "Provenance"],
 ] as const;
 
-function Report({ c }: { c: CandidateDetail }) {
+type NameFor = ReturnType<typeof useObjectNames>["nameFor"];
+
+function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; nameFor: NameFor }) {
   const [source, setSource] = useState<SourceSubject | null>(null);
   const simulated = c.classification === "injected";
   const openSource = (i: number) => {
@@ -149,11 +157,14 @@ function Report({ c }: { c: CandidateDetail }) {
       <header className={styles.header}>
         <div className={styles.headerTop}>
           <ClassificationBadge value={c.classification} size="lg" />
-          <span className={`mono ${styles.id}`}>{c.candidate_id}</span>
+          <JplStatus known={c.known_object} />
         </div>
-        <h1>{c.label_plain}</h1>
-        <p className="lede">{c.summary_plain}</p>
-        <p className={styles.classNote}>{CLASSIFICATIONS[c.classification]?.plain}</p>
+        <h1 className={styles.title}>{name.title}</h1>
+        <p className={`mono ${styles.id}`}>
+          <span className="visually-hidden">Pipeline ID </span>
+          {name.id}
+        </p>
+        <p className={`lede ${styles.verdict}`}>{c.summary_plain}</p>
         <dl className={styles.headline}>
           <div>
             <dt>Sightings</dt>
@@ -168,8 +179,10 @@ function Report({ c }: { c: CandidateDetail }) {
             <dd className="mono">{formatRate(c.motion.rate_arcsec_per_hr)}</dd>
           </div>
           <div>
-            <dt>Known object</dt>
-            <dd className="mono">{!c.known_object.checked ? "not checked" : c.known_object.matched ? (c.known_object.designation ?? "yes") : "no match"}</dd>
+            <dt>Signal quality</dt>
+            <dd>
+              <QualityMeter level={c.scores.quality_level} scores={c.scores} />
+            </dd>
           </div>
         </dl>
         {(c.classification === "unmatched" || c.classification === "unconfirmed_pair") && (
@@ -179,21 +192,18 @@ function Report({ c }: { c: CandidateDetail }) {
         )}
       </header>
 
-      <nav className={styles.toc} aria-label="Report sections">
-        <ul>
-          {SECTIONS.filter(([sid]) => present.has(sid)).map(([sid, label]) => (
-            <li key={sid}>
-              <a href={`#${sid}`}>{label}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <SectionNav sections={SECTIONS.filter(([sid]) => present.has(sid))} />
 
+      <Deferred fallback={<ViewerSkeleton label="Loading the evidence" />}>
       <div className={styles.sections}>
         <Panel id="evidence" title="See it move" kicker="Images" intro="The real SPHEREx images where this object was caught, zoomed in on its path.">
-          <FieldContext candidate={c} />
+          <WhenVisible minHeight={520}>
+            <FieldContext candidate={c} />
+          </WhenVisible>
           <h3 className={styles.subhead}>Each sighting up close</h3>
-          <StampStrip detections={c.detections} onSource={openSource} />
+          <WhenVisible minHeight={460}>
+            <StampStrip detections={c.detections} onSource={openSource} />
+          </WhenVisible>
         </Panel>
 
         <ExplanationPanel candidate={c} />
@@ -202,23 +212,32 @@ function Report({ c }: { c: CandidateDetail }) {
           <MeasurementTable detections={c.detections} />
         </Panel>
 
-        <MotionPanel motion={c.motion} detections={c.detections} />
+        <WhenVisible minHeight={700}>
+          <MotionPanel motion={c.motion} detections={c.detections} />
+        </WhenVisible>
         <KnownObjectPanel known={c.known_object} detections={c.detections} />
         <ErrorSourcesPanel errorSources={c.error_sources} vetting={c.vetting} />
         <ScoresPanel scores={c.scores} />
-        {c.spectrum && c.spectrum.points.length > 0 && <SpectrumPanel spectrum={c.spectrum} />}
+        {c.spectrum && c.spectrum.points.length > 0 && (
+          <WhenVisible minHeight={400}>
+            <SpectrumPanel spectrum={c.spectrum} />
+          </WhenVisible>
+        )}
         {c.injection && <InjectionPanel injection={c.injection} />}
         <ProvenancePanel candidate={c} onSource={openSource} />
       </div>
 
-      <Neighbors current={c} />
+      <WhenVisible minHeight={96}>
+        <Neighbors current={c} nameFor={nameFor} />
+      </WhenVisible>
+      </Deferred>
       <SourceDrawer subject={source} onClose={() => setSource(null)} />
     </div>
   );
 }
 
 /** Previous / next candidate in the default list order (highest score first). */
-function Neighbors({ current }: { current: CandidateDetail }) {
+function Neighbors({ current, nameFor }: { current: CandidateDetail; nameFor: NameFor }) {
   const includeInjected = current.classification === "injected";
   const state = useData(`neighbors:${includeInjected}`, (signal) => getCandidates({ include_injected: includeInjected }, signal));
   if (state.status !== "ok") return null;
@@ -232,7 +251,7 @@ function Neighbors({ current }: { current: CandidateDetail }) {
       {prev ? (
         <Link href={candidateHref(prev.candidate_id)} className={`card ${styles.neighbor}`}>
           <span className={styles.kicker}>← Previous</span>
-          <span>{prev.label_plain}</span>
+          <span>{nameFor({ candidate_id: prev.candidate_id, classification: prev.classification, designation: prev.known_object_designation }).title}</span>
         </Link>
       ) : (
         <span />
@@ -240,9 +259,92 @@ function Neighbors({ current }: { current: CandidateDetail }) {
       {next && (
         <Link href={candidateHref(next.candidate_id)} className={`card ${styles.neighbor} ${styles.next}`}>
           <span className={styles.kicker}>Next →</span>
-          <span>{next.label_plain}</span>
+          <span>{nameFor({ candidate_id: next.candidate_id, classification: next.classification, designation: next.known_object_designation }).title}</span>
         </Link>
       )}
+    </nav>
+  );
+}
+
+/** Where the JPL check stands, from the live known_object block. */
+function JplStatus({ known }: { known: CandidateDetail["known_object"] }) {
+  const ago = known.query_utc ? formatAgo(known.query_utc) : null;
+  let tone: "pending" | "ok" | "warn";
+  let text: string;
+  if (!known.checked && known.enrichment === "pending") {
+    tone = "pending";
+    text = "Checking JPL now";
+  } else if (!known.checked) {
+    tone = "warn";
+    text = "JPL check didn't complete";
+  } else {
+    tone = "ok";
+    text = `${known.matched ? "Matched in JPL" : "No JPL match"}${ago ? ` · checked ${ago}` : ""}`;
+  }
+  return (
+    <span role="status" aria-live="polite">
+      <a href="#known" className={styles.jpl} data-tone={tone}>
+        <span className={styles.jplDot} aria-hidden="true" />
+        {text}
+      </a>
+    </span>
+  );
+}
+
+/** Sticky jump links that highlight the section being read. */
+function SectionNav({ sections }: { sections: readonly (readonly [string, string])[] }) {
+  const [active, setActive] = useState<string | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // Work out the active section from positions on scroll. Sections mount lazily, so look them
+  // up each time rather than observing a fixed set.
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = window.innerHeight * 0.3;
+      let current: string | null = null;
+      for (const [id] of sections) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      setActive(current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [sections]);
+
+  // Keep the active link in view on narrow screens, where the list scrolls sideways.
+  useEffect(() => {
+    const link = listRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    link?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [active]);
+
+  return (
+    <nav className={styles.toc} aria-label="Report sections">
+      <ul ref={listRef}>
+        {sections.map(([sid, label]) => (
+          <li key={sid}>
+            <a href={`#${sid}`} aria-current={active === sid ? "true" : undefined}>
+              {label}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a href="#main" className={styles.top}>
+            ↑ Top
+          </a>
+        </li>
+      </ul>
     </nav>
   );
 }

@@ -1,11 +1,16 @@
+"use client";
+
 import type { Detection } from "@/lib/contract";
 import { fmt, formatUtcDateTime } from "@/lib/format";
 import { Term } from "../Term";
 import { detectionLabel } from "./StampStrip";
+import { useShowAll } from "./ShowAll";
 import styles from "./report.module.css";
 
 export function MeasurementTable({ detections }: { detections: Detection[] }) {
+  const { count, toggle } = useShowAll(detections.length, 8, "rows");
   return (
+    <>
     <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Measurements per sighting (scrolls sideways)">
       <table className={styles.table}>
         <thead>
@@ -41,7 +46,7 @@ export function MeasurementTable({ detections }: { detections: Detection[] }) {
           </tr>
         </thead>
         <tbody>
-          {detections.map((d, i) => (
+          {detections.slice(0, count).map((d, i) => (
             <tr key={`${d.epoch_id}-${i}`} id={`detection-${i}`}>
               <td>{detectionLabel(i)}</td>
               <td>{formatUtcDateTime(d.time_utc).replace(" UTC", "")}</td>
@@ -64,5 +69,7 @@ export function MeasurementTable({ detections }: { detections: Detection[] }) {
         </tbody>
       </table>
     </div>
+    {toggle}
+    </>
   );
 }

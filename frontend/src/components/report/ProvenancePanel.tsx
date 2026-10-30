@@ -1,14 +1,23 @@
+"use client";
+
 import type { CandidateDetail } from "@/lib/contract";
 import { formatUtcDateTime } from "@/lib/format";
 import { Panel } from "./Panel";
+import { useShowAll } from "./ShowAll";
 import styles from "./report.module.css";
 
 export function ProvenancePanel({ candidate, onSource }: { candidate: CandidateDetail; onSource: (i: number) => void }) {
   const p = candidate.provenance;
+  const { count, toggle } = useShowAll(candidate.detections.length, 3, "source files");
+  const releases = Array.from(new Set(candidate.detections.map((d) => d.source?.data_release).filter(Boolean)));
   return (
     <Panel id="provenance" title="Where this came from" kicker="Provenance">
+      <p className={styles.intro}>
+        {candidate.detections.length} SPHEREx Level 2 files{releases.length ? ` from ${releases.join(", ")}` : ""}, one per sighting.
+        Each links to the full file in the public archive.
+      </p>
       <ul className={styles.sourcesList}>
-        {candidate.detections.map((d, i) => (
+        {candidate.detections.slice(0, count).map((d, i) => (
           <li key={`${d.epoch_id}-${i}`}>
             <span>
               #{i + 1} <span className="mono">{d.source?.file ?? "missing source"}</span>
@@ -26,6 +35,7 @@ export function ProvenancePanel({ candidate, onSource }: { candidate: CandidateD
           </li>
         ))}
       </ul>
+      {toggle}
       <dl className={styles.facts} style={{ marginTop: "var(--space-4)" }}>
         <div>
           <dt>Pipeline run</dt>

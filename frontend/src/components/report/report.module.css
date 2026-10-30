@@ -41,13 +41,13 @@
 
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr));
   gap: var(--space-3);
   margin: 0 0 var(--space-4);
 }
 
 .facts > div {
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
   min-width: 0;
@@ -75,7 +75,7 @@
 /* Stamps */
 .stamps {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: var(--space-3);
   margin: 0;
   padding: 0;
@@ -432,7 +432,7 @@
 /* Explanation */
 .explanation {
   position: relative;
-  padding: var(--space-6);
+  padding: var(--space-4);
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
   background:
@@ -456,8 +456,14 @@
 
 .explanationText {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   line-height: 1.6;
+}
+
+@media (min-width: 640px) {
+  .explanationText {
+    font-size: var(--text-lg);
+  }
 }
 
 .grounded {
@@ -583,4 +589,40 @@
 
 .sourcesList .mono {
   overflow-wrap: anywhere;
+}
+
+.showAll {
+  margin-top: var(--space-3);
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .showAll {
+    width: auto;
+  }
+}
+
+.checkItem[data-compact] {
+  align-items: center;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.checkItem[data-compact] .checkIcon {
+  grid-row: auto;
+}
+
+.checkDetails summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 32px;
+  align-items: center;
+}
+
+.checkDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.checkDetails[open] summary {
+  margin-bottom: var(--space-1);
 }

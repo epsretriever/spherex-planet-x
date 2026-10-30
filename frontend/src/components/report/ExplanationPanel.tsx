@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { CandidateDetail } from "@/lib/contract";
 import { formatUtcDateTime } from "@/lib/format";
 import { linkNumbers, resolveGrounded } from "@/lib/grounding";
@@ -20,6 +20,7 @@ export function generatorLabel(generator: string) {
 
 export function ExplanationPanel({ candidate }: { candidate: CandidateDetail }) {
   const exp = candidate.explanation;
+  const valuesRef = useRef<HTMLDetailsElement>(null);
   const grounded = useMemo(() => (exp ? resolveGrounded(candidate, exp.grounded_fields ?? []) : null), [candidate, exp]);
 
   useEffect(() => {
@@ -49,7 +50,15 @@ export function ExplanationPanel({ candidate }: { candidate: CandidateDetail }) 
             p.ref === undefined ? (
               <span key={i}>{p.text}</span>
             ) : (
-              <a key={i} href={`#ground-${p.ref}`} className={styles.grounded} title={grounded.values[p.ref]!.path}>
+              <a
+                key={i}
+                href={`#ground-${p.ref}`}
+                className={styles.grounded}
+                title={grounded.values[p.ref]!.path}
+                onClick={() => {
+                  if (valuesRef.current) valuesRef.current.open = true;
+                }}
+              >
                 {p.text}
               </a>
             ),
@@ -65,10 +74,8 @@ export function ExplanationPanel({ candidate }: { candidate: CandidateDetail }) 
         . Highlighted numbers link to the value they came from.
       </p>
       {grounded.values.length > 0 && (
-        <div>
-          <h3 className={styles.kicker} style={{ margin: "0 0 var(--space-2)" }}>
-            Values this explanation uses
-          </h3>
+        <details ref={valuesRef} className={styles.details}>
+          <summary>Values this explanation uses ({grounded.values.length})</summary>
           <ul className={styles.groundList}>
             {grounded.values.map((v, i) => (
               <li key={v.path} id={`ground-${i}`}>
@@ -77,7 +84,7 @@ export function ExplanationPanel({ candidate }: { candidate: CandidateDetail }) 
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
     </Panel>
   );

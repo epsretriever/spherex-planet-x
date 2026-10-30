@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmt, formatHours, formatInterval, formatRate, formatUtcDate, formatUtcDateTime, formatWavelength } from "./format";
+import { fmt, formatAgo, formatHours, formatInterval, formatRate, formatUtcDate, formatUtcDateTime, formatWavelength } from "./format";
 
 describe("format", () => {
   it("formats UTC dates regardless of the local time zone", () => {
@@ -23,5 +23,16 @@ describe("format", () => {
     expect(formatHours(72)).toBe("3.0 days");
     expect(fmt(null)).toBe("—");
     expect(fmt(1.236, 2)).toBe("1.24");
+  });
+});
+
+describe("formatAgo", () => {
+  const now = Date.parse("2026-10-29T12:00:00Z");
+  it("describes how long ago in plain units", () => {
+    expect(formatAgo("2026-10-29T11:59:40Z", now)).toBe("just now");
+    expect(formatAgo("2026-10-29T11:48:00Z", now)).toBe("12 minutes ago");
+    expect(formatAgo("2026-10-29T09:00:00Z", now)).toBe("3 hours ago");
+    expect(formatAgo("2026-10-27T12:00:00Z", now)).toBe("2 days ago");
+    expect(formatAgo("bad", now)).toBe("at an unknown time");
   });
 });
