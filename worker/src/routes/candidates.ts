@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
+import type { Deps, Env } from "../env";
 import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type CandidateSummary, type Classification } from "../contract";
 import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
@@ -59,18 +60,33 @@ candidates.get("/", async (c) => {
 candidates.get("/:candidateId", async (c) => {
   const id = c.req.param("candidateId");
   if (!ID_RE.test(id)) throw badRequest("invalid candidate_id");
-  const cand = await requireStaticJson<CandidateDetail>(c.env, `candidates/${id}.json`, `candidate '${id}'`);
-  const deps = c.get("deps");
+  const { detail, cacheControl } = await loadCandidate(c.env, c.get("deps"), id);
+  c.header("Cache-Control", cacheControl);
+  return c.json(detail);
+});
+
+/**
+ * A candidate report with the stored JPL result applied, as the detail route serves it. When no
+ * result is stored yet, starts the lookup in the background and reports it as pending.
+ */
+export async function loadCandidate(
+  env: Env,
+  deps: Deps,
+  id: string,
+): Promise<{ detail: CandidateDetail; cacheControl: string; pending: boolean }> {
+  const cand = await requireStaticJson<CandidateDetail>(env, `candidates/${id}.json`, `candidate '${id}'`);
   const now = deps.now().toISOString();
   if (cand.classification === "injected") {
-    c.header("Cache-Control", "public, max-age=300");
-    return c.json(applyKnownObject(cand, cand.known_object, false, now));
+    return { detail: applyKnownObject(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
   }
   const rec = await readRecord(deps, cand);
   if (rec) {
     const e: Enrichment = { ...rec.enrichment, known_object: { ...rec.enrichment.known_object, enrichment: "cached" } };
-    c.header("Cache-Control", rec.status === "checked" ? "public, max-age=300" : "no-store");
-    return c.json(applyKnownObject(cand, e.known_object, e.matched, now));
+    return {
+      detail: applyKnownObject(cand, e.known_object, e.matched, now),
+      cacheControl: rec.status === "checked" ? "public, max-age=300" : "no-store",
+      pending: false,
+    };
   }
   // Nothing stored yet: answer now and look JPL up in the background. The client polls.
   deps.waitUntil(
@@ -80,9 +96,8 @@ candidates.get("/:candidateId", async (c) => {
     ...notCheckedKnownObject("Checking JPL's catalog of known asteroids and comets now. This takes up to a minute the first time.", cand.known_object),
     enrichment: "pending" as const,
   };
-  c.header("Cache-Control", "no-store");
-  return c.json(applyKnownObject(cand, pending, false, now));
-});
+  return { detail: applyKnownObject(cand, pending, false, now), cacheControl: "no-store", pending: true };
+}
 
 export function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {
   const classification: Classification = e.matched ? "known_object" : s.classification;

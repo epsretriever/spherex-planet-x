@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
+import type { Deps, Env } from "../env";
 import type {
   CandidateDetail,
   Classification,
@@ -57,12 +58,23 @@ objects.get("/", async (c) => {
 objects.get("/:objectId", async (c) => {
   const id = c.req.param("objectId");
   if (!ID_RE.test(id)) throw badRequest("invalid object_id");
-  const obj = await requireStaticJson<ObjectDetail>(c.env, `objects/${id}.json`, `object '${id}'`);
-  const deps = c.get("deps");
+  const { detail, cacheControl } = await loadObject(c.env, c.get("deps"), id);
+  c.header("Cache-Control", cacheControl);
+  return c.json(detail);
+});
+
+/** An object report with the JPL result of its first candidate applied, as the detail route serves it. */
+export async function loadObject(
+  env: Env,
+  deps: Deps,
+  id: string,
+): Promise<{ detail: ObjectDetail; cacheControl: string; pending: boolean }> {
+  const obj = await requireStaticJson<ObjectDetail>(env, `objects/${id}.json`, `object '${id}'`);
   const now = deps.now().toISOString();
   let known = obj.known_object;
   let matched = false;
   let cacheable = true;
+  let pending = false;
   if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
     const rec = await readRecord(deps, refOf(obj, obj.pipeline_version));
     if (rec) {
@@ -72,7 +84,7 @@ objects.get("/:objectId", async (c) => {
     } else {
       const candId = obj.candidate_ids[0]!;
       deps.waitUntil(
-        requireStaticJson<CandidateDetail>(c.env, `candidates/${candId}.json`, "candidate")
+        requireStaticJson<CandidateDetail>(env, `candidates/${candId}.json`, "candidate")
           .then((cand) => refreshRecord(deps, cand))
           .catch((err) => console.error(`background JPL lookup for ${candId}:`, err)),
       );
@@ -84,6 +96,7 @@ objects.get("/:objectId", async (c) => {
         enrichment: "pending",
       };
       cacheable = false;
+      pending = true;
     }
   }
   const classification: Classification = matched && obj.classification !== "injected" ? "known_object" : obj.classification;
@@ -91,9 +104,8 @@ objects.get("/:objectId", async (c) => {
   next.label_plain = labelPlain(next);
   next.summary_plain = summaryPlain(next);
   next.explanation = buildExplanation(next, now);
-  c.header("Cache-Control", cacheable ? "public, max-age=300" : "no-store");
-  return c.json(next);
-});
+  return { detail: next, cacheControl: cacheable ? "public, max-age=300" : "no-store", pending };
+}
 
 objects.get("/:objectId/prediction", async (c) => {
   const id = c.req.param("objectId");
