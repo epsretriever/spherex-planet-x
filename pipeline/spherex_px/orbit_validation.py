@@ -27,6 +27,7 @@ import numpy as np
 
 from . import schemas as S
 from .objects import distance_class
+from .orbits import clone_class
 from .science import orbit as O
 
 log = logging.getLogger(__name__)
@@ -135,7 +136,7 @@ def run_trial(rng, pop, real: O.Observations, mjd_utc: np.ndarray, sc_km: np.nda
         r_lo=fit.helio_distance[1],
         r_hi=fit.helio_distance[2],
         true_class=cls(true_r),
-        fit_class=cls(fit.helio_distance[0]),
+        fit_class=clone_class(fit.clones_r).value,
         da=float(fit.elements[0] - el[0]),
         de=float(fit.elements[1] - el[1]),
         di=float(fit.elements[2] - el[2]),
@@ -196,8 +197,13 @@ def summarize(trials: list[Trial]) -> dict:
                 float(np.mean([t.r_lo <= t.true_r <= t.r_hi for t in ts])), 3
             ),
             "distance_rel_error_median": round(float(np.median(rel)), 3),
-            "distance_class_correct": round(
-                float(np.mean([t.fit_class == t.true_class for t in ts])), 3
+            "distance_class_named": round(
+                float(np.mean([t.fit_class != "unknown" for t in ts])), 3
+            ),
+            "distance_class_correct": (
+                round(float(np.mean([t.fit_class == t.true_class for t in named])), 3)
+                if (named := [t for t in ts if t.fit_class != "unknown"])
+                else None
             ),
             "a_rel_error_median": round(float(np.median([abs(t.da) / t.true_a for t in ts])), 3),
             "e_abs_error_median": round(float(np.median([abs(t.de) for t in ts])), 3),

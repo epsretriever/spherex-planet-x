@@ -155,7 +155,8 @@ def _orbit_validation(args: argparse.Namespace) -> int:
     for r in doc.rows:
         print(
             f"{r.population:15s} n={r.n:3d} distance in 5-95%: {r.distance_in_5_95_interval:.2f}  "
-            f"class right: {r.distance_class_correct:.2f}  30-day inside 3 sigma: "
+            f"class named: {r.distance_class_named:.2f} right: {r.distance_class_correct}  "
+            "30-day inside 3 sigma: "
             f"{r.prediction_30d_inside_3sigma:.2f}"
         )
     return 0

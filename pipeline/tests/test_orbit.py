@@ -112,3 +112,17 @@ def test_orbit_cache_is_reused_and_invalidated(cand, tmp_path):
     moved = cand.model_copy(deep=True)
     moved.detections[0].ra_deg += 1e-4
     assert orbit_for(tmp_path, moved).input_hash != rec.input_hash
+
+
+def test_distance_class_needs_most_clones_to_agree():
+    from spherex_px.orbits import clone_class
+
+    def at(rs):
+        return np.array([[r, 0.0, 0.0] for r in rs])
+
+    assert clone_class(at([2.5] * 80 + [1.5] * 20)) == S.DistanceClass.main_belt
+    assert (
+        clone_class(at([2.5] * 50 + [10.0] * 50)) == S.DistanceClass.unknown
+    )  # spread over classes
+    assert clone_class(at([1.5] * 100)) == S.DistanceClass.unknown  # in the gap between classes
+    assert clone_class(at([45.0] * 70 + [20.0] * 30)) == S.DistanceClass.tno

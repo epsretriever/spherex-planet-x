@@ -262,8 +262,25 @@ def prediction_doc(
     )
 
 
-def distance_class_of(rec: OrbitRecord) -> S.DistanceClass:
+#: Share of the clones that must agree before a distance class is named.
+CLASS_AGREEMENT = 0.68
+
+
+def clone_class(clones_r: np.ndarray) -> S.DistanceClass:
+    """The distance class most clones fall in, if at least CLASS_AGREEMENT of them do; otherwise
+    unknown. Short arcs often leave the distance spanning several classes (validation/orbits.json
+    measures how often), and then the class is not named."""
     from .objects import distance_class
 
-    best, lo, hi = rec.helio_distance
-    return distance_class(S.DistanceEstimate(best=best, lo=lo, hi=hi))
+    r = np.linalg.norm(np.asarray(clones_r, float), axis=1)
+    classes = [
+        distance_class(S.DistanceEstimate(best=float(x), lo=float(x), hi=float(x))) for x in r
+    ]
+    best = max(set(classes), key=classes.count)
+    if best == S.DistanceClass.unknown or classes.count(best) < CLASS_AGREEMENT * len(classes):
+        return S.DistanceClass.unknown
+    return best
+
+
+def distance_class_of(rec: OrbitRecord) -> S.DistanceClass:
+    return clone_class(np.array(rec.clones_r))

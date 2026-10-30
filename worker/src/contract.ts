@@ -395,7 +395,10 @@ export interface OrbitValidation extends Envelope {
     n: number;
     distance_in_5_95_interval: number;
     distance_rel_error_median: number;
-    distance_class_correct: number;
+    /** Share given a class (at least 68% of clones agree); the rest are "unknown". */
+    distance_class_named: number;
+    /** Share right among those given a class. */
+    distance_class_correct: number | null;
     a_rel_error_median: number;
     e_abs_error_median: number;
     i_abs_error_deg_median: number;

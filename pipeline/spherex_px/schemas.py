@@ -766,7 +766,12 @@ class OrbitValidationRow(Model):
     n: int
     distance_in_5_95_interval: float = Field(description="Fraction with the true distance inside")
     distance_rel_error_median: float
-    distance_class_correct: float
+    distance_class_named: float = Field(
+        description="Share of objects given a class (at least 68% of clones agree); the rest are unknown"
+    )
+    distance_class_correct: float | None = Field(
+        description="Share right among those given a class"
+    )
     a_rel_error_median: float
     e_abs_error_median: float
     i_abs_error_deg_median: float
