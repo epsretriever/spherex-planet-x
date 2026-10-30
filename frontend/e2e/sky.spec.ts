@@ -12,7 +12,8 @@ test("sky map shows searched tiles, totals and the sourced region", async ({ pag
   const tile = map.getByRole("link", { name: /Synthetic test field: searched, 3 images, 3 moving objects, half of simulated objects found down to magnitude 19\.4/ });
   await expect(tile).toBeVisible();
   await expect(map.getByRole("img", { name: /synthetic-pending-tile: waiting to be searched/ })).toBeAttached();
-  await expect(page.getByText("Most likely Planet Nine positions (68%)")).toBeVisible();
+  await expect(page.getByText("Where Planet Nine is most likely, if it exists (68%)")).toBeVisible();
+  await expect(page.getByText(/only the 250 of 1,000 simulated orbits that earlier surveys haven't ruled out \(SYNTHETIC members not ruled out\)/)).toBeVisible();
   await expect(page.getByRole("link", { name: "SYNTHETIC test region (not a real prediction)" })).toHaveAttribute("href", "https://example.invalid/synthetic-region");
   await expect(page.getByText(/not a detection/)).toBeVisible();
   // 0.5 + 0.3 make the 68% region; the last cell completes 95%.

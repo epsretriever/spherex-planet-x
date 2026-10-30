@@ -451,6 +451,11 @@ export interface OrbitalElements {
     delta_i_deg: number;
     position_error_arcsec_30d: number;
   } | null;
+  /** Distance from the Sun at the epoch: median and 5–95% of the clones. */
+  helio_distance_au?: { best: number; lo: number; hi: number } | null;
+  n_ranging_orbits?: number;
+  /** The orbit in one plain-language sentence, from the backend. */
+  reported_orbit?: string;
 }
 
 export interface ObjectDetail extends Versioned {
@@ -524,6 +529,10 @@ export interface PlanetNineRegion {
   /** Sky positions are for this date. */
   epoch_utc: string;
   cell_deg: number;
+  /** Which members were binned, in words; and how many of how many. */
+  population?: string;
+  n_population?: number;
+  n_remaining?: number;
   /** RA/Dec bin centers; fraction is the share of the population in the bin. */
   cells: { ra_deg: number; dec_deg: number; fraction: number }[];
 }

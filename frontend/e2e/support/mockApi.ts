@@ -477,6 +477,9 @@ function objectDetail(o: Obj): ObjectDetail {
           ],
           n_clones: 60,
           clones_url: null,
+          helio_distance_au: { best: 2.55, lo: 2.31, hi: 2.92 },
+          n_ranging_orbits: 40,
+          reported_orbit: "Synthetic: a main-belt orbit, roughly 2.7 AU from the Sun.",
           jpl_comparison: { designation: "(99999) Synthetic", delta_a_au: 0.021, delta_e: 0.004, delta_i_deg: 0.12, position_error_arcsec_30d: 14.2 },
         }
       : null,
@@ -547,6 +550,9 @@ export const survey: Survey = {
     url: "https://example.invalid/synthetic-region",
     epoch_utc: "2026-01-01T00:00:00Z",
     cell_deg: 10,
+    population: "SYNTHETIC members not ruled out",
+    n_population: 1000,
+    n_remaining: 250,
     cells: [
       { ra_deg: 50, dec_deg: 10, fraction: 0.5 },
       { ra_deg: 60, dec_deg: 10, fraction: 0.3 },

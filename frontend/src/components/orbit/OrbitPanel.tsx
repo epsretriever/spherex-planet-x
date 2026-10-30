@@ -85,6 +85,7 @@ export function OrbitPanel({ object, label }: { object: ObjectDetail; label: str
         cloudSource ? `The faint orbits and dots are ${clones.length} possible orbits ${cloudSource}: the wider the cloud, the less certain the orbit.` : "No uncertainty was published for this orbit."
       }`}
     >
+      {orbit.reported_orbit && <p className={styles.reported}>{orbit.reported_orbit}</p>}
       <WhenVisible minHeight={360}>
         <OrbitView object={orbit} clones={clones} planets={planets} epochMjd={orbit.epoch_mjd} objectLabel={label} />
       </WhenVisible>
@@ -139,9 +140,20 @@ export function OrbitPanel({ object, label }: { object: ObjectDetail; label: str
               {orbit.n_detections} sightings over {formatHours(orbit.arc_hours)}
             </dd>
           </div>
+          {orbit.helio_distance_au && (
+            <div>
+              <dt>Distance from the Sun</dt>
+              <dd className="mono">
+                {fmt(orbit.helio_distance_au.best, 2)} AU <small>({fmt(orbit.helio_distance_au.lo, 2)}–{fmt(orbit.helio_distance_au.hi, 2)}, 90% of clones)</small>
+              </dd>
+            </div>
+          )}
           <div>
             <dt>Method</dt>
-            <dd className="mono">{orbit.method}</dd>
+            <dd className="mono">
+              {orbit.method}
+              {typeof orbit.n_ranging_orbits === "number" && <small> · {orbit.n_ranging_orbits} ranging orbits</small>}
+            </dd>
           </div>
           <div>
             <dt>Fit scatter</dt>

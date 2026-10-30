@@ -25,6 +25,8 @@ test("object with an orbit: visits, 3D orbit with uncertainty, elements, JPL che
   const orbit = page.getByRole("region", { name: "Orbit" });
   await orbit.scrollIntoViewIfNeeded();
   await expect(orbit.getByText("Preliminary orbit")).toBeVisible();
+  await expect(orbit.getByText("Synthetic: a main-belt orbit, roughly 2.7 AU from the Sun.")).toBeVisible();
+  await expect(orbit.getByText(/2\.55 AU\s*\(2\.31–2\.92, 90% of clones\)/)).toBeVisible();
   await expect(orbit.getByText(/possible orbits sampled from the orbit's uncertainty/)).toBeVisible();
   // The 3D view, or the flat view where WebGL isn't available.
   await expect(orbit.locator("canvas, svg[role=img]").first()).toBeVisible();

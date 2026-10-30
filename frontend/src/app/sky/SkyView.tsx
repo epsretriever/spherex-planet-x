@@ -111,10 +111,10 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
             {p9 && (
               <>
                 <li>
-                  <span className={styles.swP9Inner} aria-hidden="true" /> Most likely Planet Nine positions (68%)
+                  <span className={styles.swP9Inner} aria-hidden="true" /> Where Planet Nine is most likely, if it exists (68%)
                 </li>
                 <li>
-                  <span className={styles.swP9Outer} aria-hidden="true" /> Possible Planet Nine positions (95%)
+                  <span className={styles.swP9Outer} aria-hidden="true" /> Where it could be (95%)
                 </li>
               </>
             )}
@@ -138,6 +138,12 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
               <a href={p9.url} rel="noopener" target="_blank">
                 {p9.citation}
               </a>
+              {typeof p9.n_remaining === "number" && typeof p9.n_population === "number" ? (
+                <>
+                  , counting only the {p9.n_remaining.toLocaleString("en-US")} of {p9.n_population.toLocaleString("en-US")} simulated orbits
+                  that earlier surveys haven&apos;t ruled out{p9.population ? ` (${p9.population})` : ""}
+                </>
+              ) : null}
               . It is a prediction of where a hypothetical planet would be if it exists, not a detection.
             </p>
           )}
