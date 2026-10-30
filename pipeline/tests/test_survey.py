@@ -74,11 +74,12 @@ class FakeArchive:
         return {"qr2": ["2025W20_1A", "2025W21_1A", "2025W22_1A"], "qr3": ["2025W40_1A"]}[release]
 
 
-def test_auto_segments_spread_over_releases():
+def test_auto_segments_spread_over_readable_releases():
     from spherex_px.survey import resolve_segments
 
     got = resolve_segments(["auto:3", "qr2/2025W23_1C"], FakeArchive())
-    assert got == ["qr2/2025W20_1A", "qr2/2025W22_1A", "qr3/2025W40_1A", "qr2/2025W23_1C"]
+    assert got == ["qr2/2025W20_1A", "qr2/2025W21_1A", "qr2/2025W22_1A", "qr2/2025W23_1C"]
+    assert resolve_segments(["auto:2"], FakeArchive()) == ["qr2/2025W20_1A", "qr2/2025W22_1A"]
 
 
 def test_selection_round_robins_across_weeks():

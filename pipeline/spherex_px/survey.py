@@ -27,9 +27,13 @@ from pathlib import Path
 import numpy as np
 
 from . import schemas as S
-from .build import DEFAULT_OUT, FieldSpec, build_field
+from .build import DEFAULT_OUT, FieldSpec, NoReadableImages, build_field
 
 log = logging.getLogger(__name__)
+
+#: Releases auto:N picks weeks from. qr3 is left out: none of its Level 2 images could be read
+#: by the pipeline in the 2026-10-30 survey run (every qr3 tile came back with no readable images).
+AUTO_RELEASES = ("qr2",)
 
 #: Exposures closer together than this belong to the same visit.
 VISIT_GAP_HOURS = 1.0
@@ -199,7 +203,7 @@ def resolve_segments(specs: list[str], archive=None) -> list[str]:
         _, releases = archive.list("")
         everything = [
             f"{rel}/{seg}"
-            for rel in sorted(p.rstrip("/") for p in releases if p.startswith("qr"))
+            for rel in sorted(p.rstrip("/") for p in releases if p.rstrip("/") in AUTO_RELEASES)
             for seg in sorted(archive.level2_segments(rel))
         ]
         if len(everything) <= n:
@@ -305,6 +309,10 @@ def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -
     for t in mine:
         try:
             _detail, cands = build_field(_spec(t), out)
+        except NoReadableImages as err:
+            _remove_outputs(out, t.field_id)
+            results.append(TileResult(t.field_id, "empty", 0, str(err), t))
+            continue
         except Exception as err:  # one bad tile must not sink the shard
             log.exception("%s failed", t.field_id)
             _remove_outputs(out, t.field_id)

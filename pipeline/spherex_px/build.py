@@ -53,6 +53,11 @@ from .version import build_run_id, pipeline_version
 
 log = logging.getLogger(__name__)
 
+
+class NoReadableImages(RuntimeError):
+    """Too few of a field's images could be read to search it (missing or unreadable files)."""
+
+
 REPO_ROOT = BACKEND_ROOT.parent
 DEFAULT_OUT = REPO_ROOT / "frontend" / "public" / "data"
 URL_PREFIX = "/data"
@@ -218,6 +223,10 @@ class FieldBuilder:
             )
         log.info("%s: %d exposures", spec.field_id, len(keys))
         epochs = self.load(keys)
+        if len(epochs) < 2:
+            raise NoReadableImages(
+                f"{spec.field_id}: {len(epochs)} of {len(keys)} images could be read from the archive"
+            )
         data = [e.data for e in epochs]
         assign_clusters(data)
         sightings = build_sightings(data, LINK)
