@@ -8,8 +8,9 @@ import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { QualityMeter } from "@/components/QualityMeter";
 import { ErrorState } from "@/components/DataState";
 import { Deferred } from "@/components/Deferred";
-import { WhenVisible } from "@/components/WhenVisible";
+import { Seen, WhenVisible } from "@/components/WhenVisible";
 import { ReportSkeleton, ViewerSkeleton } from "@/components/Skeletons";
+import { AskPanel } from "@/components/report/AskPanel";
 import { ErrorSourcesPanel } from "@/components/report/ErrorSourcesPanel";
 import { ExplanationPanel } from "@/components/report/ExplanationPanel";
 import { FieldContext } from "@/components/report/FieldContext";
@@ -24,7 +25,7 @@ import { SpectrumPanel } from "@/components/report/SpectrumPanel";
 import { StampStrip } from "@/components/report/StampStrip";
 import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { SourceDrawer, type SourceSubject } from "@/components/SourceDrawer";
-import { getCandidate, getCandidates } from "@/lib/api";
+import { USE_FIXTURES, getCandidate, getCandidates, getWriteup } from "@/lib/api";
 import type { CandidateDetail } from "@/lib/contract";
 import { formatAgo, formatHours, formatRate } from "@/lib/format";
 import type { ObjectName } from "@/lib/names";
@@ -115,6 +116,7 @@ function Crumbs() {
 const SECTIONS = [
   ["evidence", "Images"],
   ["explanation", "In plain words"],
+  ["ask", "Ask"],
   ["measurements", "Measurements"],
   ["motion", "Motion"],
   ["known", "Known object"],
@@ -129,6 +131,12 @@ type NameFor = ReturnType<typeof useObjectNames>["nameFor"];
 
 function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; nameFor: NameFor }) {
   const [source, setSource] = useState<SourceSubject | null>(null);
+  // The AI write-up is fetched when the reader nears it, so it never competes with the first screen.
+  const [wantWriteup, setWantWriteup] = useState(false);
+  const writeup = useData(wantWriteup && !USE_FIXTURES ? `writeup:${c.candidate_id}` : null, (signal) =>
+    getWriteup("candidate", c.candidate_id, signal),
+  );
+  const aiReady = writeup.status === "ok";
   const simulated = c.classification === "injected";
   const openSource = (i: number) => {
     const d = c.detections[i];
@@ -146,6 +154,8 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
   const present = new Set<string>(["evidence", "explanation", "measurements", "motion", "known", "errors", "quality", "provenance"]);
   if (c.spectrum?.points.length) present.add("spectrum");
   if (c.injection) present.add("injection");
+  // Ask appears once the write-up answered, which shows the AI endpoints are live.
+  if (aiReady) present.add("ask");
 
   return (
     <div className="fade-in">
@@ -208,9 +218,11 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
           <WhenVisible minHeight={460}>
             <StampStrip detections={c.detections} onSource={openSource} />
           </WhenVisible>
+          <Seen onSeen={() => setWantWriteup(true)} />
         </Panel>
 
-        <ExplanationPanel candidate={c} />
+        <ExplanationPanel candidate={c} writeup={aiReady ? writeup.data : null} />
+        {aiReady && <AskPanel subjectKind="candidate" subjectId={c.candidate_id} doc={c} />}
 
         <Panel id="measurements" title="Measured positions" kicker="Per sighting" intro="One row per image in which the object was detected. Scroll sideways for every column.">
           <MeasurementTable detections={c.detections} />

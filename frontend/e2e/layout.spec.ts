@@ -12,6 +12,7 @@ const PAGES = [
   "/detective/candidate/?id=syn-injected",
   "/about/",
   "/limits/",
+  "/sky/",
   "/no-such-page/",
 ];
 

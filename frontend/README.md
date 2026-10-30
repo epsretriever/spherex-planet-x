@@ -59,6 +59,14 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 - Simulated objects are lettered separately ("Simulated object A in …") so they never shift real names.
 - The pipeline ID is always shown as secondary text.
 
+## AI features (contract v1.1, build plan section 6)
+
+- **Write-up.** The report's "In plain words" section fetches `GET /api/candidates/{id}/writeup` when the reader scrolls near it. With an answer, it shows the verdict and three paragraphs. Each number links to the value it came from in `grounded_fields`. The section is labeled with the API's `label_plain` and model ID. Template text (`source: "template"`) is labeled as template text, never as AI.
+- **Ask about this object.** A chat that posts to `POST /api/ask`. It appears only once the write-up has answered, which shows the AI endpoints are live. The citations are JSON paths, shown as chips that hold the value and link to the report section where it appears (`src/lib/citations.ts`). An answer with `answered_from_data: false` is tagged "The data doesn't tell us". A 429 shows the API's own `detail`. The session id is anonymous and kept in `sessionStorage`.
+- **Search by description.** On the Detective page, `POST /api/search` returns a `CandidateFilter`. The page cleans it (`normalizeFilter`), writes it to the URL, and shows each part as a removable chip; the regular controls edit the same values. The `unusual` sort is accepted, but until the anomaly ranking ships (row 7) its chip says the list is sorted by score.
+- With no AI endpoints (a 404 or 501), or in fixture mode, all three step aside. The report keeps the explanation published with it, and search says it is off.
+- `e2e/ai.spec.ts` covers all of this with synthetic AI responses (`installMockApi(page, { ai: true })`).
+
 ## Performance notes
 
 - Pages that read `?id=` start their API requests from an inline script in the static HTML (`PrefetchData`), so data downloads while the JavaScript does.

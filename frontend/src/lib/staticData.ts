@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CandidateDetail, CandidateList, FieldDetail, FieldList } from "./contract";
+import type { CandidateDetail, CandidateList, FieldDetail, FieldList, Survey } from "./contract";
 
 /**
  * Build-time access to the pipeline's published data in public/data/ (the same files the Worker
@@ -35,6 +35,11 @@ export function staticCandidates(): CandidateList | null {
 
 export function staticCandidate(id: string): CandidateDetail | null {
   return ID_RE.test(id) ? read<CandidateDetail>(`candidates/${id}.json`) : null;
+}
+
+export function staticSurvey(): Survey | null {
+  const s = read<Survey>("survey.json");
+  return s && Array.isArray(s.tiles) ? s : null;
 }
 
 /** The lists the name table is built from, for the first render. */

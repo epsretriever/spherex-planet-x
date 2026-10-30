@@ -626,3 +626,170 @@
 .checkDetails[open] summary {
   margin-bottom: var(--space-1);
 }
+
+/* AI write-up */
+.writeupVerdict {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.explanation .explanationText + .explanationText {
+  margin-top: var(--space-3);
+}
+
+/* Ask about this object */
+.chat {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.turn {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.question {
+  justify-self: end;
+  max-width: min(85%, 560px);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius) var(--radius) 2px var(--radius);
+  background: var(--surface-3);
+  overflow-wrap: anywhere;
+}
+
+.answer {
+  max-width: min(100%, 680px);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius) var(--radius) var(--radius) 2px;
+  border: 1px solid var(--border-strong);
+  background:
+    linear-gradient(135deg, rgb(120 28 109 / 0.14), transparent 60%),
+    var(--surface-2);
+}
+
+.answerText {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.answerError {
+  margin: var(--space-2) 0 0;
+  color: var(--warning);
+  font-size: var(--text-sm);
+}
+
+p.answerError.answer {
+  margin: 0;
+}
+
+.answerTag {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.cites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cite {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-2);
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+a.cite:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.cites li:target .cite {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.citeName {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.citeName code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.answerMeta {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.askForm {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.askForm input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--touch);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+}
+
+.askForm input:focus-visible {
+  border-color: var(--accent);
+}
+
+.suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.suggest button {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px dashed var(--border-strong);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.suggest button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}

@@ -1,0 +1,146 @@
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.sky {
+  fill: color-mix(in srgb, var(--surface-2) 70%, var(--bg));
+}
+
+.rim {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.grid {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.equator {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.ecliptic {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 10 6;
+}
+
+.galactic {
+  fill: none;
+  stroke: var(--cool);
+  stroke-opacity: 0.25;
+  stroke-width: 22;
+  stroke-linecap: round;
+}
+
+.raLabel,
+.eclLabel,
+.galLabel {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  fill: var(--text-muted);
+}
+
+.eclLabel {
+  fill: var(--accent);
+}
+
+.galLabel {
+  fill: var(--cool);
+}
+
+.hatch {
+  stroke: var(--status-unexplained);
+  stroke-width: 2;
+  stroke-opacity: 0.55;
+}
+
+.p9Inner,
+.p9Outer {
+  stroke: none;
+}
+
+.p9Inner {
+  fill: color-mix(in srgb, var(--status-unexplained) 42%, transparent);
+}
+
+.p9Outer {
+  fill: url(#p9-hatch);
+}
+
+.hit {
+  fill: transparent;
+}
+
+.halo {
+  fill: none;
+  stroke: var(--track);
+  stroke-width: 2;
+  stroke-opacity: 0.6;
+}
+
+.tile {
+  fill: var(--track);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.tilePending {
+  fill: var(--bg);
+  stroke: var(--text-muted);
+  stroke-width: 2.5;
+}
+
+.tileNoData {
+  fill: var(--status-artifact);
+  opacity: 0.6;
+}
+
+.tileLink {
+  cursor: pointer;
+  outline: none;
+}
+
+.tileLink:hover .halo,
+.tileLink:focus-visible .halo {
+  stroke: var(--text);
+  stroke-opacity: 1;
+  stroke-width: 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pulse 2.4s var(--ease-out) infinite;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* The map shrinks to about a third of its drawn size on phones; keep its labels readable. */
+@media (max-width: 600px) {
+  .raLabel,
+  .eclLabel,
+  .galLabel {
+    font-size: 30px;
+  }
+}
