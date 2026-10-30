@@ -797,7 +797,9 @@ class ObjectPrediction(Envelope):
 
 
 class TileStatus(StrEnum):
-    processed = "processed"
+    processed = "processed"  # searched; a field page exists (it found a moving object)
+    empty = "empty"  # searched; no moving object passed vetting, so no field page
+    failed = "failed"  # the last search of this tile failed (see SurveyTile.detail)
     pending = "pending"  # covered by SPHEREx, not processed yet
     no_data = "no_data"  # no repeated SPHEREx visits in the releases searched
 
@@ -819,6 +821,8 @@ class SurveyTile(Model):
     m50_ab: float | None = Field(
         default=None, description="50% completeness magnitude from injection-recovery, if measured"
     )
+    m50_study_id: str | None = Field(default=None, description="Injection study m50_ab comes from")
+    detail: str | None = Field(default=None, description="Why the last search failed")
 
 
 class SurveyRun(Model):
@@ -826,9 +830,15 @@ class SurveyRun(Model):
     started_utc: str
     finished_utc: str
     pipeline_version: str
-    n_new_files: int
-    n_tiles_processed: int
-    n_new_objects: int
+    n_new_files: int = Field(description="Exposures in tiles this run searched for the first time")
+    n_tiles_processed: int = Field(description="Tiles searched in this run")
+    n_new_objects: int = Field(description="Objects published by this run that were not before")
+    segments: list[str] = []
+    n_tiles_with_movers: int = 0
+    n_tiles_empty: int = 0
+    n_tiles_failed: int = 0
+    n_candidates: int = 0
+    workflow_url: str | None = None
 
 
 class SurveyTotals(Model):
@@ -838,6 +848,10 @@ class SurveyTotals(Model):
     n_epochs: int
     n_candidates: int
     n_objects: int
+    n_searched: int = Field(default=0, description="Tiles searched: processed + empty")
+    n_empty: int = 0
+    n_failed: int = 0
+    area_deg2_searched: float = 0.0
 
 
 class Survey(Envelope):
@@ -850,6 +864,7 @@ class Survey(Envelope):
     tiles: list[SurveyTile]
     totals: SurveyTotals
     last_run: SurveyRun | None
+    runs: list[SurveyRun] = Field(default=[], description="Most recent runs first (up to 20)")
 
 
 class AiSubjectKind(StrEnum):

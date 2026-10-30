@@ -39,16 +39,59 @@
           "type": "string"
         },
         "n_new_files": {
+          "description": "Exposures in tiles this run searched for the first time",
           "title": "N New Files",
           "type": "integer"
         },
         "n_tiles_processed": {
+          "description": "Tiles searched in this run",
           "title": "N Tiles Processed",
           "type": "integer"
         },
         "n_new_objects": {
+          "description": "Objects published by this run that were not before",
           "title": "N New Objects",
           "type": "integer"
+        },
+        "segments": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Segments",
+          "type": "array"
+        },
+        "n_tiles_with_movers": {
+          "default": 0,
+          "title": "N Tiles With Movers",
+          "type": "integer"
+        },
+        "n_tiles_empty": {
+          "default": 0,
+          "title": "N Tiles Empty",
+          "type": "integer"
+        },
+        "n_tiles_failed": {
+          "default": 0,
+          "title": "N Tiles Failed",
+          "type": "integer"
+        },
+        "n_candidates": {
+          "default": 0,
+          "title": "N Candidates",
+          "type": "integer"
+        },
+        "workflow_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workflow Url"
         }
       },
       "required": [
@@ -157,6 +200,32 @@
           "default": null,
           "description": "50% completeness magnitude from injection-recovery, if measured",
           "title": "M50 Ab"
+        },
+        "m50_study_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Injection study m50_ab comes from",
+          "title": "M50 Study Id"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why the last search failed",
+          "title": "Detail"
         }
       },
       "required": [
@@ -203,6 +272,27 @@
         "n_objects": {
           "title": "N Objects",
           "type": "integer"
+        },
+        "n_searched": {
+          "default": 0,
+          "description": "Tiles searched: processed + empty",
+          "title": "N Searched",
+          "type": "integer"
+        },
+        "n_empty": {
+          "default": 0,
+          "title": "N Empty",
+          "type": "integer"
+        },
+        "n_failed": {
+          "default": 0,
+          "title": "N Failed",
+          "type": "integer"
+        },
+        "area_deg2_searched": {
+          "default": 0.0,
+          "title": "Area Deg2 Searched",
+          "type": "number"
         }
       },
       "required": [
@@ -219,6 +309,8 @@
     "TileStatus": {
       "enum": [
         "processed",
+        "empty",
+        "failed",
         "pending",
         "no_data"
       ],
@@ -296,6 +388,15 @@
           "type": "null"
         }
       ]
+    },
+    "runs": {
+      "default": [],
+      "description": "Most recent runs first (up to 20)",
+      "items": {
+        "$ref": "#/$defs/SurveyRun"
+      },
+      "title": "Runs",
+      "type": "array"
     }
   },
   "required": [
