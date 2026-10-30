@@ -178,6 +178,37 @@
       },
       "title": "Candidates",
       "type": "array"
+    },
+    "offset": {
+      "default": 0,
+      "title": "Offset",
+      "type": "integer"
+    },
+    "limit": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Page size requested; null = everything",
+      "title": "Limit"
+    },
+    "next_offset": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Offset of the next page; null on the last",
+      "title": "Next Offset"
     }
   },
   "required": [

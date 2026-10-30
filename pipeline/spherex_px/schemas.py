@@ -245,6 +245,12 @@ class FieldSummary(Model):
 class FieldList(Envelope):
     generated_utc: str
     fields: list[FieldSummary]
+    total: int | None = Field(default=None, description="Items matching the filters, before paging")
+    offset: int = 0
+    limit: int | None = Field(default=None, description="Page size requested; null = everything")
+    next_offset: int | None = Field(
+        default=None, description="Offset of the next page; null on the last"
+    )
     build_run_id: str | None = Field(
         default=None,
         description="Pipeline run that wrote this file: 'gh-<run>-<attempt>' in GitHub Actions, "
@@ -483,6 +489,11 @@ class CandidateList(Envelope):
         "'local-<UTC time>-<commit>' otherwise",
     )
     candidates: list[CandidateSummary]
+    offset: int = 0
+    limit: int | None = Field(default=None, description="Page size requested; null = everything")
+    next_offset: int | None = Field(
+        default=None, description="Offset of the next page; null on the last"
+    )
 
 
 class CandidateDetail(Envelope):
@@ -744,6 +755,11 @@ class ObjectSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    also_seen_as: list[str] = Field(
+        default=[],
+        description="Objects with the same JPL designation (the same asteroid in other tiles), "
+        "merged into this one by the Worker",
+    )
 
 
 class ObjectList(Envelope):
@@ -751,6 +767,11 @@ class ObjectList(Envelope):
     generated_utc: str
     total: int
     objects: list[ObjectSummary]
+    offset: int = 0
+    limit: int | None = Field(default=None, description="Page size requested; null = everything")
+    next_offset: int | None = Field(
+        default=None, description="Offset of the next page; null on the last"
+    )
 
 
 class ObjectDetail(Envelope):
@@ -762,6 +783,7 @@ class ObjectDetail(Envelope):
     thumbnail_url: str
     field_ids: list[str]
     candidate_ids: list[str]
+    also_seen_as: list[str] = Field(default=[], description="Objects with the same JPL designation")
     detections: list[ObjectDetection]
     motion: Motion
     distance_class: DistanceClass
@@ -838,6 +860,10 @@ class SurveyTotals(Model):
     n_epochs: int
     n_candidates: int
     n_objects: int
+    n_known_objects: int | None = Field(
+        default=None,
+        description="Distinct JPL designations among matched objects (added by the Worker)",
+    )
 
 
 class Survey(Envelope):

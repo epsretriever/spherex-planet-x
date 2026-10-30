@@ -41,19 +41,19 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 | Method & path | Response model | Data |
 |---|---|---|
 | `GET /api/health` | `Health` | Probe of each upstream (IRSA TAP, JPL SBIdent, JPL Horizons, SPHEREx S3) with a minimal **valid** request; probe results are reused for 10 minutes. Static data counts. The response itself is never cached. |
-| `GET /api/fields` | `FieldList` | Static `data/fields.json`. Each field's `candidate_counts` reflects the static (pipeline) classification. |
+| `GET /api/fields?origin=&limit=&offset=` | `FieldList` | Static `data/fields.json`. Each field's `candidate_counts` reflects the static (pipeline) classification. `origin=showcase` or `origin=run` (survey tiles) filters. Paged (see [Paging](#paging)). |
 | `GET /api/fields/{field_id}` | `FieldDetail` | Static `data/fields/{field_id}.json`, with each mover's `classification` and `label_plain` taken from its candidate's stored JPL result (no upstream calls). |
-| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false` | `CandidateList` | Static `data/candidates.json`, with each summary's `classification`, `label_plain`, `summary_plain` and known-object fields taken from stored enrichment results. A candidate with no stored result yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. |
+| `GET /api/candidates?field_id=&classification=&min_score=&include_injected=false&limit=&offset=` | `CandidateList` | Static `data/candidates.json`, with each summary's `classification`, `label_plain`, `summary_plain` and known-object fields taken from stored enrichment results. A candidate with no stored result yet keeps `known_object_checked: false`. `classification` may repeat. `min_score` filters on `overall_score`. Injected candidates are excluded unless `include_injected=true` or `classification=injected` is requested. Paged after filtering. |
 | `GET /api/candidates/{candidate_id}` | `CandidateDetail` | Static `data/candidates/{candidate_id}.json`, with the stored JPL result, or `enrichment: "pending"` while the first lookup runs (see [Known-object enrichment](#known-object-enrichment)). |
 | `GET /api/injection/{study_id}` | `InjectionStudy` | Static `data/injection/{study_id}.json`. |
 | `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | **Live** IRSA TAP (`https://irsa.ipac.caltech.edu/TAP/sync`). |
 | `POST /api/runs` | `ErrorResponse` (501) | Pixel processing can't run inside a Worker. Runs are produced offline with `spherex-px run --ra ... --dec ...` and published with the static data. The endpoint returns 501 with instructions instead of pretending to queue work. |
 | `GET /api/runs/{run_id}` | `RunStatus` | Static `data/runs/{run_id}.json` for runs built offline. `field_id` points at the resulting field. |
-| `GET /api/objects` | `ObjectList` | Static `data/objects.json`, with stored JPL results folded in as for candidates. |
-| `GET /api/objects/{object_id}` | `ObjectDetail` | Static `data/objects/{object_id}.json`, with the stored JPL result of its first linked candidate, or `enrichment: "pending"` while the first lookup runs. |
+| `GET /api/objects?dedupe=true&limit=&offset=` | `ObjectList` | Static `data/objects.json`, with stored JPL results folded in as for candidates. Objects matched to the same JPL designation (the same asteroid in neighbouring tiles or other weeks) are merged: the one with the most detections stays, the others are listed in its `also_seen_as`, and their `field_ids`, `candidate_ids`, `n_detections`, `n_visits` and time span are added to it. Unmatched objects are never merged. `dedupe=false` returns every object as built. Paged after merging. |
+| `GET /api/objects/{object_id}` | `ObjectDetail` | Static `data/objects/{object_id}.json`, with the stored JPL result of its first linked candidate, or `enrichment: "pending"` while the first lookup runs. `also_seen_as` lists the other objects with the same JPL designation. |
 | `GET /api/objects/{object_id}/prediction?days=30` | `ObjectPrediction` | Static `data/objects/{object_id}/prediction.json`, trimmed to `days` (1–60). `404` while the object has no orbit. |
 | `GET /api/objects/{object_id}/ades.xml` | ADES XML | Minor Planet Center ADES export (build-plan row 9). `404` until then. |
-| `GET /api/survey` | `Survey` | Static `data/survey.json`: survey tiles, their status and totals. |
+| `GET /api/survey` | `Survey` | Static `data/survey.json`: survey tiles, their status and totals. The Worker adds `totals.n_known_objects`: distinct JPL designations among matched objects, so an asteroid seen in several tiles counts once. |
 | `GET /api/{candidates,objects}/{id}/writeup` | `AiWriteup` | Row 4 (Workers AI). |
 | `POST /api/ask` | `AskRequest` → `AiAnswer` | Row 4. |
 | `POST /api/search` | `SearchRequest` → `AiSearch` | Row 4. |
@@ -70,12 +70,12 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 
 The pipeline writes every candidate with `known_object.checked = false`, `enrichment: "static"` and `catalogs_checked: []`, because the offline builder has no JPL access. It never writes a match it did not check.
 
-**When it runs.** JPL lookups take 10–30 seconds, so a visitor never waits for one. Results are stored globally in Workers KV (binding `ENRICHMENT`, `worker/src/store.ts`):
+**When it runs.** JPL lookups take 10–30 seconds, so a visitor never waits for one. Results are stored globally in D1 (binding `DB`, table `enrichment`, `worker/src/store.ts`), so a list of any length reads them in one query. Results stored in Workers KV (binding `ENRICHMENT`) before D1 held them are still read and copied into D1 by the cron and by detail views:
 
 - `GET /api/candidates/{candidate_id}` returns the stored result with `enrichment: "cached"`. If there is none yet, it answers immediately with `checked: false`, `enrichment: "pending"` and `Cache-Control: no-store`, and starts the lookup in the background. Clients fetch the report again every few seconds until `enrichment` is no longer `pending`.
 - `GET /api/candidates` folds in stored results and starts one background lookup for a candidate that has none.
 - A Cron Trigger every 10 minutes (`worker/src/scheduled.ts`) refreshes, within one invocation's subrequest budget, results that are missing, failed, or older than 24 hours.
-- A failed lookup is stored for 30 minutes, then retried. A lock stops two lookups for the same candidate running at once.
+- A failed lookup is retried after 30 minutes. A lock (D1 table `locks`) stops two lookups for the same candidate running at once.
 
 **What a lookup does** (`worker/src/enrich.ts`):
 
@@ -88,6 +88,11 @@ The pipeline writes every candidate with `known_object.checked = false`, `enrich
 Every invocation spends from a budget of 40 upstream calls (the free plan allows 50 subrequests per invocation); calls beyond it fail with `upstream_status: "budget"`.
 
 Injected candidates are never sent to JPL and are never relabelled.
+
+
+### Paging
+
+`GET /api/fields`, `/api/candidates` and `/api/objects` take `limit` (1–500) and `offset` (default 0); without `limit` they return everything, as the static files do. Responses add `total` (items matching the filters, before paging), `offset`, `limit` and `next_offset` (the offset of the next page, or `null` on the last page). Invalid values return `400`. Order is the static file's order, so pages are stable for one data version.
 
 ## Field (`FieldSummary`, `FieldDetail`)
 
@@ -188,7 +193,7 @@ Every output is checked before it is shown. It must parse as JSON in the expecte
 
 - `SkyRequestCreate {ra_deg, dec_deg, turnstile_token, note?}` → `SkyRequest {request_id, status: queued | processing | done | no_coverage | rejected, ra_deg, dec_deg, created_utc, updated_utc, position_in_queue, field_id, message}`.
 - `VettingItem {item_id, candidate_id, epoch_id, stamps {detection, reference, difference} (ImageRef each), model_score, model_version}`. `VoteCreate {item_id, label: real | artifact | unsure, session_id, turnstile_token}` → `VoteResult {accepted, item_id, counts {real, artifact, unsure}, message}`. `VettingStats {n_votes, n_sessions, n_items_labeled (>= 5 votes and >= 80% agreement), agreement_with_experts, models[] {version, trained_utc, n_train_real, n_train_bogus, n_votes_used, test_precision, test_recall, test_roc_auc, promoted}}`.
-- Storage: D1 database `spherex-planet-x` (binding `DB`), schema in `migrations/`. Tables: `sky_requests`, `vetting_items`, `votes` (one vote per session per item), `model_versions`, `tracked_objects`, `rate_limits`, `ai_usage`, plus `schema_migrations`. Visitor identifiers are stored only as salted SHA-256 hashes. The Worker applies the migrations itself on first use (`worker/src/db.ts`, kept identical to `migrations/` by a test).
+- Storage: D1 database `spherex-planet-x` (binding `DB`), schema in `migrations/`. Tables: `sky_requests`, `vetting_items`, `votes` (one vote per session per item), `model_versions`, `tracked_objects`, `rate_limits`, `ai_usage`, `enrichment` (JPL results, one row per data version and candidate), `locks`, plus `schema_migrations`. Visitor identifiers are stored only as salted SHA-256 hashes. The Worker applies the migrations itself on first use (`worker/src/db.ts`, kept identical to `migrations/` by a test).
 
 ## Health, coverage and runs
 

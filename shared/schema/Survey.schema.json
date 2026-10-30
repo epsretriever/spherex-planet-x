@@ -203,6 +203,19 @@
         "n_objects": {
           "title": "N Objects",
           "type": "integer"
+        },
+        "n_known_objects": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distinct JPL designations among matched objects (added by the Worker)",
+          "title": "N Known Objects"
         }
       },
       "required": [
