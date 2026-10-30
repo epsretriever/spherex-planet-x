@@ -90,7 +90,8 @@ Requires Node.js 20 or newer.
 ```bash
 npm ci
 npm run build      # frontend static export into frontend/out + Worker type-check
-npx wrangler dev   # site + API on http://localhost:8787
+npx wrangler dev   # site + API on http://localhost:8787 (Workers AI is remote: needs `npx wrangler login`)
+npm run dev:offline   # the same without Cloudflare credentials; AI features return their template text
 npm test           # Worker tests (vitest)
 npm test --workspace frontend   # frontend unit tests
 ```
