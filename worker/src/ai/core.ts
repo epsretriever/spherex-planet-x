@@ -12,7 +12,7 @@ import type { Deps } from "../env";
 /** Default text model. Override with the AI_MODEL var in wrangler.toml. */
 export const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 /** Bump when prompts or post-processing change, so cached outputs are regenerated. */
-export const PROMPT_VERSION = "1";
+export const PROMPT_VERSION = "2";
 
 /** Daily call caps per feature, to stay inside the free 10,000 neurons/day allowance. */
 export const DAILY_CAPS: Record<AiKind, number> = { writeup: 400, ask: 600, search: 600, digest: 10 };

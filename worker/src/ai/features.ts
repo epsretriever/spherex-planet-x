@@ -118,7 +118,8 @@ export async function writeup(ctx: AiContext, kind: AiSubjectKind, id: string, s
       ? "bad_verdict"
       : paragraphs.length !== 3 || paragraphs.some((p) => p.length > MAX_PARAGRAPH)
         ? `bad_paragraphs_${paragraphs.length}`
-        : FORBIDDEN.test(text)
+        : FORBIDDEN.test(text) ||
+            (!s.known_object.checked && /\bunexplained\b|(does not|doesn't|did not|didn't) match/i.test(text))
           ? "forbidden_claim"
           : !grounded(text, paths, s)
             ? "ungrounded_numbers"
