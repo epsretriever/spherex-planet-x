@@ -176,7 +176,17 @@ An object is one solar-system body: every detection linked to it, across visits 
 
 ## Survey (`Survey`)
 
-`{generated_utc, name, description, tile_size_deg, data_releases, tiles[], totals {n_tiles, n_processed, area_deg2_processed, n_epochs, n_candidates, n_objects}, last_run {run_id, started_utc, finished_utc, pipeline_version, n_new_files, n_tiles_processed, n_new_objects} | null}`. Each tile is `{tile_id, center, ecliptic_lon_deg, ecliptic_lat_deg, size_deg, status: processed | pending | no_data, n_epochs, n_visits, first_time_utc, last_time_utc, last_processed_utc, field_id, n_candidates, m50_ab}`. `m50_ab` is the 50% completeness magnitude from injection-recovery, null until measured.
+`{generated_utc, name, description, tile_size_deg, data_releases, tiles[], totals, last_run, runs[]}`.
+
+- `tiles[]`: `{tile_id, center, ecliptic_lon_deg, ecliptic_lat_deg, size_deg, status, n_epochs, n_visits, first_time_utc, last_time_utc, last_processed_utc, field_id, n_candidates, m50_ab, m50_study_id, detail}`. `status`:
+  - `processed`: searched, and the search found a moving object; `field_id` is its field page.
+  - `empty`: searched, no moving object passed vetting, so there is no field page (`field_id: null`). This is how the sky map shows where we looked and found nothing.
+  - `failed`: the last search of this tile failed; `detail` says why (for example an S3 read error). It is retried by the next run that plans it.
+  - `pending` / `no_data`: covered but not searched yet / no repeated SPHEREx visits.
+- `m50_ab` is the 50% completeness magnitude (linear tracks at 3–100″/hr) for that tile from the newest published injection study (`m50_study_id`), null where no study has measured it.
+- `totals {n_tiles, n_processed, area_deg2_processed, n_epochs, n_candidates, n_objects, n_searched, n_empty, n_failed, area_deg2_searched}`; `n_searched` and `area_deg2_searched` count processed plus empty tiles. The Worker adds `n_known_objects` (see endpoints).
+- `last_run` and `runs[]` (newest first, up to 20) come from the run ledger: `{run_id, started_utc, finished_utc, pipeline_version, n_new_files (exposures in tiles searched for the first time), n_tiles_processed (tiles searched), n_new_objects (objects not published before), segments, n_tiles_with_movers, n_tiles_empty, n_tiles_failed, n_candidates, workflow_url}`.
+- Storage: after each run of the `Survey` Action (`.github/workflows/survey.yml`), `spherex-px survey-ledger` updates `data/survey/footprint.json` (every tile ever searched, with its latest result) and appends to `data/survey/ledger.json`; `spherex-px publish` folds both into `survey.json`.
 
 ## AI (`AiWriteup`, `AiAnswer`, `AiSearch`, `Digest`)
 

@@ -47,6 +47,8 @@ class PlannedTile:
     n_visits: int
     hours_spanned: float
     constellation: str
+    first_mjd: float | None = None
+    last_mjd: float | None = None
 
 
 def tile_id(segment: str, elon: float, elat: float) -> str:
@@ -163,6 +165,8 @@ def plan_segment(
                     n_visits=visits,
                     hours_spanned=round((max(mjds) - min(mjds)) * 24, 2),
                     constellation=_constellation(r0, d0),
+                    first_mjd=round(min(mjds), 6),
+                    last_mjd=round(max(mjds), 6),
                 )
             )
     log.info("%s: %d tiles planned", segment, len(tiles))
@@ -217,6 +221,8 @@ class TileResult:
     status: str  # kept | empty | failed
     candidates: int
     detail: str = ""
+    #: The planned tile, so empty and failed tiles stay on the survey footprint.
+    tile: PlannedTile | None = None
 
 
 def _remove_outputs(out: Path, field_id: str) -> None:
@@ -237,13 +243,13 @@ def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -
         except Exception as err:  # one bad tile must not sink the shard
             log.exception("%s failed", t.field_id)
             _remove_outputs(out, t.field_id)
-            results.append(TileResult(t.field_id, "failed", 0, f"{type(err).__name__}: {err}"))
+            results.append(TileResult(t.field_id, "failed", 0, f"{type(err).__name__}: {err}", t))
             continue
         real = [c for c in cands if c.classification != S.Classification.likely_artifact]
         if not real:
             _remove_outputs(out, t.field_id)
-            results.append(TileResult(t.field_id, "empty", 0))
+            results.append(TileResult(t.field_id, "empty", 0, tile=t))
             continue
-        results.append(TileResult(t.field_id, "kept", len(real)))
+        results.append(TileResult(t.field_id, "kept", len(real), tile=t))
         log.info("%s: kept, %d candidates", t.field_id, len(real))
     return results

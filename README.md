@@ -123,3 +123,5 @@ The website lives in [`frontend/`](frontend/): a Next.js static export served by
 ## Survey
 
 Beyond the three showcase fields, `.github/workflows/survey.yml` searches SPHEREx week segments tile by tile along the ecliptic. It runs on GitHub's machines (they read the images straight from the public `nasa-irsa-spherex` S3 bucket) in 15 parallel shards, keeps every 0.3° tile where the pipeline found a moving object that passed vetting, and commits the result to `main`. Cloudflare then redeploys, and the Worker's cron checks each new candidate against JPL. It runs weekly, on every pipeline change, and on demand (Actions → Survey → Run workflow, where you can list more segments).
+
+Tiles searched without finding anything are recorded too: `data/survey/footprint.json` keeps every tile ever searched with its latest result (with moving objects, empty, or failed and why), and `data/survey/ledger.json` keeps one row per run. `/api/survey` serves both, so the sky map shows where the survey looked and found nothing, not just its finds.

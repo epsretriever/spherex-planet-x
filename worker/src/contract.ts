@@ -439,7 +439,7 @@ export interface ObjectPrediction extends Envelope {
   points: PredictionPoint[];
 }
 
-export type TileStatus = "processed" | "pending" | "no_data";
+export type TileStatus = "processed" | "empty" | "failed" | "pending" | "no_data";
 
 export interface SurveyTile {
   tile_id: string;
@@ -456,6 +456,25 @@ export interface SurveyTile {
   field_id: string | null;
   n_candidates: number;
   m50_ab: number | null;
+  m50_study_id?: string | null;
+  /** Why the last search failed (status "failed"). */
+  detail?: string | null;
+}
+
+export interface SurveyRun {
+  run_id: string;
+  started_utc: string;
+  finished_utc: string;
+  pipeline_version: string;
+  n_new_files: number;
+  n_tiles_processed: number;
+  n_new_objects: number;
+  segments?: string[];
+  n_tiles_with_movers?: number;
+  n_tiles_empty?: number;
+  n_tiles_failed?: number;
+  n_candidates?: number;
+  workflow_url?: string | null;
 }
 
 export interface Survey extends Envelope {
@@ -475,16 +494,14 @@ export interface Survey extends Envelope {
     n_objects: number;
     /** Distinct JPL designations among matched objects (from stored JPL results; added by the Worker). */
     n_known_objects?: number | null;
+    n_searched?: number;
+    n_empty?: number;
+    n_failed?: number;
+    area_deg2_searched?: number;
   };
-  last_run: {
-    run_id: string;
-    started_utc: string;
-    finished_utc: string;
-    pipeline_version: string;
-    n_new_files: number;
-    n_tiles_processed: number;
-    n_new_objects: number;
-  } | null;
+  last_run: SurveyRun | null;
+  /** Most recent runs first (up to 20). */
+  runs?: SurveyRun[];
 }
 
 export type AiSubjectKind = "candidate" | "object";

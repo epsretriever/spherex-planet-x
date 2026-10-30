@@ -8,6 +8,7 @@ The survey summary lists every tile: processed tiles are the built fields.
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
@@ -136,6 +137,49 @@ def tile_from_field(f: S.FieldDetail, n_candidates: int) -> S.SurveyTile:
     )
 
 
+def tile_from_footprint(t) -> S.SurveyTile:
+    """A searched tile without a published field page: nothing found, or the search failed."""
+    return S.SurveyTile(
+        tile_id=t.tile_id,
+        center=S.SkyPosition(ra_deg=t.ra_deg, dec_deg=t.dec_deg),
+        ecliptic_lon_deg=t.elon_deg,
+        ecliptic_lat_deg=t.elat_deg,
+        size_deg=t.size_deg,
+        status={"failed": S.TileStatus.failed, "empty": S.TileStatus.empty}.get(
+            t.status, S.TileStatus.processed
+        ),
+        n_epochs=t.n_exposures,
+        n_visits=t.n_visits,
+        first_time_utc=t.first_utc,
+        last_time_utc=t.last_utc,
+        last_processed_utc=t.searched_utc,
+        field_id=None,
+        n_candidates=0,
+        detail=t.detail if t.status == "failed" else None,
+    )
+
+
+def injection_m50(out_dir: Path) -> tuple[str | None, dict[str, float]]:
+    """Per-field m50 (linear tracks, 3-100 arcsec/hr) from the newest published injection study."""
+    idx = out_dir / "injection" / "index.json"
+    if not idx.exists():
+        return None, {}
+    studies = json.loads(idx.read_text()).get("studies", [])
+    if not studies:
+        return None, {}
+    newest = max(studies, key=lambda r: r["generated_utc"])
+    p = out_dir / "injection" / f"{newest['study_id']}.json"
+    if not p.exists():
+        return None, {}
+    study = json.loads(p.read_text())
+    per_field = {
+        f["field_id"]: f["m50_ab"]
+        for f in study.get("per_field", [])
+        if f.get("m50_ab") is not None
+    }
+    return study["study_id"], per_field
+
+
 def build_survey(
     fields: list[S.FieldDetail],
     cands_by_field: dict[str, list[S.CandidateDetail]],
@@ -143,10 +187,23 @@ def build_survey(
     version: str,
     run_id: str | None,
     now: str,
+    footprint=None,
+    runs: list[S.SurveyRun] | None = None,
+    m50: tuple[str | None, dict[str, float]] = (None, {}),
 ) -> S.Survey:
+    study_id, m50_by_field = m50
     tiles = [tile_from_field(f, len(cands_by_field.get(f.field_id, []))) for f in fields]
-    area = sum(t.size_deg**2 for t in tiles if t.status == S.TileStatus.processed)
+    for t in tiles:
+        if t.tile_id in m50_by_field:
+            t.m50_ab = m50_by_field[t.tile_id]
+            t.m50_study_id = study_id
+    published = {t.tile_id for t in tiles}
+    if footprint is not None:
+        tiles += [tile_from_footprint(t) for t in footprint.tiles if t.tile_id not in published]
+    processed = [t for t in tiles if t.status == S.TileStatus.processed]
+    searched = [t for t in tiles if t.status in (S.TileStatus.processed, S.TileStatus.empty)]
     releases = sorted({f.data_release for f in fields})
+    runs = sorted(runs or [], key=lambda r: r.finished_utc, reverse=True)
     return S.Survey(
         pipeline_version=version,
         build_run_id=run_id,
@@ -161,13 +218,18 @@ def build_survey(
         tiles=tiles,
         totals=S.SurveyTotals(
             n_tiles=len(tiles),
-            n_processed=sum(t.status == S.TileStatus.processed for t in tiles),
-            area_deg2_processed=round(area, 4),
+            n_processed=len(processed),
+            area_deg2_processed=round(sum(t.size_deg**2 for t in processed), 4),
             n_epochs=sum(t.n_epochs for t in tiles),
             n_candidates=sum(t.n_candidates for t in tiles),
             n_objects=n_objects,
+            n_searched=len(searched),
+            n_empty=sum(t.status == S.TileStatus.empty for t in tiles),
+            n_failed=sum(t.status == S.TileStatus.failed for t in tiles),
+            area_deg2_searched=round(sum(t.size_deg**2 for t in searched), 4),
         ),
-        last_run=None,
+        last_run=runs[0] if runs else None,
+        runs=runs[:20],
     )
 
 
@@ -204,7 +266,18 @@ def write_objects_and_survey(
     by_field: dict[str, list[S.CandidateDetail]] = {}
     for c in cands:
         by_field.setdefault(c.field_id, []).append(c)
-    write_json(
-        out_dir / "survey.json", build_survey(fields, by_field, len(objects), version, run_id, now)
+    from .ledger import load_footprint, load_ledger
+
+    survey = build_survey(
+        fields,
+        by_field,
+        len(objects),
+        version,
+        run_id,
+        now,
+        footprint=load_footprint(out_dir),
+        runs=load_ledger(out_dir).runs,
+        m50=injection_m50(out_dir),
     )
+    write_json(out_dir / "survey.json", survey)
     return len(objects), len(fields)

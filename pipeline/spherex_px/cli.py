@@ -120,6 +120,31 @@ def _survey_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _survey_ledger(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT, utc_now
+    from .ledger import record_run, workflow_url_from_env
+    from .version import build_run_id
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    now = utc_now()
+    run = record_run(
+        out,
+        [Path(p) for p in args.reports],
+        run_id=args.run_id or build_run_id(),
+        started_utc=args.started or now,
+        finished_utc=now,
+        workflow_url=workflow_url_from_env(),
+    )
+    print(
+        f"{run.run_id}: {run.n_tiles_processed} tiles searched, {run.n_tiles_with_movers} with "
+        f"moving objects, {run.n_tiles_empty} empty, {run.n_tiles_failed} failed; "
+        f"{run.n_new_objects} new objects"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -154,6 +179,14 @@ def main(argv: list[str] | None = None) -> int:
     sb.add_argument("--of", type=int, default=1)
     sb.add_argument("--out")
     sb.set_defaults(func=_survey_build)
+    sl = sub.add_parser(
+        "survey-ledger", help="record a survey run: footprint of searched tiles and run ledger"
+    )
+    sl.add_argument("reports", nargs="+", help="survey-shard-N.json reports from survey-build")
+    sl.add_argument("--run-id", help="default: this build's run id (gh-<run>-<attempt> in Actions)")
+    sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
+    sl.add_argument("--out")
+    sl.set_defaults(func=_survey_ledger)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

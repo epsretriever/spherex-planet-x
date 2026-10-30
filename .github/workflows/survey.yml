@@ -43,7 +43,11 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      started: ${{ steps.start.outputs.started }}
     steps:
+      - id: start
+        run: echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -102,7 +106,7 @@ jobs:
           retention-days: 3
 
   merge:
-    needs: build
+    needs: [plan, build]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -129,6 +133,9 @@ jobs:
             [ -d "$d/fields" ] && cp -r "$d/fields/." "$out/fields/"
             [ -d "$d/candidates" ] && cp -r "$d/candidates/." "$out/candidates/"
           done
+          # Footprint of every tile searched (empty and failed ones too) and the run ledger,
+          # in data/survey/; publish folds them into survey.json.
+          spherex-px survey-ledger shards/*/survey-shard-*.json --started "${{ needs.plan.outputs.started }}"
           spherex-px publish
           python - <<'EOF'
           import glob, json
