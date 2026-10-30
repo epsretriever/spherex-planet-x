@@ -1,11 +1,17 @@
 import {
   SUPPORTED_SCHEMA_MAJOR,
+  type AiAnswer,
+  type AiSearch,
+  type AiSubjectKind,
+  type AiWriteup,
+  type AskRequest,
   type CandidateDetail,
   type CandidateList,
   type Classification,
   type FieldDetail,
   type FieldList,
   type InjectionStudy,
+  type ObjectList,
   type Versioned,
 } from "./contract";
 
@@ -29,6 +35,10 @@ export class DataError extends Error {
   constructor(
     readonly reason: DataErrorReason,
     message: string,
+    /** The HTTP status, when the server answered. */
+    readonly status?: number,
+    /** The API's own explanation (ErrorResponse.detail), when it sent one. */
+    readonly detail?: string,
   ) {
     super(message);
     this.name = "DataError";
@@ -55,8 +65,8 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     if ((err as Error).name === "AbortError") throw err;
     throw new DataError("unavailable", `Could not reach ${url}.`);
   }
-  if (res.status === 404) throw new DataError("not_found", `${url} returned 404.`);
-  if (!res.ok) throw new DataError("unavailable", `${url} returned ${res.status}.`);
+  if (res.status === 404) throw new DataError("not_found", `${url} returned 404.`, 404);
+  if (!res.ok) throw new DataError("unavailable", `${url} returned ${res.status}.`, res.status);
   try {
     return (await res.json()) as T;
   } catch {
@@ -185,6 +195,72 @@ export async function findInjectionStudyId(signal?: AbortSignal): Promise<string
   const detail = await getCandidate(first.candidate_id, signal);
   if (!detail.injection?.study_id) throw new DataError("not_found", "Injected candidate has no study.");
   return detail.injection.study_id;
+}
+
+export async function getObjects(signal?: AbortSignal): Promise<ObjectList> {
+  const body = await getJson<ObjectList>(USE_FIXTURES ? `${FIXTURE_BASE}/objects.json` : "/api/objects", signal);
+  expectArray(body, "objects", "Object list");
+  return checkVersion(body, "objects");
+}
+
+/* ---- AI (contract v1.1). There is no AI in fixture mode: these report not_found. ---- */
+
+async function postJson<T>(url: string, payload: unknown, signal?: AbortSignal): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") throw err;
+    throw new DataError("unavailable", `Could not reach ${url}.`);
+  }
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: unknown };
+      if (typeof body?.detail === "string" && body.detail) detail = body.detail;
+    } catch {
+      // Not JSON; keep the status only.
+    }
+    const reason: DataErrorReason = res.status === 404 || res.status === 501 ? "not_found" : "unavailable";
+    throw new DataError(reason, `${url} returned ${res.status}.`, res.status, detail);
+  }
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new DataError("invalid", `${url} did not return JSON.`);
+  }
+}
+
+const noAi = () => new DataError("not_found", "AI features need the live API.", 404);
+
+/** The AI analyst write-up for a candidate or object. */
+export async function getWriteup(kind: AiSubjectKind, id: string, signal?: AbortSignal): Promise<AiWriteup> {
+  if (USE_FIXTURES) throw noAi();
+  const body = await getJson<AiWriteup>(`/api/${kind === "object" ? "objects" : "candidates"}/${enc(id)}/writeup`, signal);
+  expectArray(body, "paragraphs", "Write-up");
+  if (body.subject_id !== id) throw new DataError("invalid", `Write-up is for ${body.subject_id}, not ${id}.`);
+  return checkVersion({ ...body, grounded_fields: body.grounded_fields ?? [] }, "writeup");
+}
+
+/** Asks a question about one report. Answers come only from that report's data. */
+export async function askAbout(req: AskRequest, signal?: AbortSignal): Promise<AiAnswer> {
+  if (USE_FIXTURES) throw noAi();
+  const body = await postJson<AiAnswer>("/api/ask", req, signal);
+  if (typeof body?.answer !== "string") throw new DataError("invalid", "Answer is missing its text.");
+  return checkVersion({ ...body, citations: Array.isArray(body.citations) ? body.citations : [] }, "ask");
+}
+
+/** Turns a plain-language request into a candidate filter. */
+export async function searchCandidates(query: string, signal?: AbortSignal): Promise<AiSearch> {
+  if (USE_FIXTURES) throw noAi();
+  const body = await postJson<AiSearch>("/api/search", { query }, signal);
+  if (!body || typeof body.filter !== "object" || body.filter === null) throw new DataError("invalid", "Search answer has no filter.");
+  return checkVersion(body, "search");
 }
 
 /**

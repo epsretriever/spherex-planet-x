@@ -42,3 +42,33 @@ export function WhenVisible({
   if (visible) return <>{children}</>;
   return <div ref={ref} style={{ minHeight }} aria-hidden="true" />;
 }
+
+/** Calls `onSeen` once when this point comes within `margin` of the viewport. Renders nothing visible. */
+export function Seen({ onSeen, margin = "400px" }: { onSeen: () => void; margin?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useRef(onSeen);
+  useEffect(() => {
+    seen.current = onSeen;
+  });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      seen.current();
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          obs.disconnect();
+          seen.current();
+        }
+      },
+      { rootMargin: margin },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [margin]);
+
+  return <div ref={ref} aria-hidden="true" />;
+}

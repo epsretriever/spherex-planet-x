@@ -389,3 +389,202 @@ export interface InjectionStudy extends Versioned {
   method_notes: string[];
   example_candidate_ids: string[];
 }
+
+/* ---- v1.1: objects, survey, AI (docs/api-contract.md, shared/schema/) ---- */
+
+export type DistanceClass = "neo" | "main_belt" | "jupiter_trojan" | "centaur" | "tno" | "unknown";
+export type OrbitStatus = "none" | "preliminary" | "refined";
+
+export interface ObjectSummary {
+  object_id: string;
+  classification: Classification;
+  label_plain: string;
+  summary_plain: string;
+  thumbnail_url: string;
+  field_ids: string[];
+  candidate_ids: string[];
+  n_detections: number;
+  n_visits: number;
+  first_time_utc: string;
+  last_time_utc: string;
+  arc_hours: number;
+  rate_arcsec_per_hr: number | null;
+  distance_class: DistanceClass;
+  distance_au_estimate: { best: number; lo: number; hi: number } | null;
+  orbit_status: OrbitStatus;
+  overall_score: number;
+  quality_level: QualityLevel;
+  known_object_checked: boolean;
+  known_object_matched: boolean;
+  known_object_designation: string | null;
+}
+
+export interface ObjectList extends Versioned {
+  generated_utc: string;
+  total: number;
+  objects: ObjectSummary[];
+}
+
+export interface OrbitalElements {
+  epoch_mjd: number;
+  a_au: number;
+  e: number;
+  i_deg: number;
+  node_deg: number;
+  peri_deg: number;
+  mean_anomaly_deg: number;
+  q_au: number;
+  method: string;
+  rms_arcsec: number;
+  n_detections: number;
+  arc_hours: number;
+  /** 6×6 over [a, e, i, node, peri, M], or null. */
+  covariance: number[][] | null;
+  n_clones: number;
+  clones_url: string | null;
+  jpl_comparison: {
+    designation: string;
+    delta_a_au: number;
+    delta_e: number;
+    delta_i_deg: number;
+    position_error_arcsec_30d: number;
+  } | null;
+}
+
+export interface ObjectDetail extends Versioned {
+  object_id: string;
+  classification: Classification;
+  label_plain: string;
+  summary_plain: string;
+  thumbnail_url: string;
+  field_ids: string[];
+  candidate_ids: string[];
+  detections: (Detection & { field_id: string; candidate_id: string })[];
+  motion: Motion;
+  distance_class: DistanceClass;
+  orbit_status: OrbitStatus;
+  orbit: OrbitalElements | null;
+  known_object: KnownObject;
+  scores: Scores;
+  explanation: Explanation | null;
+  spectrum: Spectrum | null;
+  history: { utc: string; run_id: string; change: string }[];
+  provenance: CandidateDetail["provenance"];
+  disclaimer?: string;
+}
+
+export interface ObjectPrediction extends Versioned {
+  object_id: string;
+  generated_utc: string;
+  orbit_epoch_mjd: number;
+  observer: string;
+  days: number;
+  points: {
+    time_utc: string;
+    mjd: number;
+    ra_deg: number;
+    dec_deg: number;
+    sigma_major_arcsec: number;
+    sigma_minor_arcsec: number;
+    sigma_pa_deg: number;
+    vmag_estimate: number | null;
+  }[];
+}
+
+export interface SurveyTile {
+  tile_id: string;
+  center: SkyPosition;
+  ecliptic_lon_deg: number;
+  ecliptic_lat_deg: number;
+  size_deg: number;
+  status: "processed" | "pending" | "no_data";
+  n_epochs: number;
+  n_visits: number;
+  first_time_utc: string | null;
+  last_time_utc: string | null;
+  last_processed_utc: string | null;
+  field_id: string | null;
+  n_candidates: number;
+  /** 50% completeness magnitude from injection-recovery; null until measured. */
+  m50_ab: number | null;
+}
+
+export interface Survey extends Versioned {
+  generated_utc: string;
+  name: string;
+  description: string;
+  tile_size_deg: number;
+  data_releases: string[];
+  tiles: SurveyTile[];
+  totals: { n_tiles: number; n_processed: number; area_deg2_processed: number; n_epochs: number; n_candidates: number; n_objects: number };
+  last_run: {
+    run_id: string;
+    started_utc: string;
+    finished_utc: string;
+    pipeline_version: string;
+    n_new_files: number;
+    n_tiles_processed: number;
+    n_new_objects: number;
+  } | null;
+}
+
+export type AiSubjectKind = "candidate" | "object";
+
+export interface AiWriteup extends Versioned {
+  subject_kind: AiSubjectKind;
+  subject_id: string;
+  verdict: string;
+  paragraphs: string[];
+  grounded_fields: string[];
+  numeric_check: "passed" | "failed" | "not_run";
+  /** "template" when the AI output failed a check or the AI was unavailable. */
+  source: "ai" | "template";
+  /** Workers AI model ID; null for template text. */
+  model: string | null;
+  label_plain: string;
+  cached: boolean;
+  generated_utc: string;
+}
+
+export interface AskRequest {
+  subject_kind: AiSubjectKind;
+  subject_id: string;
+  question: string;
+  session_id: string;
+}
+
+export interface AiAnswer extends Versioned {
+  subject_kind: AiSubjectKind;
+  subject_id: string;
+  question: string;
+  answer: string;
+  /** JSON paths in the subject's report. */
+  citations: string[];
+  /** False when the model said the data doesn't answer the question. */
+  answered_from_data: boolean;
+  numeric_check: "passed" | "failed" | "not_run";
+  model: string | null;
+  cached: boolean;
+  generated_utc: string;
+}
+
+export interface CandidateFilter {
+  classification: Classification[];
+  rate_min_arcsec_per_hr: number | null;
+  rate_max_arcsec_per_hr: number | null;
+  distance_class: DistanceClass[];
+  field_id: string[];
+  min_score: number | null;
+  include_injected: boolean;
+  sort: "score" | "rate" | "newest" | "unusual";
+}
+
+export interface AiSearch extends Versioned {
+  query: string;
+  filter: CandidateFilter;
+  explanation_plain: string;
+  /** False when the model's output failed schema validation; the filter is then empty. */
+  valid: boolean;
+  model: string | null;
+  cached: boolean;
+}

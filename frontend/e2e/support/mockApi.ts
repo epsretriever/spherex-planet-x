@@ -8,6 +8,9 @@
  */
 import type { Page, Route } from "@playwright/test";
 import type {
+  AiAnswer,
+  AiSearch,
+  AiWriteup,
   CandidateDetail,
   CandidateList,
   CandidateSummary,
@@ -18,6 +21,7 @@ import type {
   GridWcs,
   InjectionStudy,
   Mover,
+  ObjectList,
   Source,
 } from "../../src/lib/contract";
 import { skyToGrid } from "../../src/lib/grid";
@@ -270,7 +274,8 @@ const summaries: CandidateSummary[] = OBJECTS.map((o) => ({
   detection_count: 3,
   time_span_hours: 26.4,
   first_time_utc: epochs[0]!.time_utc,
-  rate_arcsec_per_hr: 30.1,
+  // The unexplained one is slow, so speed filters have something to separate.
+  rate_arcsec_per_hr: o.cls === "unmatched" ? 4.2 : 30.1,
   position_angle_deg: 112.4,
   mean_snr: 10,
   overall_score: o.cls === "unmatched" ? 0.45 : 0.78,
@@ -360,7 +365,101 @@ const json = (route: Route, body: unknown, status = 200) =>
 export interface MockOptions {
   /** Make every /api request fail with this status. */
   failWith?: number;
+  /** Answer the AI endpoints (write-up, ask, search). Off by default: they 404, as before the AI ships. */
+  ai?: boolean;
+  /** Make POST /api/ask fail with this status. */
+  askStatus?: number;
 }
+
+const AI_MODEL = "@synthetic/test-model";
+
+function writeup(id: string): AiWriteup {
+  return {
+    schema_version: "1.1",
+    pipeline_version: PIPE,
+    subject_kind: "candidate",
+    subject_id: id,
+    verdict: "Synthetic verdict: a steady mover seen 3 times.",
+    paragraphs: [
+      "Synthetic paragraph one. It was caught in 3 images over 26.4 hours.",
+      "Synthetic paragraph two. It moved 30.1 arcseconds per hour.",
+      "Synthetic paragraph three. Nothing here is a discovery claim.",
+    ],
+    grounded_fields: ["motion.n_detections", "motion.time_span_hours", "motion.rate_arcsec_per_hr"],
+    numeric_check: "passed",
+    source: "ai",
+    model: AI_MODEL,
+    label_plain: "AI-written from the measurements below",
+    cached: false,
+    generated_utc: "2026-01-01T00:00:00Z",
+  };
+}
+
+function answer(id: string, question: string): AiAnswer {
+  const fromData = !/colou?r|name|who/i.test(question);
+  return {
+    schema_version: "1.1",
+    pipeline_version: PIPE,
+    subject_kind: "candidate",
+    subject_id: id,
+    question,
+    answer: fromData
+      ? "Synthetic answer: it moved 30.1 arcseconds per hour across 3 sightings."
+      : "Synthetic answer: the data doesn't tell us that.",
+    citations: fromData ? ["motion.rate_arcsec_per_hr", "motion.n_detections", "detections[0].snr"] : [],
+    answered_from_data: fromData,
+    numeric_check: fromData ? "passed" : "not_run",
+    model: AI_MODEL,
+    cached: false,
+    generated_utc: "2026-01-01T00:00:00Z",
+  };
+}
+
+function search(query: string): AiSearch {
+  const valid = !/gibberish/i.test(query);
+  return {
+    schema_version: "1.1",
+    pipeline_version: PIPE,
+    query,
+    filter: valid
+      ? { classification: ["unmatched"], rate_min_arcsec_per_hr: null, rate_max_arcsec_per_hr: 10, distance_class: [], field_id: [], min_score: null, include_injected: false, sort: "rate" }
+      : { classification: [], rate_min_arcsec_per_hr: null, rate_max_arcsec_per_hr: null, distance_class: [], field_id: [], min_score: null, include_injected: false, sort: "score" },
+    explanation_plain: valid ? "Synthetic reading: unexplained objects slower than 10″ per hour, fastest first." : "Synthetic: that didn't make a filter.",
+    valid,
+    model: AI_MODEL,
+    cached: false,
+  };
+}
+
+const objectList: ObjectList = {
+  schema_version: "1.1",
+  pipeline_version: PIPE,
+  generated_utc: "2026-01-01T00:00:00Z",
+  total: OBJECTS.length,
+  objects: OBJECTS.map((o) => ({
+    object_id: `obj-${o.id}`,
+    classification: o.cls,
+    label_plain: o.label,
+    summary_plain: `Synthetic summary for ${o.id}.`,
+    thumbnail_url: `/static/synthetic/stamp_${o.id}_t1.png`,
+    field_ids: [FIELD_ID],
+    candidate_ids: [o.id],
+    n_detections: 3,
+    n_visits: 2,
+    first_time_utc: epochs[0]!.time_utc,
+    last_time_utc: epochs[2]!.time_utc,
+    arc_hours: 26.4,
+    rate_arcsec_per_hr: 30.1,
+    distance_class: o.cls === "known_object" ? "main_belt" : "unknown",
+    distance_au_estimate: null,
+    orbit_status: "none",
+    overall_score: 0.5,
+    quality_level: "medium",
+    known_object_checked: true,
+    known_object_matched: o.cls === "known_object",
+    known_object_designation: o.cls === "known_object" ? "(99999) Synthetic" : null,
+  })),
+};
 
 export async function installMockApi(page: Page, opts: MockOptions = {}) {
   await page.route("**/api/**", async (route) => {
@@ -382,7 +481,18 @@ export async function installMockApi(page: Page, opts: MockOptions = {}) {
       const body: CandidateList = { schema_version: "1.0", pipeline_version: PIPE, generated_utc: "2026-01-01T00:00:00Z", total: list.length, candidates: list };
       return json(route, body);
     }
-    const cand = path.match(/^\/api\/candidates\/(.+)$/);
+    if (path === "/api/objects") return json(route, objectList);
+    if (opts.ai) {
+      const w = path.match(/^\/api\/candidates\/(.+)\/writeup$/);
+      if (w) return json(route, writeup(decodeURIComponent(w[1]!)));
+      const body = route.request().method() === "POST" ? (route.request().postDataJSON() as Record<string, string>) : null;
+      if (path === "/api/ask" && body) {
+        if (opts.askStatus) return json(route, { detail: `Synthetic ${opts.askStatus} detail.` }, opts.askStatus);
+        return json(route, answer(body.subject_id!, body.question!));
+      }
+      if (path === "/api/search" && body) return json(route, search(body.query!));
+    }
+    const cand = path.match(/^\/api\/candidates\/([^/]+)$/);
     if (cand) {
       const o = OBJECTS.find((x) => x.id === decodeURIComponent(cand[1]!));
       return o ? json(route, detail(o)) : json(route, { detail: "not found" }, 404);
