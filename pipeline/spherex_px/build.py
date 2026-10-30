@@ -28,6 +28,7 @@ from astropy.coordinates import BarycentricMeanEcliptic, SkyCoord
 from astropy.time import Time
 
 from . import schemas as S
+from .data.http import UpstreamError
 from .data.index import CoverageIndex, dichroic_partner
 from .data.l2file import L2File
 from .data.s3 import Level2Key, S3Archive
@@ -160,6 +161,15 @@ class FieldBuilder:
         size = self.spec.size_deg + 0.05
 
         def one(key: Level2Key) -> Epoch | None:
+            try:
+                return read(key)
+            except (UpstreamError, KeyError, ValueError) as err:
+                # One unreadable or missing file (e.g. a dichroic partner IRSA has not
+                # published) costs that image, not the field.
+                log.warning("skipping %s: %s: %s", key.file, type(err).__name__, err)
+                return None
+
+        def read(key: Level2Key) -> Epoch | None:
             f = L2File(key, self.archive)
             c = f.cutout(self.spec.ra_deg, self.spec.dec_deg, size)
             if c is None:
