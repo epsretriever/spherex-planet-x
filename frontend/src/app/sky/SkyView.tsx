@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
+import { Deferred } from "@/components/Deferred";
 import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
@@ -102,6 +103,8 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
         </div>
       </dl>
 
+      {/* The map and table lay out after the header paints, as the evidence report does. */}
+      <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
         <SkyMap tiles={tiles} planetNine={p9} tileName={name} />
         <figcaption className={styles.legend}>
@@ -249,6 +252,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
           <Link href="/limits/">How faint can we see? Detection limits →</Link>
         </p>
       </section>
+      </Deferred>
     </div>
   );
 }

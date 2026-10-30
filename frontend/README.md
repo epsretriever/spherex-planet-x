@@ -27,7 +27,7 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 | `npm run check` | Lint, typecheck and unit tests |
 | `npm run test:e2e` | Playwright tests against `out/` at desktop and phone widths, with synthetic API responses (run `npm run build` first) |
 | `npm run test:real` | Playwright on **real data**: starts `wrangler dev` at the repo root and screenshots every page at 360, 768 and 1280 px, checking for a heading, no horizontal overflow and no console errors. Screenshots land in `test-results-real/`. Run `npm run build` at the root first. |
-| `npm run lighthouse` | Lighthouse on real data (median of 3 runs) for Home, an Explore field and an evidence report; fails below 90 for performance, accessibility or best practices. HTML reports land in `lighthouse-reports/`. |
+| `npm run lighthouse` | Lighthouse on real data (median of 5 runs) for Home, an Explore field, an evidence report, the sky map and the object list; fails below 90 for performance, accessibility or best practices. HTML reports land in `lighthouse-reports/`. |
 | `node scripts/make-share-images.mjs` | Re-renders `public/og.png` and `src/app/apple-icon.png` after a brand change |
 
 ## How it fits together
