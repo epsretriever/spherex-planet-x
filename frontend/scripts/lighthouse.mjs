@@ -1,8 +1,8 @@
 // Lighthouse quality gate on real data.
 //
-// Starts (or reuses) `wrangler dev` from the repository root, runs Lighthouse with its default
+// Starts (or reuses) `wrangler dev --env offline` (no Workers AI, which needs credentials) from the repository root, runs Lighthouse with its default
 // mobile settings (CPU slowdown calibrated to this machine, see below) on Home, an Explore field
-// an evidence report and the sky map (median of LH_RUNS runs,
+// an evidence report, the sky map and the object list (median of LH_RUNS runs,
 // default 3), writes HTML and JSON reports to
 // lighthouse-reports/, and exits non-zero if performance, accessibility or best practices
 // scores below 90 on any of them. Build first: `npm run build` at the repository root.
@@ -40,7 +40,7 @@ let server;
 if (!base) {
   base = `http://127.0.0.1:${PORT}`;
   if (!(await waitFor(`${base}/api/health`, 1000))) {
-    server = spawn("npx", ["wrangler", "dev", "--port", String(PORT), "--ip", "127.0.0.1"], {
+    server = spawn("npx", ["wrangler", "dev", "--env", "offline", "--port", String(PORT), "--ip", "127.0.0.1"], {
       cwd: join(root, ".."),
       stdio: "ignore",
       detached: true,
@@ -56,6 +56,7 @@ const pages = [
   ["explore-field", `/explore/${fields.fields[0].field_id}/`],
   ["report", `/detective/${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}/`],
   ["sky", "/sky/"],
+  ["objects", "/objects/"],
 ];
 
 const chrome = await chromeLauncher.launch({

@@ -67,6 +67,14 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 - With no AI endpoints (a 404 or 501), or in fixture mode, all three step aside. The report keeps the explanation published with it, and search says it is off.
 - `e2e/ai.spec.ts` covers all of this with synthetic AI responses (`installMockApi(page, { ai: true })`).
 
+## Objects and orbits (build plan row 6)
+
+- `/objects/` lists every linked object, and `/objects/{object_id}/` is prerendered for each one. Unknown IDs fall back to `/objects/object/?id=`, as for fields and candidates.
+- Visits are sightings grouped with gaps over 30 minutes, the same rule as the contract's `n_visits`. The distance class and its ranges come from the contract (`src/lib/objects.ts`).
+- The orbit view (`src/components/orbit/`) uses three.js. It is loaded with `import()` only when an object has a drawable orbit and the panel scrolls into view, so no other page pays for it. When WebGL is unavailable, or the reader asks for it, a flat SVG view replaces it.
+- The uncertainty cloud uses `orbit.clones_url` when it serves a list of elements. Otherwise it samples `orbit.n_clones` clones (at most 200) from `orbit.covariance` with a fixed seed. Clones that aren't ellipses are dropped.
+- Planets come from Standish's J2000 mean elements, with only the mean longitude advanced: good for a diagram, not for astrometry. The orbit math is tested in `src/lib/orbit.test.ts`.
+
 ## Performance notes
 
 - Pages that read `?id=` start their API requests from an inline script in the static HTML (`PrefetchData`), so data downloads while the JavaScript does.

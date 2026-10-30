@@ -1,0 +1,106 @@
+.distanceClass {
+  font-size: var(--text-lg);
+}
+
+.distanceChart {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: var(--space-2) 0;
+}
+
+.band {
+  fill: var(--surface-3);
+  stroke: var(--border);
+}
+
+.band[data-active] {
+  fill: color-mix(in srgb, var(--cool) 28%, var(--surface-3));
+  stroke: var(--cool);
+}
+
+.bandLabel,
+.planetLabel,
+.tick {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text-muted);
+}
+
+.planetTick {
+  stroke: var(--text-muted);
+  stroke-opacity: 0.4;
+  stroke-dasharray: 2 3;
+}
+
+.range {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.best {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.visits {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.visit {
+  display: grid;
+}
+
+.gap {
+  margin: 0;
+  padding: var(--space-2) 0 var(--space-2) 22px;
+  border-left: 2px dashed var(--border-strong);
+  margin-left: 9px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.visitCard {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.visitHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.visitNo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--track);
+}
+
+.visitBody {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.history {
+  margin: 0;
+  padding-left: var(--space-6);
+}
+
+.history li {
+  margin-bottom: var(--space-2);
+}
+
+.also {
+  margin: 0;
+}

@@ -21,6 +21,7 @@ import type {
   GridWcs,
   InjectionStudy,
   Mover,
+  ObjectDetail,
   ObjectList,
   Survey,
   Source,
@@ -434,6 +435,61 @@ function search(query: string): AiSearch {
   };
 }
 
+/** Object detail: the candidate's report as one object. The known one has a SYNTHETIC orbit with a covariance. */
+function objectDetail(o: Obj): ObjectDetail {
+  const c = detail(o);
+  const known = o.cls === "known_object";
+  return {
+    schema_version: "1.1",
+    pipeline_version: PIPE,
+    object_id: `obj-${o.id}`,
+    classification: c.classification,
+    label_plain: c.label_plain,
+    summary_plain: c.summary_plain,
+    thumbnail_url: c.thumbnail_url,
+    field_ids: [FIELD_ID],
+    candidate_ids: [o.id],
+    detections: c.detections.map((d) => ({ ...d, field_id: FIELD_ID, candidate_id: o.id })),
+    motion: { ...c.motion, distance_au_estimate: known ? { best: 2.6, lo: 2.1, hi: 3.4 } : null },
+    distance_class: known ? "main_belt" : "unknown",
+    orbit_status: known ? "preliminary" : "none",
+    orbit: known
+      ? {
+          epoch_mjd: 61000.5,
+          a_au: 2.71,
+          e: 0.14,
+          i_deg: 9.3,
+          node_deg: 112.5,
+          peri_deg: 47.1,
+          mean_anomaly_deg: 201.4,
+          q_au: 2.33,
+          method: "synthetic_test_fit",
+          rms_arcsec: 0.82,
+          n_detections: 3,
+          arc_hours: 26.4,
+          covariance: [
+            [0.01, 0.0004, 0, 0, 0, 0],
+            [0.0004, 0.0004, 0, 0, 0, 0],
+            [0, 0, 0.09, 0, 0, 0],
+            [0, 0, 0, 0.25, 0, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 4],
+          ],
+          n_clones: 60,
+          clones_url: null,
+          jpl_comparison: { designation: "(99999) Synthetic", delta_a_au: 0.021, delta_e: 0.004, delta_i_deg: 0.12, position_error_arcsec_30d: 14.2 },
+        }
+      : null,
+    known_object: c.known_object,
+    scores: c.scores,
+    explanation: c.explanation,
+    spectrum: c.spectrum,
+    history: [{ utc: "2026-01-01T00:00:00Z", run_id: "synthetic-run", change: "Synthetic: linked 3 detections over 3 visits" }],
+    provenance: c.provenance,
+    disclaimer: c.disclaimer,
+  };
+}
+
 const objectList: ObjectList = {
   schema_version: "1.1",
   pipeline_version: PIPE,
@@ -520,6 +576,11 @@ export async function installMockApi(page: Page, opts: MockOptions = {}) {
       return json(route, body);
     }
     if (path === "/api/objects") return json(route, objectList);
+    const obj = path.match(/^\/api\/objects\/obj-([^/]+)$/);
+    if (obj) {
+      const o = OBJECTS.find((x) => x.id === decodeURIComponent(obj[1]!));
+      return o ? json(route, objectDetail(o)) : json(route, { detail: "not found" }, 404);
+    }
     if (path === "/api/survey") return json(route, opts.surveyWithoutCitation ? { ...survey, planet_nine: { ...survey.planet_nine!, citation: "" } } : survey);
     if (opts.ai) {
       const w = path.match(/^\/api\/candidates\/(.+)\/writeup$/);

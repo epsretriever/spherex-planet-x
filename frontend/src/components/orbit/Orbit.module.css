@@ -1,0 +1,201 @@
+.figure {
+  margin: 0;
+}
+
+.scene {
+  position: relative;
+  height: clamp(320px, 62vw, 520px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 50% 50%, rgb(247 209 61 / 0.08), transparent 40%),
+    var(--bg);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.scene canvas:active {
+  cursor: grabbing;
+}
+
+.tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: -1.6em 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.tag[data-kind="object"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tag[data-kind="sun"] {
+  color: var(--ir-7);
+}
+
+.reset {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.topDown {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.sun {
+  fill: var(--ir-7);
+}
+
+.planetOrbit {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-opacity: 0.45;
+}
+
+.planet {
+  fill: var(--cool);
+}
+
+.cloneOrbit {
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.06;
+}
+
+.clone {
+  fill: var(--accent);
+  fill-opacity: 0.6;
+}
+
+.objectOrbit {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.object {
+  fill: var(--accent);
+}
+
+.svgTag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text-muted);
+}
+
+.svgTag[data-kind="object"] {
+  fill: var(--accent);
+  font-weight: 600;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: var(--space-3) 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swObject,
+.swClone,
+.swPlanet {
+  display: inline-block;
+  flex: none;
+}
+
+.swObject {
+  width: 22px;
+  border-top: 2px solid var(--accent);
+}
+
+.swClone {
+  width: 22px;
+  height: 10px;
+  background: radial-gradient(circle, var(--accent) 1.5px, transparent 2px) 0 0 / 6px 6px;
+  opacity: 0.7;
+}
+
+.swPlanet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cool);
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .cols {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.subhead {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-md);
+}
+
+.jpl p {
+  margin: 0;
+}
+
+.noOrbit {
+  margin: 0 0 var(--space-2);
+}

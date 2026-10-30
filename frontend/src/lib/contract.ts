@@ -417,6 +417,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Other object IDs with the same JPL designation, merged into this entry. */
+  also_seen_as?: string[];
 }
 
 export interface ObjectList extends Versioned {
@@ -471,6 +473,8 @@ export interface ObjectDetail extends Versioned {
   history: { utc: string; run_id: string; change: string }[];
   provenance: CandidateDetail["provenance"];
   disclaimer?: string;
+  /** Other objects with the same JPL designation. */
+  also_seen_as?: string[];
 }
 
 export interface ObjectPrediction extends Versioned {
