@@ -303,6 +303,21 @@ const study: InjectionStudy = {
   recovery_criteria: "Synthetic criteria text.",
   method_notes: ["Synthetic method note."],
   example_candidate_ids: ["syn-injected"],
+  // Proposed fields (build plan section 5), exercised here so the UI is ready for them.
+  ...({
+    m50_by_distance: [
+      { distance_au: 30, m50_ab: 18.8, n_injected: 40 },
+      { distance_au: 100, m50_ab: 18.6, n_injected: 40 },
+      { distance_au: 500, m50_ab: null, n_injected: 40 },
+    ],
+    planet_context: {
+      assumptions: { diameter_km: 25000, geometric_albedo: 0.4, phase_function: "Synthetic", thermal_model: "Synthetic", reference: "Synthetic test values" },
+      rows: [
+        { distance_au: 100, predicted_mag_ab: 17.5, band_um: 1.5, m50_ab: 18.6, verdict: "detected" },
+        { distance_au: 500, predicted_mag_ab: 21.0, band_um: 1.5, m50_ab: null, verdict: "missed" },
+      ],
+    },
+  } as object),
 };
 
 /** Deterministic pseudo-random numbers for the synthetic sky. */

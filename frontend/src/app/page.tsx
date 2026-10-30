@@ -119,7 +119,7 @@ export default function LandingPage() {
             show the evidence and say which explanations we can and can&apos;t rule out.
           </p>
           <p>
-            <Link href="/simulated/">See how we test ourselves with planted, SIMULATED objects →</Link>
+            <Link href="/limits/">See where Planet X could still be hiding, and how we test ourselves →</Link>
           </p>
         </section>
       </div>

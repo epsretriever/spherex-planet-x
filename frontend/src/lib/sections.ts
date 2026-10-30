@@ -15,7 +15,7 @@ export interface Section {
 export const SECTIONS: Section[] = [
   { href: "/explore/", label: "Explore", blurb: "Blink real SPHEREx images and spot what moved", match: "/explore" },
   { href: "/detective/", label: "Detective", blurb: "Every moving object, with the evidence for and against", match: "/detective" },
-  { href: "/simulated/", label: "Simulated", blurb: "How faint and how slow an object we can find", match: "/simulated" },
+  { href: "/limits/", label: "Limits", blurb: "Where Planet X could still be hiding: how faint and slow we can see", match: "/limits" },
   { href: "/about/", label: "About", blurb: "How it works, data credits and the team", match: "/about" },
 ];
 

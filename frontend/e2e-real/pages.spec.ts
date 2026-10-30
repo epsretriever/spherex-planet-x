@@ -129,7 +129,7 @@ test("report section nav stays pinned while scrolling", async ({ page }) => {
 });
 
 test("detection limits page", async ({ page }, info) => {
-  await checkPage(page, info, "/simulated/", "simulated");
+  await checkPage(page, info, "/limits/", "limits");
 });
 
 test("about", async ({ page }, info) => {

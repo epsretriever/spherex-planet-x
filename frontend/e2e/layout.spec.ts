@@ -11,7 +11,7 @@ const PAGES = [
   "/detective/candidate/?id=syn-unmatched",
   "/detective/candidate/?id=syn-injected",
   "/about/",
-  "/simulated/",
+  "/limits/",
   "/no-such-page/",
 ];
 

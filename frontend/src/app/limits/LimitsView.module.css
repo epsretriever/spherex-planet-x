@@ -100,3 +100,71 @@
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
+
+.summary {
+  padding: var(--space-6);
+  border-left: 3px solid var(--accent);
+}
+
+.summary h2 {
+  font-size: var(--text-lg);
+}
+
+.summary p:first-of-type {
+  font-size: var(--text-lg);
+}
+
+.summary p:last-child {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.table {
+  width: 100%;
+  font-size: var(--text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  background: var(--surface-2);
+}
+
+.table td[data-verdict="detected"] {
+  color: var(--ok);
+}
+
+.table td[data-verdict="missed"] {
+  color: var(--warning);
+}
+
+.assumptions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+}
+
+.assumptions dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.assumptions dd {
+  margin: 0;
+}
