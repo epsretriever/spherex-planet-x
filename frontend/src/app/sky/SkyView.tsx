@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
@@ -34,8 +34,20 @@ const TABLE_ROWS = 30;
 /** The survey footprint: as published at build time, then as the API serves it now. */
 export function SkyView({ initial, fieldNames }: { initial: Survey | null; fieldNames: Record<string, string> }) {
   const [showAll, setShowAll] = useState(false);
-  const state = useData("survey", (signal) => getSurvey(signal));
-  const fields = useData("fields", (signal) => getFields(signal));
+  // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
+  const [live, setLive] = useState(!initial);
+  useEffect(() => {
+    if (live) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) {
+      w.requestIdleCallback(() => setLive(true), { timeout: 2500 });
+    } else {
+      const t = setTimeout(() => setLive(true), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [live]);
+  const state = useData(live ? "survey" : null, (signal) => getSurvey(signal));
+  const fields = useData(live ? "fields" : null, (signal) => getFields(signal));
   const survey = state.status === "ok" ? state.data : initial;
   const names: Record<string, string> =
     fields.status === "ok" ? { ...fieldNames, ...Object.fromEntries(fields.data.fields.map((f) => [f.field_id, f.name])) } : fieldNames;
