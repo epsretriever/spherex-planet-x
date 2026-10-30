@@ -1,0 +1,157 @@
+# Survey: search many SPHEREx tiles along the ecliptic for moving objects and publish every
+# tile where the pipeline found one. Runs on GitHub's machines, which read SPHEREx images
+# straight from the public nasa-irsa-spherex S3 bucket.
+#
+#   plan   index the week segments' headers and pick tiles imaged in enough visits
+#   build  N parallel shards build their share of the tiles (shard 0 also rebuilds the
+#          showcase fields, so all published data comes from one pipeline commit)
+#   merge  combine the shards, publish the lists, commit the data to main; the Cloudflare
+#          Workers build then deploys it and the Worker's cron checks every new candidate
+#          against JPL.
+name: Survey
+
+on:
+  workflow_dispatch:
+    inputs:
+      segments:
+        description: Week segments to search (space separated, release/segment)
+        default: qr2/2025W23_1C
+      max_tiles:
+        description: Most tiles to build
+        default: "150"
+  schedule:
+    - cron: "41 7 * * 0" # weekly, Sunday 07:41 UTC
+  push:
+    branches: [main]
+    paths:
+      - pipeline/spherex_px/**
+      - .github/workflows/survey.yml
+
+concurrency:
+  group: survey
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  SEGMENTS: ${{ inputs.segments || 'qr2/2025W23_1C' }}
+  MAX_TILES: ${{ inputs.max_tiles || '150' }}
+  SHARDS: 15
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e pipeline
+      - name: Index headers and plan tiles
+        working-directory: pipeline
+        run: spherex-px survey-plan $SEGMENTS --out var/survey-plan.json --max-tiles $MAX_TILES
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: |
+            pipeline/var/survey-plan.json
+            pipeline/var/index.sqlite
+          retention-days: 3
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e pipeline
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: pipeline/var
+      - name: Rebuild the showcase fields
+        if: matrix.shard == 0
+        working-directory: pipeline
+        run: spherex-px build --out ../shard-out
+      - name: Build survey tiles
+        working-directory: pipeline
+        run: |
+          spherex-px survey-build --plan var/survey-plan.json \
+            --shard ${{ matrix.shard }} --of $SHARDS --out ../shard-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.shard }}
+          path: |
+            shard-out/fields/
+            shard-out/candidates/
+            shard-out/survey-shard-*.json
+          if-no-files-found: ignore
+          retention-days: 3
+
+  merge:
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e pipeline
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          path: shards
+      - name: Require the showcase rebuild
+        run: test -f shards/shard-0/fields/aquarius-a.json
+      - name: Replace the published data
+        run: |
+          out=frontend/public/data
+          rm -rf "$out/fields" "$out/candidates"
+          mkdir -p "$out/fields" "$out/candidates"
+          for d in shards/shard-*; do
+            [ -d "$d/fields" ] && cp -r "$d/fields/." "$out/fields/"
+            [ -d "$d/candidates" ] && cp -r "$d/candidates/." "$out/candidates/"
+          done
+          spherex-px publish
+          python - <<'EOF'
+          import glob, json
+          rows = [r for f in glob.glob("shards/*/survey-shard-*.json") for r in json.load(open(f))]
+          kept = [r for r in rows if r["status"] == "kept"]
+          failed = [r for r in rows if r["status"] == "failed"]
+          lines = [
+              f"Searched {len(rows)} tiles: {len(kept)} with moving objects "
+              f"({sum(r['candidates'] for r in kept)} candidates), {len(failed)} failed.",
+              "",
+          ] + [f"- {r['field_id']}: {r['detail']}" for r in failed]
+          open("survey-summary.md", "w").write("\n".join(lines) + "\n")
+          EOF
+          cat survey-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit to main
+        run: |
+          git config user.name "spherex-survey[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A frontend/public/data
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "Survey: $(head -1 survey-summary.md)" -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1

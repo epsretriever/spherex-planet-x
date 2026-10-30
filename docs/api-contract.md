@@ -74,7 +74,7 @@ The pipeline writes every candidate with `known_object.checked = false`, `enrich
 
 - `GET /api/candidates/{candidate_id}` returns the stored result with `enrichment: "cached"`. If there is none yet, it answers immediately with `checked: false`, `enrichment: "pending"` and `Cache-Control: no-store`, and starts the lookup in the background. Clients fetch the report again every few seconds until `enrichment` is no longer `pending`.
 - `GET /api/candidates` folds in stored results and starts one background lookup for a candidate that has none.
-- A Cron Trigger every 30 minutes (`worker/src/scheduled.ts`) refreshes, within one invocation's subrequest budget, results that are missing, failed, or older than 24 hours.
+- A Cron Trigger every 10 minutes (`worker/src/scheduled.ts`) refreshes, within one invocation's subrequest budget, results that are missing, failed, or older than 24 hours.
 - A failed lookup is stored for 30 minutes, then retried. A lock stops two lookups for the same candidate running at once.
 
 **What a lookup does** (`worker/src/enrich.ts`):

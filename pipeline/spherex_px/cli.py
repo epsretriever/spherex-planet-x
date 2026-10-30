@@ -93,6 +93,33 @@ def _index(args: argparse.Namespace) -> int:
     return 0
 
 
+def _survey_plan(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .survey import plan
+
+    tiles = plan(args.segments, Path(args.out), max_tiles=args.max_tiles)
+    print(f"planned {len(tiles)} tiles -> {args.out}")
+    return 0
+
+
+def _survey_build(args: argparse.Namespace) -> int:
+    import json
+    from dataclasses import asdict
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .survey import build_share
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    results = build_share(Path(args.plan), args.shard, args.of, out)
+    report = out / f"survey-shard-{args.shard}.json"
+    report.write_text(json.dumps([asdict(r) for r in results], indent=1) + "\n")
+    kept = sum(r.status == "kept" for r in results)
+    print(f"shard {args.shard}/{args.of}: {len(results)} tiles, {kept} kept")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -116,6 +143,17 @@ def main(argv: list[str] | None = None) -> int:
     ix = sub.add_parser("index", help="index exposure headers for week segments")
     ix.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
     ix.set_defaults(func=_index)
+    sp = sub.add_parser("survey-plan", help="pick ecliptic tiles SPHEREx imaged often enough")
+    sp.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
+    sp.add_argument("--out", default="var/survey-plan.json")
+    sp.add_argument("--max-tiles", type=int, default=None)
+    sp.set_defaults(func=_survey_plan)
+    sb = sub.add_parser("survey-build", help="build one shard of a survey plan")
+    sb.add_argument("--plan", default="var/survey-plan.json")
+    sb.add_argument("--shard", type=int, default=0)
+    sb.add_argument("--of", type=int, default=1)
+    sb.add_argument("--out")
+    sb.set_defaults(func=_survey_build)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

@@ -24,7 +24,7 @@ binding = "ENRICHMENT"
 
 # Refresh stale and failed JPL results every 30 minutes (worker/src/scheduled.ts).
 [triggers]
-crons = ["*/30 * * * *"]
+crons = ["*/10 * * * *"]
 
 # Sky requests, vetting votes, model versions, tracked objects, rate limits, AI usage.
 # No database_id: `wrangler deploy` creates the database on first deploy. The Worker applies

@@ -118,3 +118,7 @@ SPHEREx data: NASA / JPL-Caltech / IPAC, via the NASA/IPAC Infrared Science Arch
 ## Frontend
 
 The website lives in [`frontend/`](frontend/): a Next.js static export served by the Cloudflare Worker. See [`frontend/README.md`](frontend/README.md) for setup, scripts and how it talks to the API.
+
+## Survey
+
+Beyond the three showcase fields, `.github/workflows/survey.yml` searches SPHEREx week segments tile by tile along the ecliptic. It runs on GitHub's machines (they read the images straight from the public `nasa-irsa-spherex` S3 bucket) in 15 parallel shards, keeps every 0.3° tile where the pipeline found a moving object that passed vetting, and commits the result to `main`. Cloudflare then redeploys, and the Worker's cron checks each new candidate against JPL. It runs weekly, on every pipeline change, and on demand (Actions → Survey → Run workflow, where you can list more segments).
