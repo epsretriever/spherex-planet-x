@@ -13,11 +13,12 @@ per-field results, and the false-positive rate with a Poisson 95% interval.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import multiprocessing as mp
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -88,6 +89,27 @@ class RunResult:
 
 
 _FIELDS: dict[str, FieldData] = {}
+
+CHECKPOINT_DIR = Path(__file__).resolve().parents[1] / "var" / "injection"
+
+
+def load_checkpoint(path: Path) -> list[RunResult]:
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text().splitlines():
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # a line cut short by the interruption
+        out.append(
+            RunResult(
+                trials=[Trial(**t) for t in d["trials"]],
+                false_positive_tracks=d["false_positive_tracks"],
+                seconds=d["seconds"],
+            )
+        )
+    return out
 
 
 def load_field(spec: FieldSpec) -> FieldData:
@@ -375,20 +397,33 @@ def run_study(
         fid = specs[run % len(specs)].field_id
         jobs.append((fid, run, pool_cells[start : start + INJECTIONS_PER_RUN], seed + run))
     log.info("%d injections in %d runs over %d fields", len(pool_cells), len(jobs), len(specs))
-    results: list[RunResult] = []
+    # Finished runs are appended to a checkpoint, so an interrupted study resumes where it
+    # stopped. The jobs are fixed by the seed and parameters, which name the file.
+    ckpt = (
+        CHECKPOINT_DIR
+        / f"{study_id}-s{seed}-t{trials_per_cell}-{'_'.join(s.field_id for s in specs)}.jsonl"
+    )
+    results = load_checkpoint(ckpt)
+    done = {r.trials[0].run for r in results if r.trials}
+    todo = [j for j in jobs if j[1] not in done]
+    if done:
+        log.info("resuming: %d runs already done (%s)", len(done), ckpt)
     t0 = time.time()
     ctx = mp.get_context("fork")
-    with ctx.Pool(workers) as pool:
-        for k, r in enumerate(pool.imap_unordered(_worker, jobs, chunksize=1), 1):
+    ckpt.parent.mkdir(parents=True, exist_ok=True)
+    with ctx.Pool(workers) as pool, ckpt.open("a") as fh:
+        for k, r in enumerate(pool.imap_unordered(_worker, todo, chunksize=1), 1):
             results.append(r)
-            if k % 20 == 0 or k == len(jobs):
+            fh.write(json.dumps(asdict(r)) + "\n")
+            fh.flush()
+            if k % 20 == 0 or k == len(todo):
                 el = time.time() - t0
                 log.info(
                     "%d/%d runs, %.0f s elapsed, ~%.0f s left",
-                    k,
+                    k + len(done),
                     len(jobs),
                     el,
-                    el / k * (len(jobs) - k),
+                    el / k * (len(todo) - k),
                 )
     checks = photometry_check(_FIELDS[specs[-1].field_id])
     return summarize(study_id, specs, results, out_dir, checks)

@@ -78,3 +78,20 @@ def test_fraction_at_only_extrapolates_when_implied():
     assert fraction_at([15, 16], [0.4, 0.2], 21) == 0.2  # fainter than a bin already missed
     assert fraction_at([15, 16], [0.9, 0.6], 21) is None  # fainter than tested, unknown
     assert fraction_at([], [], 18) is None
+
+
+def test_checkpoint_round_trip_skips_truncated_lines(tmp_path):
+    import json
+    from dataclasses import asdict
+
+    from spherex_px.injection import RunResult, Trial, load_checkpoint
+
+    r = RunResult(
+        trials=[Trial("f", 3, "f-r3-i0", 17.0, "linear", 3.0, 90.0, None, 3, True, 3, 3.1, 0.4)],
+        false_positive_tracks=1,
+        seconds=6.5,
+    )
+    p = tmp_path / "c.jsonl"
+    p.write_text(json.dumps(asdict(r)) + "\n" + '{"trials": [')
+    back = load_checkpoint(p)
+    assert len(back) == 1 and back[0].trials[0].run == 3 and back[0].false_positive_tracks == 1
