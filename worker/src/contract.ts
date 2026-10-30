@@ -508,6 +508,10 @@ export interface AiAnswer extends Envelope {
   generated_utc: string;
 }
 
+export interface SearchRequest {
+  query: string;
+}
+
 export type SortKey = "score" | "rate" | "newest" | "unusual";
 
 export interface CandidateFilter {

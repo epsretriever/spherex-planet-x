@@ -5,6 +5,12 @@ export interface Env {
   ENRICHMENT?: KVNamespace;
   /** D1 database (see db.ts and migrations/). Optional so local tools run without it. */
   DB?: D1Database;
+  /** Workers AI (see ai/). Optional: without it every AI feature falls back to deterministic text. */
+  AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
+  /** Text model id for Workers AI; defaults to ai/core.ts DEFAULT_MODEL. */
+  AI_MODEL?: string;
+  /** Salt for hashing visitor session ids and IP addresses before they are stored. */
+  HASH_SALT?: string;
 }
 
 /** Minimal cache interface (caches.default in production, an in-memory fake in tests). */

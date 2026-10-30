@@ -2,33 +2,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MIGRATIONS, ensureSchema, statements } from "../src/db";
+import { sqliteD1 } from "./d1";
 
 const MIGRATIONS_DIR = join(__dirname, "..", "..", "migrations");
-
-/** Minimal D1Database over node:sqlite, enough for ensureSchema. */
-async function sqliteD1() {
-  const { DatabaseSync } = await import("node:sqlite");
-  const db = new DatabaseSync(":memory:");
-  const prepare = (sql: string) => {
-    const stmt = { sql, args: [] as unknown[], bind: (...args: unknown[]) => ({ ...stmt, args }) };
-    return stmt;
-  };
-  const d1 = {
-    prepare,
-    async batch(stmts: { sql: string; args: unknown[] }[]) {
-      db.exec("BEGIN");
-      try {
-        for (const s of stmts) db.prepare(s.sql).run(...(s.args as never[]));
-        db.exec("COMMIT");
-      } catch (err) {
-        db.exec("ROLLBACK");
-        throw err;
-      }
-      return [];
-    },
-  };
-  return { d1: d1 as unknown as D1Database, db };
-}
 
 describe("D1 schema", () => {
   it("embeds exactly the SQL in migrations/", () => {

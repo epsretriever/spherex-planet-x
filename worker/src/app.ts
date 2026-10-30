@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type Deps, type Env, defaultDeps } from "./env";
 import { ApiError } from "./errors";
+import { askRoute, candidateWriteups, objectWriteups, searchRoute } from "./routes/ai";
 import { candidates } from "./routes/candidates";
 import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
@@ -34,6 +35,10 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/runs", runs);
   app.route("/api/objects", objects);
   app.route("/api/survey", survey);
+  app.route("/api/candidates", candidateWriteups);
+  app.route("/api/objects", objectWriteups);
+  app.route("/api/ask", askRoute);
+  app.route("/api/search", searchRoute);
 
   app.notFound((c) => c.json(new ApiError(404, `no API route for ${c.req.path}`).toJSON(), 404));
   app.onError((err, c) => {
