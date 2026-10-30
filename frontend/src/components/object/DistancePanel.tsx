@@ -30,7 +30,16 @@ const PLANET_MARKS: [string, number][] = [
  * How far from the Sun the object probably is: the class, and the distance estimate with its
  * range on a log scale against the class ranges and the planets.
  */
-export function DistancePanel({ distanceClass, estimate }: { distanceClass: DistanceClass; estimate: { best: number; lo: number; hi: number } | null | undefined }) {
+export function DistancePanel({
+  distanceClass,
+  estimate,
+  from = "parallax",
+}: {
+  distanceClass: DistanceClass;
+  estimate: { best: number; lo: number; hi: number } | null | undefined;
+  /** Where the estimate comes from: the parallax fit, or the orbit's possible orbits (clones). */
+  from?: "parallax" | "orbit";
+}) {
   const info = DISTANCE_CLASSES[distanceClass] ?? DISTANCE_CLASSES.unknown;
   const est = estimate && [estimate.best, estimate.lo, estimate.hi].every((v) => Number.isFinite(v) && v > 0) ? estimate : null;
   return (
@@ -50,8 +59,10 @@ export function DistancePanel({ distanceClass, estimate }: { distanceClass: Dist
         <>
           <p>
             Best estimate <span className="mono">{fmt(est.best, 2)} AU</span> from the Sun, somewhere between{" "}
-            <span className="mono">{fmt(est.lo, 2)}</span> and <span className="mono">{fmt(est.hi, 2)} AU</span>. It comes from parallax: how
-            the object seems to shift as SPHEREx and Earth move.
+            <span className="mono">{fmt(est.lo, 2)}</span> and <span className="mono">{fmt(est.hi, 2)} AU</span>.{" "}
+            {from === "orbit"
+              ? "It comes from the orbit: the middle and the 5–95% range of all the orbits that fit the sightings."
+              : "It comes from parallax: how the object seems to shift as SPHEREx and Earth move."}
           </p>
           <svg
             viewBox={`0 0 ${W} ${H}`}
