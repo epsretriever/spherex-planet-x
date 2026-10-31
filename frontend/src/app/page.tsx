@@ -193,6 +193,12 @@ export default function LandingPage() {
               <p>Every tracked object with its positions, speed, signal quality, JPL check, and the explanations we can and can&apos;t rule out.</p>
               <span className={styles.modeCta}>Open the case files →</span>
             </Link>
+            <Link href="/objects/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Objects</span>
+              <h3>Follow one across visits</h3>
+              <p>Each moving body with every sighting linked to it, how far away it is and, once one can be fitted, its orbit in 3D.</p>
+              <span className={styles.modeCta}>Browse objects →</span>
+            </Link>
             <Link href="/sky/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Sky map</span>
               <h3>Where we&apos;ve searched</h3>
