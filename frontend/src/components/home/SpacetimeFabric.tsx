@@ -227,11 +227,18 @@ export function SpacetimeFabric() {
     }
     document.addEventListener("visibilitychange", onVisibility);
 
-    // Begin animating once the page is idle, so the first paint never waits on it.
+    // Begin animating only after the page has loaded and gone idle, so neither the first paint
+    // nor the content's own loading competes with the animation.
     const w8 = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    const idle = w8.requestIdleCallback ? w8.requestIdleCallback(start, { timeout: 1500 }) : window.setTimeout(start, 600);
+    let idle = 0;
+    const whenIdle = () => {
+      idle = w8.requestIdleCallback ? w8.requestIdleCallback(start, { timeout: 4000 }) : window.setTimeout(start, 2000);
+    };
+    if (document.readyState === "complete") whenIdle();
+    else window.addEventListener("load", whenIdle, { once: true });
 
     return () => {
+      window.removeEventListener("load", whenIdle);
       stop();
       if (w8.cancelIdleCallback) w8.cancelIdleCallback(idle);
       else clearTimeout(idle);
