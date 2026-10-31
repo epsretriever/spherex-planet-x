@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CandidateDetail, CandidateList, FieldDetail, FieldList, Survey } from "./contract";
+import type { CandidateDetail, CandidateList, FieldDetail, FieldList, ObjectDetail, ObjectList, Survey } from "./contract";
 
 /**
  * Build-time access to the pipeline's published data in public/data/ (the same files the Worker
@@ -35,6 +35,15 @@ export function staticCandidates(): CandidateList | null {
 
 export function staticCandidate(id: string): CandidateDetail | null {
   return ID_RE.test(id) ? read<CandidateDetail>(`candidates/${id}.json`) : null;
+}
+
+export function staticObjects(): ObjectList | null {
+  const o = read<ObjectList>("objects.json");
+  return o && Array.isArray(o.objects) ? o : null;
+}
+
+export function staticObject(id: string): ObjectDetail | null {
+  return ID_RE.test(id) ? read<ObjectDetail>(`objects/${id}.json`) : null;
 }
 
 export function staticSurvey(): Survey | null {

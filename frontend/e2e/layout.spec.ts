@@ -13,6 +13,9 @@ const PAGES = [
   "/about/",
   "/limits/",
   "/sky/",
+  "/objects/",
+  "/objects/object/?id=obj-syn-known",
+  "/objects/object/?id=obj-syn-unmatched",
   "/no-such-page/",
 ];
 

@@ -9,10 +9,14 @@ test("sky map shows searched tiles, totals and the sourced region", async ({ pag
   const map = page.getByRole("group", { name: "All-sky map in equatorial coordinates" });
   await expect(map).toBeVisible();
   // The searched tile links to its field; the waiting one does not.
-  const tile = map.getByRole("link", { name: /Synthetic test field: searched, 3 images, 3 moving objects, half of simulated objects found down to magnitude 19\.4/ });
+  const tile = map.getByRole("link", { name: /Synthetic test field: searched, moving objects found, 3 images, 3 moving objects, half of simulated objects found down to magnitude 19\.4/ });
   await expect(tile).toBeVisible();
-  await expect(map.getByRole("img", { name: /synthetic-pending-tile: waiting to be searched/ })).toBeAttached();
-  await expect(page.getByText("Most likely Planet Nine positions (68%)")).toBeVisible();
+  // Tiles without a field page are drawn together, and counted in the legend.
+  await expect(page.getByText("Searched, nothing found (1)")).toBeVisible();
+  await expect(page.getByText("Waiting to be searched (1)")).toBeVisible();
+  await expect(map.getByRole("link")).toHaveCount(1);
+  await expect(page.getByText("Where Planet Nine is most likely, if it exists (68%)")).toBeVisible();
+  await expect(page.getByText(/only the 250 of 1,000 simulated orbits that earlier surveys haven't ruled out \(SYNTHETIC members not ruled out\)/)).toBeVisible();
   await expect(page.getByRole("link", { name: "SYNTHETIC test region (not a real prediction)" })).toHaveAttribute("href", "https://example.invalid/synthetic-region");
   await expect(page.getByText(/not a detection/)).toBeVisible();
   // 0.5 + 0.3 make the 68% region; the last cell completes 95%.
@@ -20,9 +24,10 @@ test("sky map shows searched tiles, totals and the sourced region", async ({ pag
   await expect(map.locator("path[class*=p9Outer]")).toHaveCount(1);
 
   const row = page.getByRole("row", { name: /Synthetic test field/ });
-  await expect(row).toContainText("Searched");
+  await expect(row).toContainText("Moving objects");
   await expect(row).toContainText("19.4");
   await expect(page.getByRole("row", { name: /synthetic-pending-tile/ })).toContainText("not measured");
+  await expect(page.getByRole("row", { name: /synthetic-empty-tile/ })).toContainText("Searched, nothing found");
   await expect(page.getByText("under 0.001% of the whole sky")).toBeVisible();
 
   await tile.click();

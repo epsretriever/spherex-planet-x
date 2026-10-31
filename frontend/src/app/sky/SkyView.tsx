@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
+import { Deferred } from "@/components/Deferred";
 import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
@@ -16,9 +17,11 @@ import styles from "./SkyView.module.css";
 const SKY_DEG2 = 41252.96;
 
 const STATUS: Record<SurveyTile["status"], string> = {
-  processed: "Searched",
+  processed: "Moving objects",
+  empty: "Searched, nothing found",
+  failed: "Search failed",
   pending: "Waiting",
-  no_data: "No SPHEREx data",
+  no_data: "No repeat visits",
 };
 
 function percent(area: number): string {
@@ -34,8 +37,20 @@ const TABLE_ROWS = 30;
 /** The survey footprint: as published at build time, then as the API serves it now. */
 export function SkyView({ initial, fieldNames }: { initial: Survey | null; fieldNames: Record<string, string> }) {
   const [showAll, setShowAll] = useState(false);
-  const state = useData("survey", (signal) => getSurvey(signal));
-  const fields = useData("fields", (signal) => getFields(signal));
+  // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
+  const [live, setLive] = useState(!initial);
+  useEffect(() => {
+    if (live) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) {
+      w.requestIdleCallback(() => setLive(true), { timeout: 2500 });
+    } else {
+      const t = setTimeout(() => setLive(true), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [live]);
+  const state = useData(live ? "survey" : null, (signal) => getSurvey(signal));
+  const fields = useData(live ? "fields" : null, (signal) => getFields(signal));
   const survey = state.status === "ok" ? state.data : initial;
   const names: Record<string, string> =
     fields.status === "ok" ? { ...fieldNames, ...Object.fromEntries(fields.data.fields.map((f) => [f.field_id, f.name])) } : fieldNames;
@@ -58,6 +73,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
   const p9 = hasSourcedRegion(survey.planet_nine) ? survey.planet_nine : null;
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
   const statuses = new Set(tiles.map((t) => t.status));
+  const count = (st: SurveyTile["status"]) => tiles.filter((t) => t.status === st).length.toLocaleString("en-US");
   const t = survey.totals;
   // Tiles with moving objects first, then the rest by longitude.
   const rows = [...tiles].sort((a, b) => Number(b.n_candidates > 0) - Number(a.n_candidates > 0));
@@ -90,16 +106,29 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
         </div>
       </dl>
 
+      {/* The map and table lay out after the header paints, as the evidence report does. */}
+      <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
         <SkyMap tiles={tiles} planetNine={p9} tileName={name} />
         <figcaption className={styles.legend}>
           <ul>
             <li>
-              <span className={styles.swTile} aria-hidden="true" /> Tile we searched{anyDepth ? ", coloured by depth" : ""} (select to open it)
+              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}){anyDepth ? ", coloured by depth" : ""}: select
+              one to open it
             </li>
+            {statuses.has("empty") && (
+              <li>
+                <span className={styles.swEmpty} aria-hidden="true" /> Searched, nothing found ({count("empty")})
+              </li>
+            )}
+            {statuses.has("failed") && (
+              <li>
+                <span className={styles.swFailed} aria-hidden="true" /> Search failed, will be retried ({count("failed")})
+              </li>
+            )}
             {statuses.has("pending") && (
               <li>
-                <span className={styles.swPending} aria-hidden="true" /> Waiting to be searched
+                <span className={styles.swPending} aria-hidden="true" /> Waiting to be searched ({count("pending")})
               </li>
             )}
             <li>
@@ -111,10 +140,10 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
             {p9 && (
               <>
                 <li>
-                  <span className={styles.swP9Inner} aria-hidden="true" /> Most likely Planet Nine positions (68%)
+                  <span className={styles.swP9Inner} aria-hidden="true" /> Where Planet Nine is most likely, if it exists (68%)
                 </li>
                 <li>
-                  <span className={styles.swP9Outer} aria-hidden="true" /> Possible Planet Nine positions (95%)
+                  <span className={styles.swP9Outer} aria-hidden="true" /> Where it could be (95%)
                 </li>
               </>
             )}
@@ -138,6 +167,12 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
               <a href={p9.url} rel="noopener" target="_blank">
                 {p9.citation}
               </a>
+              {typeof p9.n_remaining === "number" && typeof p9.n_population === "number" ? (
+                <>
+                  , counting only the {p9.n_remaining.toLocaleString("en-US")} of {p9.n_population.toLocaleString("en-US")} simulated orbits
+                  that earlier surveys haven&apos;t ruled out{p9.population ? ` (${p9.population})` : ""}
+                </>
+              ) : null}
               . It is a prediction of where a hypothetical planet would be if it exists, not a detection.
             </p>
           )}
@@ -179,8 +214,9 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
                   </th>
                   <td>
                     <span className={styles.status} data-status={tile.status}>
-                      {STATUS[tile.status]}
+                      {STATUS[tile.status] ?? tile.status}
                     </span>
+                    {tile.status === "failed" && tile.detail && <span className={`mono ${styles.tileId}`}>{tile.detail}</span>}
                   </td>
                   <td className="mono">
                     {fmt(tile.center.ra_deg, 2)}°, {fmt(tile.center.dec_deg, 2)}°
@@ -231,6 +267,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
           <Link href="/limits/">How faint can we see? Detection limits →</Link>
         </p>
       </section>
+      </Deferred>
     </div>
   );
 }

@@ -21,6 +21,7 @@ import type {
   GridWcs,
   InjectionStudy,
   Mover,
+  ObjectDetail,
   ObjectList,
   Survey,
   Source,
@@ -434,6 +435,64 @@ function search(query: string): AiSearch {
   };
 }
 
+/** Object detail: the candidate's report as one object. The known one has a SYNTHETIC orbit with a covariance. */
+function objectDetail(o: Obj): ObjectDetail {
+  const c = detail(o);
+  const known = o.cls === "known_object";
+  return {
+    schema_version: "1.1",
+    pipeline_version: PIPE,
+    object_id: `obj-${o.id}`,
+    classification: c.classification,
+    label_plain: c.label_plain,
+    summary_plain: c.summary_plain,
+    thumbnail_url: c.thumbnail_url,
+    field_ids: [FIELD_ID],
+    candidate_ids: [o.id],
+    detections: c.detections.map((d) => ({ ...d, field_id: FIELD_ID, candidate_id: o.id })),
+    motion: { ...c.motion, distance_au_estimate: known ? { best: 2.6, lo: 2.1, hi: 3.4 } : null },
+    distance_class: known ? "main_belt" : "unknown",
+    orbit_status: known ? "preliminary" : "none",
+    orbit: known
+      ? {
+          epoch_mjd: 61000.5,
+          a_au: 2.71,
+          e: 0.14,
+          i_deg: 9.3,
+          node_deg: 112.5,
+          peri_deg: 47.1,
+          mean_anomaly_deg: 201.4,
+          q_au: 2.33,
+          method: "synthetic_test_fit",
+          rms_arcsec: 0.82,
+          n_detections: 3,
+          arc_hours: 26.4,
+          covariance: [
+            [0.01, 0.0004, 0, 0, 0, 0],
+            [0.0004, 0.0004, 0, 0, 0, 0],
+            [0, 0, 0.09, 0, 0, 0],
+            [0, 0, 0, 0.25, 0, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 4],
+          ],
+          n_clones: 60,
+          clones_url: null,
+          helio_distance_au: { best: 2.55, lo: 2.31, hi: 2.92 },
+          n_ranging_orbits: 40,
+          reported_orbit: "Synthetic: a main-belt orbit, roughly 2.7 AU from the Sun.",
+          jpl_comparison: { designation: "(99999) Synthetic", delta_a_au: 0.021, delta_e: 0.004, delta_i_deg: 0.12, position_error_arcsec_30d: 14.2 },
+        }
+      : null,
+    known_object: c.known_object,
+    scores: c.scores,
+    explanation: c.explanation,
+    spectrum: c.spectrum,
+    history: [{ utc: "2026-01-01T00:00:00Z", run_id: "synthetic-run", change: "Synthetic: linked 3 detections over 3 visits" }],
+    provenance: c.provenance,
+    disclaimer: c.disclaimer,
+  };
+}
+
 const objectList: ObjectList = {
   schema_version: "1.1",
   pipeline_version: PIPE,
@@ -483,14 +542,22 @@ export const survey: Survey = {
       tile_id: "synthetic-pending-tile", center: { ra_deg: 200, dec_deg: -10 }, ecliptic_lon_deg: 205, ecliptic_lat_deg: 0.2, size_deg: 0.3, status: "pending",
       n_epochs: 0, n_visits: 0, first_time_utc: null, last_time_utc: null, last_processed_utc: null, field_id: null, n_candidates: 0, m50_ab: null,
     },
+    {
+      tile_id: "synthetic-empty-tile", center: { ra_deg: 30, dec_deg: 12 }, ecliptic_lon_deg: 32, ecliptic_lat_deg: -0.2, size_deg: 0.3, status: "empty",
+      n_epochs: 24, n_visits: 3, first_time_utc: epochs[0]!.time_utc, last_time_utc: epochs[2]!.time_utc, last_processed_utc: "2026-01-01T00:00:00Z",
+      field_id: null, n_candidates: 0, m50_ab: null,
+    },
   ],
-  totals: { n_tiles: 2, n_processed: 1, area_deg2_processed: 0.09, n_epochs: 3, n_candidates: 3, n_objects: 3 },
+  totals: { n_tiles: 3, n_processed: 1, area_deg2_processed: 0.09, n_epochs: 3, n_candidates: 3, n_objects: 3 },
   last_run: null,
   planet_nine: {
     citation: "SYNTHETIC test region (not a real prediction)",
     url: "https://example.invalid/synthetic-region",
     epoch_utc: "2026-01-01T00:00:00Z",
     cell_deg: 10,
+    population: "SYNTHETIC members not ruled out",
+    n_population: 1000,
+    n_remaining: 250,
     cells: [
       { ra_deg: 50, dec_deg: 10, fraction: 0.5 },
       { ra_deg: 60, dec_deg: 10, fraction: 0.3 },
@@ -520,6 +587,11 @@ export async function installMockApi(page: Page, opts: MockOptions = {}) {
       return json(route, body);
     }
     if (path === "/api/objects") return json(route, objectList);
+    const obj = path.match(/^\/api\/objects\/obj-([^/]+)$/);
+    if (obj) {
+      const o = OBJECTS.find((x) => x.id === decodeURIComponent(obj[1]!));
+      return o ? json(route, objectDetail(o)) : json(route, { detail: "not found" }, 404);
+    }
     if (path === "/api/survey") return json(route, opts.surveyWithoutCitation ? { ...survey, planet_nine: { ...survey.planet_nine!, citation: "" } } : survey);
     if (opts.ai) {
       const w = path.match(/^\/api\/candidates\/(.+)\/writeup$/);
