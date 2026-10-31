@@ -1,5 +1,8 @@
 .hero {
   position: relative;
+  /* Clicking the hero sends a ripple through the fabric; don't start a text selection. */
+  user-select: none;
+  -webkit-user-select: none;
   margin-top: calc(var(--space-6) * -1);
   min-height: min(88vh, 860px);
   display: flex;
@@ -19,7 +22,7 @@
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgb(8 6 13 / 0.7) 0%, rgb(8 6 13 / 0.3) 45%, transparent 70%),
+    linear-gradient(90deg, rgb(8 6 13 / 0.45) 0%, rgb(8 6 13 / 0.12) 45%, transparent 65%),
     linear-gradient(180deg, transparent 70%, var(--bg) 100%);
 }
 

@@ -35,6 +35,14 @@ interface Meteor {
   life: number;
 }
 
+/** Planets around the fabric's star: orbit size (× base), angular speed, mass, look. */
+const PLANETS = [
+  { r: 0.45, speed: 2.4, phase: 0.6, mass: 0.18, size: 2.6, color: "#c3a6ff" },
+  { r: 0.8, speed: 1.5, phase: 2.2, mass: 0.28, size: 3.4, color: "#7cc4ff" },
+  { r: 1.2, speed: 0.95, phase: 4.1, mass: 0.42, size: 4.6, color: "#ffb07a" },
+  { r: 1.75, speed: 0.6, phase: 5.3, mass: 0.32, size: 3.8, color: "#7cf0c8" },
+];
+
 type Pt = { x: number; y: number; depth: number; dip: number };
 
 const GLOW = 4;
@@ -60,7 +68,7 @@ export function SpacetimeFabric() {
     if (!canvas || !ctx) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     let w = 0;
     let h = 0;
     let stars: Star[] = [];
@@ -85,7 +93,7 @@ export function SpacetimeFabric() {
       ROWS = Math.round(COLS * 0.56);
       let seed = 7;
       const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-      stars = Array.from({ length: Math.round((w * h) / 2200) }, () => {
+      stars = Array.from({ length: Math.round((w * h) / 3600) }, () => {
         const layer = rand();
         return { x: rand() * w, y: rand() * h, r: layer > 0.93 ? 1.5 : 0.45 + layer * 0.85, a: 0.25 + rand() * 0.6, tw: rand() * Math.PI * 2, layer };
       });
@@ -152,12 +160,14 @@ export function SpacetimeFabric() {
       const narrow = w < 700;
       const star = project((narrow ? 0.3 : 0.42) - Math.min(0.5, sp * 0.25), narrow ? 0.78 : 0.42);
       const orbitR = Math.min(w, h) * 0.22;
-      const ang = reduce ? 2.2 : t * 0.00025 + scroll.y * 0.004;
-      const wells: Well[] = [
-        { x: star.x, y: star.y, mass: 1.0 },
-        { x: star.x + Math.cos(ang) * orbitR * 1.35, y: star.y + Math.sin(ang) * orbitR * 0.42, mass: 0.35 },
-      ];
-      if (pointer.strength > 0.01) wells.push({ x: pointer.x, y: pointer.y, mass: 0.9 * pointer.strength });
+      const spin = reduce ? 0 : t * 0.00025 + scroll.y * 0.004;
+      // Planets on nested orbits (flattened ellipses on the fabric), each with its own well.
+      const planets = PLANETS.map((p) => {
+        const a = p.phase + spin * p.speed;
+        return { x: star.x + Math.cos(a) * orbitR * p.r * 1.35, y: star.y + Math.sin(a) * orbitR * p.r * 0.42, mass: p.mass, p };
+      });
+      const wells: Well[] = [{ x: star.x, y: star.y, mass: 1.0 }, ...planets];
+      if (pointer.strength > 0.01) wells.push({ x: pointer.x, y: pointer.y, mass: 1.9 * pointer.strength });
 
       const reach = Math.min(w, h) * 0.32;
       const warp = (p: { x: number; y: number; depth: number }): Pt => {
@@ -247,16 +257,22 @@ export function SpacetimeFabric() {
       ctx.arc(sw.x, sw.y, 5, 0, Math.PI * 2);
       ctx.fill();
 
-      const pl = wells[1]!;
-      const pw = warp({ x: pl.x, y: pl.y, depth: 0.6 });
-      ctx.fillStyle = "#7cc4ff";
-      ctx.beginPath();
-      ctx.arc(pw.x, pw.y, 3.4, 0, Math.PI * 2);
-      ctx.fill();
+      for (const pl of planets) {
+        // Faint orbit path, then the planet in its own dip.
+        ctx.strokeStyle = `rgba(170, 159, 189, ${(0.18 * fade).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.ellipse(sw.x, sw.y, orbitR * pl.p.r * 1.35, orbitR * pl.p.r * 0.42, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        const pw = warp({ x: pl.x, y: pl.y, depth: 0.6 });
+        ctx.fillStyle = pl.p.color;
+        ctx.beginPath();
+        ctx.arc(pw.x, pw.y, pl.p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       if (pointer.strength > 0.01) {
         const glow = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 70);
-        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.3 * pointer.strength).toFixed(3)})`);
+        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.45 * pointer.strength).toFixed(3)})`);
         glow.addColorStop(1, "rgba(255, 138, 76, 0)");
         ctx.fillStyle = glow;
         ctx.beginPath();
@@ -357,13 +373,21 @@ export function SpacetimeFabric() {
     const win = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
     let idle = 0;
     const whenIdle = () => {
-      idle = win.requestIdleCallback ? win.requestIdleCallback(start, { timeout: 4000 }) : window.setTimeout(start, 2000);
+      idle = win.requestIdleCallback ? win.requestIdleCallback(start, { timeout: 1200 }) : window.setTimeout(start, 800);
     };
     if (document.readyState === "complete") whenIdle();
     else window.addEventListener("load", whenIdle, { once: true });
+    // The reader is here: start at once rather than wait for idle.
+    const kick = () => start();
+    window.addEventListener("pointermove", kick, { once: true, passive: true });
+    window.addEventListener("scroll", kick, { once: true, passive: true });
+    window.addEventListener("pointerdown", kick, { once: true, passive: true });
 
     return () => {
       window.removeEventListener("load", whenIdle);
+      window.removeEventListener("pointermove", kick);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("pointerdown", kick);
       stop();
       if (win.cancelIdleCallback) win.cancelIdleCallback(idle);
       else clearTimeout(idle);
