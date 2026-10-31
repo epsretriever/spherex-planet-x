@@ -519,6 +519,8 @@ export interface AiWriteup extends Envelope {
   label_plain: string;
   cached: boolean;
   generated_utc: string;
+  /** Why template text was served instead of the model's (diagnostics; absent when source is "ai"). */
+  fallback_reason?: string;
 }
 
 export interface AskRequest {

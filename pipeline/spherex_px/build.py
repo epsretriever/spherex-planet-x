@@ -28,6 +28,7 @@ from astropy.coordinates import BarycentricMeanEcliptic, SkyCoord
 from astropy.time import Time
 
 from . import schemas as S
+from .data.http import UpstreamError
 from .data.index import CoverageIndex, dichroic_partner
 from .data.l2file import L2File
 from .data.s3 import Level2Key, S3Archive
@@ -51,6 +52,11 @@ from .settings import BACKEND_ROOT
 from .version import build_run_id, pipeline_version
 
 log = logging.getLogger(__name__)
+
+
+class NoReadableImages(RuntimeError):
+    """Too few of a field's images could be read to search it (missing or unreadable files)."""
+
 
 REPO_ROOT = BACKEND_ROOT.parent
 DEFAULT_OUT = REPO_ROOT / "frontend" / "public" / "data"
@@ -160,6 +166,15 @@ class FieldBuilder:
         size = self.spec.size_deg + 0.05
 
         def one(key: Level2Key) -> Epoch | None:
+            try:
+                return read(key)
+            except (UpstreamError, KeyError, ValueError) as err:
+                # One unreadable or missing file (e.g. a dichroic partner IRSA has not
+                # published) costs that image, not the field.
+                log.warning("skipping %s: %s: %s", key.file, type(err).__name__, err)
+                return None
+
+        def read(key: Level2Key) -> Epoch | None:
             f = L2File(key, self.archive)
             c = f.cutout(self.spec.ra_deg, self.spec.dec_deg, size)
             if c is None:
@@ -208,6 +223,10 @@ class FieldBuilder:
             )
         log.info("%s: %d exposures", spec.field_id, len(keys))
         epochs = self.load(keys)
+        if len(epochs) < 2:
+            raise NoReadableImages(
+                f"{spec.field_id}: {len(epochs)} of {len(keys)} images could be read from the archive"
+            )
         data = [e.data for e in epochs]
         assign_clusters(data)
         sightings = build_sightings(data, LINK)

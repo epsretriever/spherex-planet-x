@@ -251,7 +251,9 @@ def dichroic_partner(key: Level2Key) -> Level2Key:
     new_key = key.key.replace(f"/{key.detector}/level2_", f"/{other}/level2_").replace(
         f"_{key.obs_id}D{key.detector}_", f"_{key.obs_id}D{other}_"
     )
-    return Level2Key(new_key, key.release, key.segment, key.version, other, key.obs_id, key.size)
+    # The partner's size is unknown (it is not the same as this file's), so leave it unset:
+    # reading the layout then walks the file's headers to the end instead of stopping early.
+    return Level2Key(new_key, key.release, key.segment, key.version, other, key.obs_id, None)
 
 
 def to_json(exposures: list[Exposure]) -> str:
