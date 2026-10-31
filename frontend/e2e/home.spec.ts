@@ -86,3 +86,16 @@ test("clicking sends a ripple and the fabric keeps animating", async ({ page }) 
   await page.waitForTimeout(600);
   expect(errors).toEqual([]);
 });
+
+test("with reduced motion the fabric still follows the reader's pointer", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.waitForLoadState("load");
+  const shot = () => page.evaluate(() => (document.querySelector("canvas") as HTMLCanvasElement).toDataURL());
+  const before = await shot();
+  const vp = page.viewportSize()!;
+  await page.mouse.move(vp.width * 0.3, vp.height * 0.4);
+  await page.mouse.move(vp.width * 0.7, vp.height * 0.6, { steps: 10 });
+  await page.waitForTimeout(500);
+  expect(await shot()).not.toBe(before);
+});

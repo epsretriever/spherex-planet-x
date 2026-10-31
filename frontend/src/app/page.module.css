@@ -146,7 +146,6 @@
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
   background: rgb(18 14 26 / 0.6);
-  backdrop-filter: blur(6px);
 }
 
 .stats dt {
@@ -373,4 +372,11 @@
   margin-top: var(--space-2);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Over the animated backdrop, a blurred header would be re-blurred every frame: use a solid one. */
+:global(body:has(canvas[data-fabric])) :global(header) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgb(8 6 13 / 0.94);
 }

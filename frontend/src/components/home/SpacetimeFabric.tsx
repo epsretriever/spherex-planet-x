@@ -57,7 +57,8 @@ const DEPTH = 4;
  * - Now and then a shooting star crosses the sky.
  *
  * Fixed behind the page, it starts only after the page has loaded and gone idle, pauses in
- * background tabs, never takes clicks, and draws one still frame for reduced motion.
+ * background tabs and never takes clicks. With reduced motion it has no motion of its own (no
+ * orbiting, twinkling or shooting stars) and only follows the reader's pointer, clicks and scroll.
  */
 export function SpacetimeFabric() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -68,7 +69,7 @@ export function SpacetimeFabric() {
     if (!canvas || !ctx) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    let dpr = 1;
     let w = 0;
     let h = 0;
     let stars: Star[] = [];
@@ -86,6 +87,9 @@ export function SpacetimeFabric() {
     const resize = () => {
       w = Math.max(1, window.innerWidth);
       h = Math.max(1, window.innerHeight);
+      // Cap the canvas at about 1.3 megapixels: it's a soft backdrop, and fill rate is what
+      // limits the frame rate on large or high-density screens.
+      dpr = Math.min(window.devicePixelRatio || 1, 1, Math.sqrt(1.3e6 / (w * h)));
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -144,7 +148,7 @@ export function SpacetimeFabric() {
       // The fabric: a plane tilted away from the viewer. Scrolling flies forward over it (rows
       // stream toward you) and pitches the view toward the horizon; the pointer leans it.
       const horizon = h * (0.36 - Math.min(0.2, sp * 0.12)) + py;
-      const flow = (scroll.y * 0.0016 + t * 0.000015) % (1 / ROWS);
+      const flow = (scroll.y * 0.0016 + (reduce ? 0 : t * 0.000015)) % (1 / ROWS);
       const lean = pointer.lean * 0.2;
       const project = (u: number, v: number) => {
         const depth = 0.3 + 0.7 * v;
@@ -160,7 +164,7 @@ export function SpacetimeFabric() {
       const narrow = w < 700;
       const star = project((narrow ? 0.3 : 0.42) - Math.min(0.5, sp * 0.25), narrow ? 0.78 : 0.42);
       const orbitR = Math.min(w, h) * 0.22;
-      const spin = reduce ? 0 : t * 0.00025 + scroll.y * 0.004;
+      const spin = (reduce ? 0 : t * 0.00025) + scroll.y * 0.004;
       // Planets on nested orbits (flattened ellipses on the fabric), each with its own well.
       const planets = PLANETS.map((p) => {
         const a = p.phase + spin * p.speed;
@@ -286,6 +290,7 @@ export function SpacetimeFabric() {
     let tick = 0;
     let cost = 0;
     let halfRate = false;
+    let lastInput = 0;
     const loop = (t: number) => {
       pointer.x += (pointer.tx - pointer.x) * 0.12;
       pointer.y += (pointer.ty - pointer.y) * 0.12;
@@ -294,7 +299,7 @@ export function SpacetimeFabric() {
       pointer.tilt += (pointer.tiltT - pointer.tilt) * 0.05;
       scroll.y += (scroll.ty - scroll.y) * 0.12;
       for (let i = ripples.length - 1; i >= 0; i--) if (t - ripples[i]!.t0 > 2200) ripples.splice(i, 1);
-      if (t > nextMeteor) {
+      if (!reduce && t > nextMeteor) {
         const fromLeft = Math.random() < 0.5;
         meteors.push({
           x: fromLeft ? Math.random() * w * 0.5 : w * (0.5 + Math.random() * 0.5),
@@ -305,6 +310,12 @@ export function SpacetimeFabric() {
           life: 900 + Math.random() * 500,
         });
         nextMeteor = t + 3500 + Math.random() * 5500;
+      }
+      // Reduced motion: no motion of its own, so stop once the reader stops interacting.
+      if (reduce && performance.now() - lastInput > 1500) {
+        running = false;
+        draw(t);
+        return;
       }
       // Schedule the next frame first: one bad frame must never freeze the backdrop.
       frame = requestAnimationFrame(loop);
@@ -320,7 +331,7 @@ export function SpacetimeFabric() {
       if (!halfRate && cost > 9) halfRate = true;
     };
     const start = () => {
-      if (running || reduce || document.hidden) return;
+      if (running || document.hidden) return;
       running = true;
       frame = requestAnimationFrame(loop);
     };
@@ -337,6 +348,8 @@ export function SpacetimeFabric() {
         pointer.y = pointer.ty;
       }
       pointer.target = 1;
+      lastInput = performance.now();
+      start();
       pointer.leanT = (e.clientX / w) * 2 - 1;
       pointer.tiltT = (e.clientY / h) * 2 - 1;
     };
@@ -347,9 +360,13 @@ export function SpacetimeFabric() {
     };
     const onDown = (e: PointerEvent) => {
       if (ripples.length < 6) ripples.push({ x: e.clientX, y: e.clientY, t0: performance.now() });
+      lastInput = performance.now();
+      start();
     };
     const onScroll = () => {
       scroll.ty = window.scrollY;
+      lastInput = performance.now();
+      start();
     };
     const onVisibility = () => (document.hidden ? stop() : start());
     const onResize = () => {
@@ -360,12 +377,11 @@ export function SpacetimeFabric() {
     resize();
     draw(0);
     window.addEventListener("resize", onResize);
-    if (!reduce) {
-      window.addEventListener("pointermove", onMove, { passive: true });
-      document.documentElement.addEventListener("pointerleave", onLeave);
-      window.addEventListener("pointerdown", onDown, { passive: true });
-      window.addEventListener("scroll", onScroll, { passive: true });
-    }
+    // Always follow the reader's own input; with reduced motion that's the only thing that moves it.
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
 
     // Begin animating only after the page has loaded and gone idle, so neither the first paint
@@ -400,5 +416,5 @@ export function SpacetimeFabric() {
     };
   }, []);
 
-  return <canvas ref={ref} className={styles.canvas} aria-hidden="true" />;
+  return <canvas ref={ref} className={styles.canvas} aria-hidden="true" data-fabric="" />;
 }
