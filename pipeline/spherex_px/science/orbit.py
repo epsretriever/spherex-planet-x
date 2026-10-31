@@ -181,7 +181,11 @@ def lambert(r1: np.ndarray, r2: np.ndarray, dt: np.ndarray) -> tuple[np.ndarray,
         miss = r2 - p
         v1 = v1 + miss / gg
     p, _ = propagate(r1, v1, dt)
-    ok = ok & (np.linalg.norm(p - r2, axis=1) < 1e-10 * np.maximum(r2n, 1.0)) & np.isfinite(v1).all(axis=1)
+    ok = (
+        ok
+        & (np.linalg.norm(p - r2, axis=1) < 1e-10 * np.maximum(r2n, 1.0))
+        & np.isfinite(v1).all(axis=1)
+    )
     return v1, ok
 
 

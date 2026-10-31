@@ -532,6 +532,20 @@ export interface SurveyRun {
   workflow_url?: string | null;
 }
 
+/** Brown & Batygin's Planet Nine population still open after the ZTF, DES and Pan-STARRS searches, binned on the sky. */
+export interface PlanetNineRegion {
+  citation: string;
+  url: string;
+  /** Sky positions are for this date. */
+  epoch_utc: string;
+  cell_deg: number;
+  population: string;
+  n_population: number;
+  n_remaining: number;
+  /** RA/Dec bin centres; fraction = share of the remaining population in the bin (sums to 1; empty bins omitted). */
+  cells: { ra_deg: number; dec_deg: number; fraction: number }[];
+}
+
 export interface Survey extends Envelope {
   build_run_id?: string | null;
   generated_utc: string;
@@ -557,6 +571,7 @@ export interface Survey extends Envelope {
   last_run: SurveyRun | null;
   /** Most recent runs first (up to 20). */
   runs?: SurveyRun[];
+  planet_nine?: PlanetNineRegion | null;
 }
 
 export type AiSubjectKind = "candidate" | "object";

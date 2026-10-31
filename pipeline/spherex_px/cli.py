@@ -191,6 +191,27 @@ def _orbit_validation(args: argparse.Namespace) -> int:
     return 0
 
 
+def _planet_nine(args: argparse.Namespace) -> int:
+    import json
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .planet_nine import OUT, POPULATION_FILE, describe, fetch, load_population, region
+
+    meta, paths = fetch(Path(args.cache))
+    if args.describe:
+        describe(meta, paths)
+    pop = next(p for p in paths if p.name == POPULATION_FILE)
+    doc = region(load_population(pop), args.cell_deg)
+    out = (Path(args.out) if args.out else DEFAULT_OUT) / OUT
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(doc, indent=1) + "\n")
+    print(
+        f"{doc['n_remaining']} of {doc['n_population']} still open; {len(doc['cells'])} cells -> {out}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -255,6 +276,14 @@ def main(argv: list[str] | None = None) -> int:
     ov.add_argument("--per-population", type=int, default=12)
     ov.add_argument("--out")
     ov.set_defaults(func=_orbit_validation)
+    p9 = sub.add_parser(
+        "planet-nine", help="download Brown & Batygin's Planet Nine population (CaltechDATA)"
+    )
+    p9.add_argument("--cache", default="var/planet-nine")
+    p9.add_argument("--cell-deg", type=float, default=5.0)
+    p9.add_argument("--describe", action="store_true", help="also log the record's contents")
+    p9.add_argument("--out")
+    p9.set_defaults(func=_planet_nine)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
