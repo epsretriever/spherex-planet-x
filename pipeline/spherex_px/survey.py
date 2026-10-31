@@ -306,7 +306,13 @@ def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -
     tiles = [PlannedTile(**t) for t in json.loads(plan_file.read_text())]
     mine = tiles[shard::of]
     results: list[TileResult] = []
+    from .settings import get_settings
+
+    range_cache = get_settings().cache_dir / "s3" / "range"
     for t in mine:
+        # Image bytes read for one tile are rarely reused by the next; dropping them keeps a
+        # shard inside a CI runner's disk (the 1,200-tile run filled 19 runners' disks).
+        shutil.rmtree(range_cache, ignore_errors=True)
         try:
             _detail, cands = build_field(_spec(t), out)
         except NoReadableImages as err:
