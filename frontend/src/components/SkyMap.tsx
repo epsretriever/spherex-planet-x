@@ -34,8 +34,27 @@ export function depthColor(m50: number | null): string | null {
   return `var(${RAMP[i]})`;
 }
 
+const TILE_STATUS_TEXT: Record<SurveyTile["status"], string> = {
+  processed: "searched, moving objects found",
+  empty: "searched, nothing found",
+  failed: "search failed, will be retried",
+  pending: "waiting to be searched",
+  no_data: "no repeat SPHEREx visits",
+};
+
+/** Tiles without a field page, drawn as one path per status (hundreds of tiles, a few elements). */
+const BATCHED: { status: SurveyTile["status"]; r: number; className: keyof typeof styles }[] = [
+  { status: "no_data", r: 3, className: "tileNoData" },
+  { status: "pending", r: 4, className: "tilePending" },
+  { status: "empty", r: 4, className: "tileEmpty" },
+  { status: "failed", r: 4, className: "tileFailed" },
+];
+
+const dotPath = (pts: Pt[], r: number) =>
+  pts.map((p) => `M${(p.x - r).toFixed(1)} ${p.y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`).join("");
+
 export function tileLabel(t: SurveyTile, name?: string): string {
-  const status = t.status === "processed" ? "searched" : t.status === "pending" ? "waiting to be searched" : "no SPHEREx data";
+  const status = TILE_STATUS_TEXT[t.status] ?? t.status;
   const depth = t.m50_ab !== null ? `, half of simulated objects found down to magnitude ${t.m50_ab.toFixed(1)}` : "";
   return `${name ?? t.tile_id}: ${status}, ${t.n_epochs} images, ${t.n_candidates} moving ${t.n_candidates === 1 ? "object" : "objects"}${depth}`;
 }
@@ -146,34 +165,35 @@ export function SkyMap({
         </text>
       </g>
       <g>
-        {tiles.map((t) => {
-          const p = at(t.center.ra_deg, t.center.dec_deg);
-          const color = t.status === "processed" ? (depthColor(t.m50_ab) ?? "var(--track)") : null;
-          const label = tileLabel(t, tileName?.(t));
-          const mark = (
-            <>
-              <circle cx={p.x} cy={p.y} r={22} className={styles.hit} />
-              <circle cx={p.x} cy={p.y} r={14} className={styles.halo} style={color ? { stroke: color } : undefined} />
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={7}
-                className={t.status === "processed" ? styles.tile : t.status === "pending" ? styles.tilePending : styles.tileNoData}
-                style={color ? { fill: color } : undefined}
-              />
-              <title>{label}</title>
-            </>
-          );
-          return t.field_id && t.status === "processed" ? (
-            <Link key={t.tile_id} href={fieldHref(t.field_id)} aria-label={label} className={styles.tileLink} prefetch={false}>
-              {mark}
-            </Link>
-          ) : (
-            <g key={t.tile_id} role="img" aria-label={label}>
-              {mark}
-            </g>
-          );
+        {BATCHED.map(({ status, r, className }) => {
+          const pts = tiles.filter((t) => t.status === status).map((t) => at(t.center.ra_deg, t.center.dec_deg));
+          return pts.length ? <path key={status} d={dotPath(pts, r)} className={styles[className]} aria-hidden="true" /> : null;
         })}
+        {/* Tiles with moving objects: one link each, to their field. */}
+        {tiles
+          .filter((t) => t.status === "processed")
+          .map((t) => {
+            const p = at(t.center.ra_deg, t.center.dec_deg);
+            const color = depthColor(t.m50_ab) ?? "var(--track)";
+            const label = tileLabel(t, tileName?.(t));
+            const mark = (
+              <>
+                <circle cx={p.x} cy={p.y} r={22} className={styles.hit} />
+                <circle cx={p.x} cy={p.y} r={14} className={styles.halo} style={{ stroke: color }} />
+                <circle cx={p.x} cy={p.y} r={7} className={styles.tile} style={{ fill: color }} />
+                <title>{label}</title>
+              </>
+            );
+            return t.field_id ? (
+              <Link key={t.tile_id} href={fieldHref(t.field_id)} aria-label={label} className={styles.tileLink} prefetch={false}>
+                {mark}
+              </Link>
+            ) : (
+              <g key={t.tile_id} role="img" aria-label={label}>
+                {mark}
+              </g>
+            );
+          })}
       </g>
     </svg>
   );

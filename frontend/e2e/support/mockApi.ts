@@ -542,8 +542,13 @@ export const survey: Survey = {
       tile_id: "synthetic-pending-tile", center: { ra_deg: 200, dec_deg: -10 }, ecliptic_lon_deg: 205, ecliptic_lat_deg: 0.2, size_deg: 0.3, status: "pending",
       n_epochs: 0, n_visits: 0, first_time_utc: null, last_time_utc: null, last_processed_utc: null, field_id: null, n_candidates: 0, m50_ab: null,
     },
+    {
+      tile_id: "synthetic-empty-tile", center: { ra_deg: 30, dec_deg: 12 }, ecliptic_lon_deg: 32, ecliptic_lat_deg: -0.2, size_deg: 0.3, status: "empty",
+      n_epochs: 24, n_visits: 3, first_time_utc: epochs[0]!.time_utc, last_time_utc: epochs[2]!.time_utc, last_processed_utc: "2026-01-01T00:00:00Z",
+      field_id: null, n_candidates: 0, m50_ab: null,
+    },
   ],
-  totals: { n_tiles: 2, n_processed: 1, area_deg2_processed: 0.09, n_epochs: 3, n_candidates: 3, n_objects: 3 },
+  totals: { n_tiles: 3, n_processed: 1, area_deg2_processed: 0.09, n_epochs: 3, n_candidates: 3, n_objects: 3 },
   last_run: null,
   planet_nine: {
     citation: "SYNTHETIC test region (not a real prediction)",
