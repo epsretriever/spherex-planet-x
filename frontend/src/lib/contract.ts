@@ -417,6 +417,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Other object IDs with the same JPL designation, merged into this entry. */
+  also_seen_as?: string[];
 }
 
 export interface ObjectList extends Versioned {
@@ -449,6 +451,11 @@ export interface OrbitalElements {
     delta_i_deg: number;
     position_error_arcsec_30d: number;
   } | null;
+  /** Distance from the Sun at the epoch: median and 5–95% of the clones. */
+  helio_distance_au?: { best: number; lo: number; hi: number } | null;
+  n_ranging_orbits?: number;
+  /** The orbit in one plain-language sentence, from the backend. */
+  reported_orbit?: string;
 }
 
 export interface ObjectDetail extends Versioned {
@@ -471,6 +478,8 @@ export interface ObjectDetail extends Versioned {
   history: { utc: string; run_id: string; change: string }[];
   provenance: CandidateDetail["provenance"];
   disclaimer?: string;
+  /** Other objects with the same JPL designation. */
+  also_seen_as?: string[];
 }
 
 export interface ObjectPrediction extends Versioned {
@@ -497,7 +506,12 @@ export interface SurveyTile {
   ecliptic_lon_deg: number;
   ecliptic_lat_deg: number;
   size_deg: number;
-  status: "processed" | "pending" | "no_data";
+  /** processed: searched, found a mover (field page); empty: searched, nothing passed vetting;
+   *  failed: the last search failed (see detail); pending: not searched yet; no_data: no repeat visits. */
+  status: "processed" | "empty" | "failed" | "pending" | "no_data";
+  /** Why the last search failed, for failed tiles. */
+  detail?: string | null;
+  m50_study_id?: string | null;
   n_epochs: number;
   n_visits: number;
   first_time_utc: string | null;
@@ -520,6 +534,10 @@ export interface PlanetNineRegion {
   /** Sky positions are for this date. */
   epoch_utc: string;
   cell_deg: number;
+  /** Which members were binned, in words; and how many of how many. */
+  population?: string;
+  n_population?: number;
+  n_remaining?: number;
   /** RA/Dec bin centers; fraction is the share of the population in the bin. */
   cells: { ra_deg: number; dec_deg: number; fraction: number }[];
 }

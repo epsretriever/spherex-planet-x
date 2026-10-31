@@ -11,6 +11,7 @@ import {
   type FieldDetail,
   type FieldList,
   type InjectionStudy,
+  type ObjectDetail,
   type ObjectList,
   type Survey,
   type Versioned,
@@ -202,6 +203,15 @@ export async function getObjects(signal?: AbortSignal): Promise<ObjectList> {
   const body = await getJson<ObjectList>(USE_FIXTURES ? `${FIXTURE_BASE}/objects.json` : "/api/objects", signal);
   expectArray(body, "objects", "Object list");
   return checkVersion(body, "objects");
+}
+
+export async function getObject(objectId: string, signal?: AbortSignal): Promise<ObjectDetail> {
+  const body = USE_FIXTURES
+    ? await firstFound<ObjectDetail>([`${FIXTURE_BASE}/objects/${enc(objectId)}.json`, `${FIXTURE_BASE}/object_detail.json`], signal)
+    : await getJson<ObjectDetail>(`/api/objects/${enc(objectId)}`, signal);
+  expectArray(body, "detections", "Object");
+  if (body.object_id !== objectId) throw new DataError("not_found", `No object ${objectId}.`);
+  return checkVersion({ ...body, history: body.history ?? [], candidate_ids: body.candidate_ids ?? [], field_ids: body.field_ids ?? [] }, "object");
 }
 
 export async function getSurvey(signal?: AbortSignal): Promise<Survey> {

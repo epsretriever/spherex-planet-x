@@ -117,24 +117,6 @@
   stroke-width: 3;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .halo {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: pulse 2.4s var(--ease-out) infinite;
-  }
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
 
 /* The map shrinks to about a third of its drawn size on phones; keep its labels readable. */
 @media (max-width: 600px) {
@@ -143,4 +125,14 @@
   .galLabel {
     font-size: 30px;
   }
+}
+
+.tileEmpty {
+  fill: color-mix(in srgb, var(--cool) 55%, transparent);
+}
+
+.tileFailed {
+  fill: none;
+  stroke: var(--warning);
+  stroke-width: 1.5;
 }

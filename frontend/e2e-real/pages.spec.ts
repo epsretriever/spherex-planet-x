@@ -139,6 +139,19 @@ test("sky map", async ({ page }, info) => {
   await expect(map.getByRole("link")).not.toHaveCount(0);
 });
 
+test("objects list and an object page", async ({ page, request }, info) => {
+  await checkPage(page, info, "/objects/", "objects");
+  const list = await (await request.get("/api/objects")).json();
+  const top = [...list.objects].sort((a: { n_detections: number }, b: { n_detections: number }) => b.n_detections - a.n_detections)[0];
+  await checkPage(page, info, `/objects/${top.object_id}/`, "object");
+  await expect(page.getByText(new RegExp(`Object ID\\s*${top.object_id}`))).toBeVisible();
+  await expect(page.getByRole("region", { name: "Tracked across visits" })).toBeVisible();
+  // Orbits come from the backend's linking (row 6); without one the page says why.
+  const orbit = page.getByRole("region", { name: "Orbit" });
+  await orbit.scrollIntoViewIfNeeded();
+  if (top.orbit_status === "none") await expect(orbit.getByText(/^No orbit yet\./)).toBeVisible();
+});
+
 test("about", async ({ page }, info) => {
   await checkPage(page, info, "/about/", "about");
 });

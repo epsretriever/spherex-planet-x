@@ -133,7 +133,8 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
   const [source, setSource] = useState<SourceSubject | null>(null);
   // The AI write-up is fetched when the reader nears it, so it never competes with the first screen.
   const [wantWriteup, setWantWriteup] = useState(false);
-  const writeup = useData(wantWriteup && !USE_FIXTURES ? `writeup:${c.candidate_id}` : null, (signal) =>
+  // While JPL is pending the API returns template text uncached; fetch again once the check lands.
+  const writeup = useData(wantWriteup && !USE_FIXTURES ? `writeup:${c.candidate_id}:${c.known_object.enrichment === "pending"}` : null, (signal) =>
     getWriteup("candidate", c.candidate_id, signal),
   );
   const aiReady = writeup.status === "ok";
@@ -283,7 +284,7 @@ function Neighbors({ current, nameFor }: { current: CandidateDetail; nameFor: Na
 }
 
 /** Where the JPL check stands, from the live known_object block. */
-function JplStatus({ known }: { known: CandidateDetail["known_object"] }) {
+export function JplStatus({ known }: { known: CandidateDetail["known_object"] }) {
   const ago = known.query_utc ? formatAgo(known.query_utc) : null;
   let tone: "pending" | "ok" | "warn";
   let text: string;
@@ -312,7 +313,7 @@ function JplStatus({ known }: { known: CandidateDetail["known_object"] }) {
 }
 
 /** Sticky jump links that highlight the section being read. */
-function SectionNav({ sections }: { sections: readonly (readonly [string, string])[] }) {
+export function SectionNav({ sections }: { sections: readonly (readonly [string, string])[] }) {
   const [active, setActive] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
 

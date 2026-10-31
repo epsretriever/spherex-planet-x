@@ -25,6 +25,9 @@ const jetbrainsMono = localFont({
   weight: "100 800",
   display: "swap",
   variable: "--font-jetbrains-mono",
+  // Only labels and numbers use it; leave it off the critical path so the text that counts as the
+  // largest paint (Inter) downloads first.
+  preload: false,
 });
 
 // Social previews need absolute URLs. Set NEXT_PUBLIC_SITE_URL (for example in the

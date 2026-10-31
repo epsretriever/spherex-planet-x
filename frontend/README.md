@@ -27,7 +27,7 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 | `npm run check` | Lint, typecheck and unit tests |
 | `npm run test:e2e` | Playwright tests against `out/` at desktop and phone widths, with synthetic API responses (run `npm run build` first) |
 | `npm run test:real` | Playwright on **real data**: starts `wrangler dev` at the repo root and screenshots every page at 360, 768 and 1280 px, checking for a heading, no horizontal overflow and no console errors. Screenshots land in `test-results-real/`. Run `npm run build` at the root first. |
-| `npm run lighthouse` | Lighthouse on real data (median of 3 runs) for Home, an Explore field and an evidence report; fails below 90 for performance, accessibility or best practices. HTML reports land in `lighthouse-reports/`. |
+| `npm run lighthouse` | Lighthouse on real data (median of 5 runs) for Home, an Explore field, an evidence report, the sky map and the object list; fails below 90 for performance, accessibility or best practices. HTML reports land in `lighthouse-reports/`. |
 | `node scripts/make-share-images.mjs` | Re-renders `public/og.png` and `src/app/apple-icon.png` after a brand change |
 
 ## How it fits together
@@ -66,6 +66,14 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 - **Search by description.** On the Detective page, `POST /api/search` returns a `CandidateFilter`. The page cleans it (`normalizeFilter`), writes it to the URL, and shows each part as a removable chip; the regular controls edit the same values. The `unusual` sort is accepted, but until the anomaly ranking ships (row 7) its chip says the list is sorted by score.
 - With no AI endpoints (a 404 or 501), or in fixture mode, all three step aside. The report keeps the explanation published with it, and search says it is off.
 - `e2e/ai.spec.ts` covers all of this with synthetic AI responses (`installMockApi(page, { ai: true })`).
+
+## Objects and orbits (build plan row 6)
+
+- `/objects/` lists every linked object, and `/objects/{object_id}/` is prerendered for each one. Unknown IDs fall back to `/objects/object/?id=`, as for fields and candidates.
+- Visits are sightings grouped with gaps over 30 minutes, the same rule as the contract's `n_visits`. The distance class and its ranges come from the contract (`src/lib/objects.ts`).
+- The orbit view (`src/components/orbit/`) uses three.js. It is loaded with `import()` only when an object has a drawable orbit and the panel scrolls into view, so no other page pays for it. When WebGL is unavailable, or the reader asks for it, a flat SVG view replaces it.
+- The uncertainty cloud uses `orbit.clones_url` when it serves a list of elements. Otherwise it samples `orbit.n_clones` clones (at most 200) from `orbit.covariance` with a fixed seed. Clones that aren't ellipses are dropped.
+- Planets come from Standish's J2000 mean elements, with only the mean longitude advanced: good for a diagram, not for astrometry. The orbit math is tested in `src/lib/orbit.test.ts`.
 
 ## Performance notes
 
