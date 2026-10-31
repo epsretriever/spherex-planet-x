@@ -147,15 +147,20 @@ function comparator(sort: SortKey) {
       return (a: CandidateSummary, b: CandidateSummary) => (b.rate_arcsec_per_hr ?? -1) - (a.rate_arcsec_per_hr ?? -1) || byScore(a, b);
     case "newest":
       return (a: CandidateSummary, b: CandidateSummary) => b.first_time_utc.localeCompare(a.first_time_utc) || byScore(a, b);
+    case "unusual":
+      // The anomaly ranking (build plan row 7); objects it hasn't scored go last, by score. With
+      // no anomaly scores published at all, this is plain score order and the sort chip says so.
+      return (a: CandidateSummary, b: CandidateSummary) => (b.anomaly_score ?? -1) - (a.anomaly_score ?? -1) || byScore(a, b);
     default:
-      // "unusual" needs the anomaly ranking (build plan row 7); until it is published the list
-      // stays in score order, and the sort chip says so.
       return byScore;
   }
 }
 
-/** Whether the app can rank by this sort yet. */
-export const sortAvailable = (sort: SortKey) => sort !== "unusual";
+/** Whether any candidate in the list carries an anomaly score. */
+export const hasAnomalyScores = (list: CandidateSummary[]) => list.some((c) => typeof c.anomaly_score === "number");
+
+/** Whether the app can rank by this sort yet ("unusual" needs published anomaly scores). */
+export const sortAvailable = (sort: SortKey, hasAnomaly = false) => sort !== "unusual" || hasAnomaly;
 
 export interface FilterChip {
   key: string;
@@ -167,7 +172,7 @@ export interface FilterChip {
 const rateText = (v: number) => `${Number(v.toFixed(1))}″/hr`;
 
 /** One removable chip per active part of the filter, in reading order. */
-export function filterChips(f: CandidateFilter, fieldName: (id: string) => string = (id) => id): FilterChip[] {
+export function filterChips(f: CandidateFilter, fieldName: (id: string) => string = (id) => id, hasAnomaly = false): FilterChip[] {
   const chips: FilterChip[] = [];
   for (const c of f.classification) {
     chips.push({ key: `class:${c}`, label: CLASSIFICATIONS[c].label, without: { ...f, classification: f.classification.filter((x) => x !== c) } });
@@ -192,7 +197,9 @@ export function filterChips(f: CandidateFilter, fieldName: (id: string) => strin
     chips.push({ key: "sim", label: "Including SIMULATED", without: { ...f, include_injected: false } });
   }
   if (f.sort !== "score") {
-    const label = sortAvailable(f.sort) ? `Sorted: ${SORT_LABELS[f.sort].toLowerCase()}` : `${SORT_LABELS[f.sort]}: not ranked yet, sorted by score`;
+    const label = sortAvailable(f.sort, hasAnomaly)
+      ? `Sorted: ${SORT_LABELS[f.sort].toLowerCase()}`
+      : `${SORT_LABELS[f.sort]}: not ranked yet, sorted by score`;
     chips.push({ key: "sort", label, without: { ...f, sort: "score" } });
   }
   return chips;

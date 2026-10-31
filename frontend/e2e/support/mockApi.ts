@@ -196,6 +196,19 @@ function detail(o: Obj): CandidateDetail {
       psf_fit_reduced_chi2: 1.1,
       stamp: { url: `/static/synthetic/stamp_${o.id}_${t.epoch_id}.png`, width_px: 64, height_px: 64, format: "png", source: source(t.epoch_id) },
       source: source(t.epoch_id),
+      // SYNTHETIC row 7 fields on the unexplained object only, so the others show the page without them.
+      ...(o.cls === "unmatched"
+        ? {
+            real_bogus: [0.91, 0.84, 0.88][i] ?? null,
+            saliency: {
+              url: `/static/synthetic/saliency_${o.id}_${t.epoch_id}.png`,
+              width_px: 64,
+              height_px: 64,
+              format: "png" as const,
+              source: { ...source(t.epoch_id), processing_note: "Synthetic occlusion saliency, model synthetic-cnn-0" },
+            },
+          }
+        : {}),
     })),
     motion: {
       model: "linear",
@@ -226,7 +239,30 @@ function detail(o: Obj): CandidateDetail {
       observer: "geocenter",
       query_utc: "2026-01-01T00:00:00Z",
     },
-    scores: { motion_consistency: 0.93, snr: 0.88, artifact_likelihood: 0.04, overall: 0.78, quality_level: "high", method: "rule_based_v1", definition: "overall = motion × snr × (1 − artifact)" },
+    scores: {
+      motion_consistency: 0.93,
+      snr: 0.88,
+      artifact_likelihood: 0.04,
+      overall: 0.78,
+      quality_level: "high",
+      method: "rule_based_v1",
+      definition: "overall = motion × snr × (1 − artifact)",
+      ...(o.cls === "unmatched" ? { real_bogus: 0.87, real_bogus_model: "synthetic-cnn-0" } : {}),
+    },
+    ...(o.cls === "unmatched"
+      ? {
+          anomaly: {
+            score: 0.92,
+            rank: 1,
+            reason_plain: "Synthetic reason: moving 7× slower than typical objects at this position.",
+            features: [
+              { name: "rate", value: 4.2, typical: 30.1, unit: "″/hr", label_plain: "Speed" },
+              { name: "color", value: null, typical: 0.4, unit: "", label_plain: "Colour across bands" },
+            ],
+          },
+          neo_likelihood: { neo: 0.05, main_belt: 0.15, outer: 0.8, method: "synthetic_digest", validated_on: { n: 42, accuracy: 0.81 } },
+        }
+      : {}),
     vetting: [
       { check: "min_detections", description: "At least 3 detections", value: 3, threshold: 3, passed: true },
       { check: "per_detection_snr_min", description: "Weakest detection S/N", value: 9, threshold: 5, passed: true },
@@ -284,6 +320,8 @@ const summaries: CandidateSummary[] = OBJECTS.map((o) => ({
   quality_level: o.cls === "unmatched" ? "medium" : "high",
   known_object_matched: o.cls === "known_object",
   known_object_designation: o.cls === "known_object" ? "(99999) Synthetic" : null,
+  anomaly_score: o.cls === "unmatched" ? 0.92 : o.cls === "known_object" ? 0.2 : null,
+  anomaly_reason: o.cls === "unmatched" ? "Synthetic reason: moving 7× slower than typical objects at this position." : o.cls === "known_object" ? "Synthetic reason: typical main-belt motion." : null,
 }));
 
 const MAGS = [16, 17, 18, 19, 20];
@@ -615,6 +653,13 @@ export async function installMockApi(page: Page, opts: MockOptions = {}) {
   await page.route("**/static/synthetic/**", async (route) => {
     const name = new URL(route.request().url()).pathname.split("/").pop()!.replace(".png", "");
     const epochIndex = EPOCHS.findIndex((e) => name.endsWith(e.id));
+    if (name.startsWith("saliency_")) {
+      // A soft blob at the centre, transparent elsewhere.
+      return route.fulfill({
+        contentType: "image/png",
+        body: encodePng(64, 64, (x, y) => [255, 138, 76, Math.round(255 * Math.exp(-((x - 32) ** 2 + (y - 32) ** 2) / 60))], true),
+      });
+    }
     if (name.startsWith("stamp_")) {
       const id = name.slice("stamp_".length, name.lastIndexOf("_"));
       const t = movers.find((m) => m.candidate_id === id)?.track[epochIndex];

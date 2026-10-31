@@ -10,7 +10,7 @@ import styles from "./CandidateCard.module.css";
 
 export { candidateHref } from "@/lib/routes";
 
-export function CandidateCard({ c, name }: { c: CandidateSummary; name: ObjectName }) {
+export function CandidateCard({ c, name, reason }: { c: CandidateSummary; name: ObjectName; reason?: string | null }) {
   return (
     <li className={`card ${styles.card}`} data-classification={c.classification}>
       <div className={styles.thumb}>
@@ -34,6 +34,12 @@ export function CandidateCard({ c, name }: { c: CandidateSummary; name: ObjectNa
           </Link>
         </h2>
         <p className={styles.summary}>{c.summary_plain}</p>
+        {reason && (
+          <p className={styles.reason}>
+            <span aria-hidden="true">✦</span> <span className="visually-hidden">Why it&apos;s unusual: </span>
+            {reason}
+          </p>
+        )}
         <dl className={styles.stats}>
           <div>
             <dt>Sightings</dt>

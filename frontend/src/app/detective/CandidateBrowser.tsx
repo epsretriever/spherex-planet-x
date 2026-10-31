@@ -17,6 +17,7 @@ import {
   filterChips,
   filterFromParams,
   filterToParams,
+  hasAnomalyScores,
   needsDistance,
   sortAvailable,
   type SortKey,
@@ -29,7 +30,6 @@ import styles from "./CandidateBrowser.module.css";
 
 const MIN_SCORES = [0, 0.3, 0.6];
 const REAL_CLASSES = CLASSIFICATION_ORDER.filter((c) => c !== "injected");
-const MANUAL_SORTS = (Object.keys(SORT_LABELS) as SortKey[]).filter(sortAvailable);
 
 /** Filters live in the URL so a filtered list can be shared. */
 export function CandidateBrowser() {
@@ -72,7 +72,9 @@ export function CandidateBrowser() {
     for (const c of sorted) m.set(c.classification, (m.get(c.classification) ?? 0) + 1);
     return m;
   }, [sorted]);
-  const chips = filterChips(filter, fieldName);
+  const hasAnomaly = state.status === "ok" && hasAnomalyScores(state.data.candidates);
+  const sorts = (Object.keys(SORT_LABELS) as SortKey[]).filter((k) => sortAvailable(k, hasAnomaly));
+  const chips = filterChips(filter, fieldName, hasAnomaly);
   const loading = state.status === "loading" || distancePending;
 
   return (
@@ -140,8 +142,8 @@ export function CandidateBrowser() {
           </label>
           <label>
             <span className={styles.label}>Sort</span>
-            <select value={sortAvailable(filter.sort) ? filter.sort : "score"} onChange={(e) => apply({ ...filter, sort: e.target.value as SortKey })}>
-              {MANUAL_SORTS.map((k) => (
+            <select value={sortAvailable(filter.sort, hasAnomaly) ? filter.sort : "score"} onChange={(e) => apply({ ...filter, sort: e.target.value as SortKey })}>
+              {sorts.map((k) => (
                 <option key={k} value={k}>
                   {SORT_LABELS[k]}
                 </option>
@@ -216,6 +218,7 @@ export function CandidateBrowser() {
                   <CandidateCard
                     key={c.candidate_id}
                     c={c}
+                    reason={filter.sort === "unusual" ? c.anomaly_reason : null}
                     name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object_designation })}
                   />
                 ))}
