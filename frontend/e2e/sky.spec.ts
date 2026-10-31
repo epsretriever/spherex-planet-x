@@ -46,7 +46,7 @@ test("sky map is in the navigation", async ({ page }) => {
     await link.click();
   } else {
     await page.getByRole("button", { name: /menu/i }).click();
-    await page.getByRole("link", { name: /Sky map/ }).click();
+    await page.locator("header").getByRole("link", { name: /Sky map/ }).click();
   }
   await expect(page).toHaveURL(/\/sky\/$/);
 });

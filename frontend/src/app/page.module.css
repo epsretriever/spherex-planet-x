@@ -1,39 +1,41 @@
 .hero {
   position: relative;
   margin-top: calc(var(--space-6) * -1);
-  padding: var(--space-12) 0 var(--space-16);
+  min-height: min(88vh, 860px);
+  display: flex;
+  align-items: center;
+  padding: var(--space-16) 0 var(--space-12);
   overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(700px 380px at 72% 38%, rgb(237 105 37 / 0.14), transparent 70%),
+    radial-gradient(600px 420px at 12% 0%, rgb(120 28 109 / 0.32), transparent 70%),
+    radial-gradient(1200px 500px at 50% 120%, rgb(74 12 107 / 0.35), transparent 70%);
 }
 
-.hero::before {
-  content: "";
+/* Keeps the text readable over the fabric, and fades the hero into the page. */
+.heroShade {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(600px 300px at 75% 40%, rgb(237 105 37 / 0.16), transparent 70%),
-    radial-gradient(500px 400px at 20% 0%, rgb(120 28 109 / 0.3), transparent 70%);
+  z-index: 0;
   pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(8 6 13 / 0.7) 0%, rgb(8 6 13 / 0.3) 45%, transparent 70%),
+    linear-gradient(180deg, transparent 70%, var(--bg) 100%);
 }
 
 .heroInner {
   position: relative;
-  display: grid;
-  gap: var(--space-12);
-  align-items: center;
-}
-
-@media (min-width: 960px) {
-  .heroInner {
-    grid-template-columns: 1.1fr 1fr;
-    padding-top: var(--space-8);
-  }
+  z-index: 1;
+  width: 100%;
 }
 
 .title {
-  font-size: clamp(2.5rem, 5.6vw, 4.25rem);
+  max-width: 14ch;
+  font-size: clamp(2.6rem, 7vw, 5.25rem);
   font-weight: 650;
-  letter-spacing: -0.03em;
-  line-height: 1.02;
+  letter-spacing: -0.035em;
+  line-height: 1;
   margin-bottom: var(--space-6);
 }
 
@@ -42,27 +44,189 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 40px rgb(237 105 37 / 0.25);
 }
 
 .lede {
+  max-width: 60ch;
   font-size: var(--text-lg);
-  color: var(--text-muted);
-  max-width: 56ch;
+  color: color-mix(in srgb, var(--text) 82%, var(--text-muted));
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-8);
 }
 
-.heroArt {
-  min-width: 0;
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.textLink:hover {
+  color: var(--text);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  max-width: 760px;
+  margin: var(--space-12) 0 0;
+}
+
+@media (min-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
+  background: rgb(18 14 26 / 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.stats dt {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-size: var(--text-xl);
+  color: var(--text);
+}
+
+.asOf {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* What it does */
+.what {
+  margin-top: var(--space-8);
+}
+
+.whatHead {
+  max-width: 760px;
+  margin-bottom: var(--space-8);
+}
+
+.sectionLede {
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+}
+
+.capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.capability {
+  padding: var(--space-6);
+}
+
+.capability :global(.eyebrow) {
+  margin-bottom: var(--space-2);
+}
+
+.capability h3 {
+  margin-bottom: var(--space-3);
+}
+
+.capability p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* How it works */
+.howGrid {
+  display: grid;
+  gap: var(--space-8);
+}
+
+@media (min-width: 960px) {
+  .howGrid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+
+  .howIntro {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+.pipeline {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The line that joins the stages. */
+.pipeline::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  left: 19px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--ir-7), var(--ir-4) 50%, var(--ir-1));
+  opacity: 0.6;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.stageNo {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.stage h3 {
+  margin: 8px 0 var(--space-2);
+}
+
+.stage p {
+  margin: 0;
+  color: var(--text-muted);
 }
 
 .instrument {
+  margin-top: var(--space-6);
   padding: var(--space-6);
 }
 
@@ -78,35 +242,6 @@
   margin: var(--space-4) 0 0;
   font-size: var(--text-sm);
   color: var(--text-muted);
-}
-
-.steps {
-  margin-top: var(--space-4);
-}
-
-.stepList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
-  padding: var(--space-6);
-}
-
-.step p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-.stepNumber {
-  display: block;
-  margin-bottom: var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--accent);
 }
 
 .sectionHead {

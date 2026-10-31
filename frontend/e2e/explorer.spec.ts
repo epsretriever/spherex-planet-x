@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test("landing page leads into the explorer", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("The sky moves.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Everything that moves");
   await expect(page.getByRole("link", { name: "Synthetic test field" })).toBeVisible();
   await expectNoHorizontalScroll(page);
   await page.getByRole("link", { name: /Explore the sky/ }).click();

@@ -531,7 +531,20 @@ export interface Survey extends Versioned {
   tile_size_deg: number;
   data_releases: string[];
   tiles: SurveyTile[];
-  totals: { n_tiles: number; n_processed: number; area_deg2_processed: number; n_epochs: number; n_candidates: number; n_objects: number };
+  totals: {
+    n_tiles: number;
+    n_processed: number;
+    area_deg2_processed: number;
+    n_epochs: number;
+    n_candidates: number;
+    n_objects: number;
+    /** Processed plus empty tiles. */
+    n_searched?: number;
+    n_empty?: number;
+    n_failed?: number;
+    area_deg2_searched?: number;
+    n_known_objects?: number | null;
+  };
   last_run: {
     run_id: string;
     started_utc: string;
