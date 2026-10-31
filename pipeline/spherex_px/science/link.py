@@ -35,6 +35,7 @@ class LinkParams:
     sighting_radius_arcsec: float = 9.0
     static_radius_arcsec: float = 9.0
     static_forced_snr: float = 4.0  # combined over a cluster's exposures
+    static_min_fraction: float = 0.0  # 0: static if seen in any other covering visit
     min_sighting_exposures: int = 2
     min_rate_arcsec_per_hr: float = 0.5
     max_rate_arcsec_per_hr: float = 250.0
@@ -160,39 +161,53 @@ def _covered(prep: Prepared, ra: float, dec: float, margin: float = 3) -> tuple[
 def find_transients(
     epochs: list[EpochData], sightings: list[Sighting], params: LinkParams
 ) -> list[Sighting]:
-    """Sightings with no static counterpart in any other covering cluster."""
+    """Sightings that are not static.
+
+    A sighting is static when something is at its position (a sighting within
+    static_radius_arcsec, or combined forced-photometry S/N >= static_forced_snr) in at least
+    static_min_fraction of the other visits that cover that position. With fraction 0 a single
+    such visit is enough. A fraction rule keeps slow movers: an object moving a few arcsec per
+    hour overlaps its own position in a visit 1-2 hours away, but not in the visits a day apart.
+    """
     by_cluster: dict[int, list[Sighting]] = {}
     for s in sightings:
         by_cluster.setdefault(s.cluster, []).append(s)
+    covering: dict[int, list[EpochData]] = {}
+    for e in epochs:
+        covering.setdefault(e.cluster, []).append(e)
     out = []
-    clusters = sorted(by_cluster)
+    clusters = sorted(set(by_cluster) | set(covering))
     for s in sightings:
-        static = False
-        covered_elsewhere = False
+        n_cov = n_static = 0
         for c in clusters:
             if c == s.cluster:
                 continue
-            others = by_cluster[c]
+            others = by_cluster.get(c, [])
+            matched = False
             if others:
                 sep = angular_sep_arcsec(
                     s.ra, s.dec, [o.ra for o in others], [o.dec for o in others]
                 )
-                if np.min(sep) <= params.static_radius_arcsec:
-                    static = True
-                    break
-            # forced photometry at the same position, combined over this cluster's exposures
+                matched = bool(np.min(sep) <= params.static_radius_arcsec)
             snrs = []
-            for e in (e for e in epochs if e.cluster == c):
+            for e in covering.get(c, []):
                 ok, x, y = _covered(e.prep, s.ra, s.dec)
-                if not ok:
-                    continue
-                snrs.append(float(measure(e.prep, np.array([x]), np.array([y])).snr[0]))
-            if snrs:
-                covered_elsewhere = True
-                if sum(snrs) / math.sqrt(len(snrs)) >= params.static_forced_snr:
-                    static = True
+                if ok:
+                    snrs.append(float(measure(e.prep, np.array([x]), np.array([y])).snr[0]))
+            if not snrs and not matched:
+                continue  # this visit doesn't cover the position
+            n_cov += 1
+            if matched or (snrs and sum(snrs) / math.sqrt(len(snrs)) >= params.static_forced_snr):
+                n_static += 1
+                if params.static_min_fraction <= 0:
                     break
-        if not static and covered_elsewhere:
+        if n_cov == 0:
+            continue
+        frac = n_static / n_cov
+        static = (
+            n_static > 0 if params.static_min_fraction <= 0 else frac >= params.static_min_fraction
+        )
+        if not static:
             out.append(s)
     return out
 

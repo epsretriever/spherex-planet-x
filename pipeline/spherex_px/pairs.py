@@ -69,9 +69,9 @@ def _label(la: float, lb: float, dt: float, matched: bool, shift: float | None) 
     when = f"{dt:.1f} hours apart" if dt < 48 else f"{dt / 24:.1f} days apart"
     moved = f"; the moving object shifts {shift:.0f} arcsec" if shift is not None else ""
     if matched:
-        return f"Same wavelength ({la:.2f} and {lb:.2f} um), {when}{moved}"
+        return f"Same wavelength ({la:.2f} and {lb:.2f} µm), {when}{moved}"
     return (
-        f"Different wavelengths ({la:.2f} and {lb:.2f} um), {when}{moved}: "
+        f"Different wavelengths ({la:.2f} and {lb:.2f} µm), {when}{moved}: "
         "brightness changes are expected"
     )
 

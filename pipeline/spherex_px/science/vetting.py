@@ -253,7 +253,7 @@ def error_sources(
             explanation="SPHEREx sees each spot at a different infrared wavelength in each image, so brightness "
             "naturally changes from frame to frame.",
             status=S.ruled_out if by["flux_consistent_across_lambda"].passed else S.not_ruled_out,
-            evidence=f"Detections span {lam_lo:.2f} to {lam_hi:.2f} um; fluxes vary by a factor of {m.flux_ratio:.1f}.",
+            evidence=f"Detections span {lam_lo:.2f} to {lam_hi:.2f} µm; fluxes vary by a factor of {m.flux_ratio:.1f}.",
             from_checks=["flux_consistent_across_lambda"],
         ),
         ErrorSource(

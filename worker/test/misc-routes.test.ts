@@ -65,5 +65,12 @@ describe("runs and injection", () => {
     expect(await json(await get("/api/runs/test-run"))).toEqual(run);
     expect(await json(await get("/api/injection/test-study"))).toEqual(study);
     expect((await get("/api/injection/nope")).status).toBe(404);
+    expect((await get("/api/injection/index")).status).toBe(400);
+  });
+
+  it("lists published injection studies", async () => {
+    const index = { schema_version: "1.1", pipeline_version: "test", studies: [{ study_id: "test-study", generated_utc: "x", field_ids: [], n_injected: 1 }] };
+    const { get } = makeClient({ files: { "/data/injection/index.json": index } });
+    expect(await json(await get("/api/injection"))).toEqual(index);
   });
 });

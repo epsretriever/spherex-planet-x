@@ -1,15 +1,21 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
-import type { RunStatus } from "../contract";
+import type { InjectionStudy, InjectionStudyIndex, RunStatus } from "../contract";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
 
 export const injection = new Hono<AppEnv>();
 
+injection.get("/", async (c) => {
+  const index = await requireStaticJson<InjectionStudyIndex>(c.env, "injection/index.json", "injection study index");
+  c.header("Cache-Control", "public, max-age=300");
+  return c.json(index);
+});
+
 injection.get("/:studyId", async (c) => {
   const id = c.req.param("studyId");
-  if (!ID_RE.test(id)) throw badRequest("invalid study_id");
-  const study = await requireStaticJson<unknown>(c.env, `injection/${id}.json`, `injection study '${id}'`);
+  if (!ID_RE.test(id) || id === "index") throw badRequest("invalid study_id");
+  const study = await requireStaticJson<InjectionStudy>(c.env, `injection/${id}.json`, `injection study '${id}'`);
   c.header("Cache-Control", "public, max-age=300");
   return c.json(study);
 });

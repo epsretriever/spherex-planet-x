@@ -642,3 +642,79 @@ export interface VettingStats extends Envelope {
     promoted: boolean;
   }[];
 }
+
+// ---------------------------------------------------------------------------- injection study
+
+export interface RecoveryCell {
+  mag_ab: number;
+  rate_arcsec_per_hr: number;
+  motion: MotionModel;
+  distance_au: number | null;
+  n_injected: number;
+  n_recovered: number;
+  fraction: number;
+  ci_low: number;
+  ci_high: number;
+}
+
+export interface InjectionStudy extends Envelope {
+  study_id: string;
+  generated_utc: string;
+  simulated: true;
+  field_ids: string[];
+  n_injected: number;
+  n_recovered: number;
+  mag_bins_ab: number[];
+  rate_bins_arcsec_per_hr: number[];
+  distance_bins_au: number[];
+  grid: RecoveryCell[];
+  m50_by_rate: { rate_arcsec_per_hr: number; m50_ab: number | null }[];
+  m50_by_distance: { distance_au: number; median_rate_arcsec_per_hr: number; m50_ab: number | null; n_injected: number }[];
+  per_field: { field_id: string; n_injected: number; n_recovered: number; m50_ab: number | null }[];
+  false_positives: {
+    n_control_runs: number;
+    area_deg2: number;
+    n_candidates: number;
+    rate_per_deg2: number;
+    ci_low_per_deg2: number;
+    ci_high_per_deg2: number;
+  };
+  recovered_rate_error_median: number | null;
+  recovered_position_error_arcsec_median: number | null;
+  photometry_check: {
+    mag_ab: number;
+    n: number;
+    measured_over_injected_median: number;
+    measured_over_injected_p25: number;
+    measured_over_injected_p75: number;
+  }[];
+  planet_context: PlanetContext | null;
+  recovery_criteria: string;
+  method_notes: string[];
+  example_candidate_ids: string[];
+}
+
+export interface PlanetContext {
+  assumptions: {
+    name: string;
+    diameter_km: number;
+    geometric_albedo: number;
+    band_um: number;
+    phase_function: string;
+    thermal_model: string;
+    reference: string;
+  };
+  rows: {
+    distance_au: number;
+    predicted_mag_ab: number;
+    band_um: number;
+    m50_ab: number | null;
+    recovery_fraction_at_predicted: number | null;
+    verdict: "detected" | "missed" | "not_tested";
+  }[];
+}
+
+export interface InjectionStudyIndex extends Envelope {
+  build_run_id?: string | null;
+  studies: { study_id: string; generated_utc: string; field_ids: string[]; n_injected: number }[];
+}
