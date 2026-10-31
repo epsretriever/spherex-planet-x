@@ -77,8 +77,8 @@ export default function LandingPage() {
 
   return (
     <>
+      <SpacetimeFabric />
       <section className={styles.hero} aria-labelledby="hero-title">
-        <SpacetimeFabric />
         <div className={styles.heroShade} aria-hidden="true" />
         <div className={`container ${styles.heroInner}`}>
           <p className="eyebrow">NASA SPHEREx · moving-object search · Planet X</p>

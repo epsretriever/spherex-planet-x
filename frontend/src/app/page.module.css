@@ -6,7 +6,6 @@
   align-items: center;
   padding: var(--space-16) 0 var(--space-12);
   overflow: hidden;
-  isolation: isolate;
   background:
     radial-gradient(700px 380px at 72% 38%, rgb(237 105 37 / 0.14), transparent 70%),
     radial-gradient(600px 420px at 12% 0%, rgb(120 28 109 / 0.32), transparent 70%),
@@ -28,6 +27,54 @@
   position: relative;
   z-index: 1;
   width: 100%;
+}
+
+/* Scroll-linked motion, where the browser supports scroll timelines (no script involved):
+   the hero text drifts up and fades as you scroll past it, sections rise into place, and the
+   pipeline's connecting line draws itself as you read down it. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .heroInner {
+      animation: hero-out linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 90%;
+    }
+
+    .capability,
+    .stage,
+    .mode {
+      animation: rise-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+
+    .pipeline::before {
+      transform-origin: top;
+      animation: draw-line linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 70%;
+    }
+  }
+}
+
+@keyframes hero-out {
+  to {
+    opacity: 0.15;
+    transform: translateY(-80px) scale(0.97);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    transform: scaleY(0);
+  }
 }
 
 .title {

@@ -10,15 +10,46 @@ interface Well {
   mass: number;
 }
 
-const COLS = 46;
-const ROWS = 24;
+interface Star {
+  x: number;
+  y: number;
+  r: number;
+  a: number;
+  tw: number;
+  /** 0 far … 1 near: nearer stars drift more with scroll and the pointer. */
+  layer: number;
+}
+
+interface Ripple {
+  x: number;
+  y: number;
+  t0: number;
+}
+
+interface Meteor {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  t0: number;
+  life: number;
+}
+
+type Pt = { x: number; y: number; depth: number; dip: number };
+
+const GLOW = 4;
+const DEPTH = 4;
 
 /**
- * Decorative hero background: a perspective grid ("spacetime fabric") that dips into gravity
- * wells around a central star, an orbiting planet and the reader's pointer, over a field of stars.
+ * The home page's backdrop: a perspective grid ("spacetime fabric") over three depths of stars.
+ * - Pointer: the fabric dips into a well under the pointer, the grid leans toward it and the
+ *   star layers shift with parallax. A click or tap sends a ripple through the fabric.
+ * - Scroll: you fly forward over the grid, the view pitches toward the horizon, the star layers
+ *   drift at their own depths, the planet's orbit advances, and the grid dims behind the content.
+ * - Now and then a shooting star crosses the sky.
  *
- * It starts once the page is idle (never competing with the first paint), pauses while off screen
- * or in a background tab, and draws one still frame for readers who prefer reduced motion.
+ * Fixed behind the page, it starts only after the page has loaded and gone idle, pauses in
+ * background tabs, never takes clicks, and draws one still frame for reduced motion.
  */
 export function SpacetimeFabric() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -32,54 +63,96 @@ export function SpacetimeFabric() {
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     let w = 0;
     let h = 0;
-    let stars: { x: number; y: number; r: number; a: number; tw: number }[] = [];
+    let stars: Star[] = [];
+    // Grid density follows the screen: phones get fewer, larger cells (and far less work).
+    let COLS = 46;
+    let ROWS = 26;
+    const ripples: Ripple[] = [];
+    const meteors: Meteor[] = [];
+    let nextMeteor = 3000;
 
-    // Pointer, eased toward its target so the dip glides instead of jumping.
-    const pointer = { x: -1, y: -1, tx: -1, ty: -1, strength: 0, target: 0 };
+    // Pointer and scroll, eased toward their targets so everything glides.
+    const pointer = { x: -1, y: -1, tx: -1, ty: -1, strength: 0, target: 0, lean: 0, leanT: 0, tilt: 0, tiltT: 0 };
+    const scroll = { y: window.scrollY, ty: window.scrollY };
 
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      w = Math.max(1, rect.width);
-      h = Math.max(1, rect.height);
+      w = Math.max(1, window.innerWidth);
+      h = Math.max(1, window.innerHeight);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      // Deterministic star field, denser on wide screens.
+      COLS = Math.max(22, Math.min(46, Math.round(w / 28)));
+      ROWS = Math.round(COLS * 0.56);
       let seed = 7;
       const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-      stars = Array.from({ length: Math.round((w * h) / 2600) }, () => ({
-        x: rand() * w,
-        y: rand() * h,
-        r: rand() < 0.08 ? 1.4 : 0.5 + rand() * 0.7,
-        a: 0.25 + rand() * 0.6,
-        tw: rand() * Math.PI * 2,
-      }));
-    };
-
-    /** The fabric lies on a plane tilted away from the viewer; returns screen x, y and depth (0 far, 1 near). */
-    const project = (u: number, v: number) => {
-      // u in [-1, 1] across, v in [0, 1] from far to near.
-      const depth = 0.32 + 0.68 * v;
-      const x = w / 2 + u * w * 0.95 * depth;
-      const y = h * 0.34 + Math.pow(v, 1.35) * h * 0.78;
-      return { x, y, depth };
+      stars = Array.from({ length: Math.round((w * h) / 2200) }, () => {
+        const layer = rand();
+        return { x: rand() * w, y: rand() * h, r: layer > 0.93 ? 1.5 : 0.45 + layer * 0.85, a: 0.25 + rand() * 0.6, tw: rand() * Math.PI * 2, layer };
+      });
     };
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, w, h);
+      // Scroll position in screens; the fabric dims as content takes over.
+      const sp = scroll.y / h;
+      const fade = Math.max(0.32, 1 - sp * 0.55);
 
-      // Stars, with a slow twinkle.
+      // Stars at three depths: scroll and the pointer move the near ones more.
+      const px = pointer.lean * 22;
+      const py = pointer.tilt * 14;
       ctx.fillStyle = "rgb(243, 238, 249)";
       for (const s of stars) {
-        ctx.globalAlpha = reduce ? s.a : s.a * (0.75 + 0.25 * Math.sin(t * 0.0012 + s.tw));
-        ctx.fillRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
+        const k = 0.15 + s.layer * 0.85;
+        const x = (((s.x - px * k) % w) + w) % w;
+        const y = (((s.y - scroll.y * 0.2 * k - py * k) % h) + h) % h;
+        ctx.globalAlpha = reduce ? s.a : s.a * (0.72 + 0.28 * Math.sin(t * 0.0012 + s.tw));
+        ctx.fillRect(x - s.r, y - s.r, s.r * 2, s.r * 2);
       }
       ctx.globalAlpha = 1;
 
-      // Wells: a star near the right, a planet orbiting it, and the pointer.
-      const star = project(0.42, 0.42);
+      // Shooting stars.
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const m = meteors[i]!;
+        const age = (t - m.t0) / m.life;
+        if (age >= 1) {
+          meteors.splice(i, 1);
+          continue;
+        }
+        const x = m.x + m.vx * age;
+        const y = m.y + m.vy * age;
+        const tx = x - m.vx * 0.2;
+        const ty = y - m.vy * 0.2;
+        const tail = ctx.createLinearGradient(x, y, tx, ty);
+        tail.addColorStop(0, `rgba(255, 240, 220, ${(0.9 * Math.sin(age * Math.PI)).toFixed(3)})`);
+        tail.addColorStop(1, "rgba(255, 138, 76, 0)");
+        ctx.strokeStyle = tail;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+      }
+
+      // The fabric: a plane tilted away from the viewer. Scrolling flies forward over it (rows
+      // stream toward you) and pitches the view toward the horizon; the pointer leans it.
+      const horizon = h * (0.36 - Math.min(0.2, sp * 0.12)) + py;
+      const flow = (scroll.y * 0.0016 + t * 0.000015) % (1 / ROWS);
+      const lean = pointer.lean * 0.2;
+      const project = (u: number, v: number) => {
+        const depth = 0.3 + 0.7 * v;
+        return {
+          x: w / 2 + (u + lean * (1 - v)) * w * 0.95 * depth,
+          y: horizon + Math.pow(v, 1.35) * (h - horizon + h * 0.14),
+          depth,
+        };
+      };
+
+      // Wells: a star, a planet orbiting it (scrolling advances the orbit), and the pointer.
+      // On narrow screens the star sits lower, under the hero text rather than behind it.
+      const narrow = w < 700;
+      const star = project((narrow ? 0.3 : 0.42) - Math.min(0.5, sp * 0.25), narrow ? 0.78 : 0.42);
       const orbitR = Math.min(w, h) * 0.22;
-      const ang = reduce ? 2.2 : t * 0.00025;
+      const ang = reduce ? 2.2 : t * 0.00025 + scroll.y * 0.004;
       const wells: Well[] = [
         { x: star.x, y: star.y, mass: 1.0 },
         { x: star.x + Math.cos(ang) * orbitR * 1.35, y: star.y + Math.sin(ang) * orbitR * 0.42, mass: 0.35 },
@@ -87,39 +160,45 @@ export function SpacetimeFabric() {
       if (pointer.strength > 0.01) wells.push({ x: pointer.x, y: pointer.y, mass: 0.9 * pointer.strength });
 
       const reach = Math.min(w, h) * 0.32;
-      const warp = (p: { x: number; y: number; depth: number }) => {
+      const warp = (p: { x: number; y: number; depth: number }): Pt => {
         let dx = 0;
         let dy = 0;
         let dip = 0;
         for (const g of wells) {
           const ex = g.x - p.x;
           const ey = g.y - p.y;
-          const d2 = ex * ex + ey * ey;
-          const f = g.mass * Math.exp(-d2 / (reach * reach * 0.35));
+          const f = g.mass * Math.exp(-(ex * ex + ey * ey) / (reach * reach * 0.35));
           // Pull toward the mass and sink below it: the fabric stretches into a funnel.
           dx += ex * f * 0.38;
           dy += ey * f * 0.38;
           dip += f;
         }
+        // Ripples: a ring that travels outward and fades.
+        for (const r of ripples) {
+          const age = (t - r.t0) / 1000;
+          const band = Math.hypot(p.x - r.x, p.y - r.y) - age * 520;
+          if (age > 0 && Math.abs(band) < 90) {
+            const amp = Math.cos((band / 90) * Math.PI * 0.5) * Math.max(0, 1 - age / 2.2);
+            dy += amp * 40 * p.depth;
+            dip += amp * 0.6;
+          }
+        }
         return { x: p.x + dx, y: p.y + dy + dip * reach * 0.42 * p.depth, depth: p.depth, dip };
       };
 
-      // Precompute the warped grid.
-      const pts: { x: number; y: number; depth: number; dip: number }[][] = [];
+      const pts: Pt[][] = [];
       for (let j = 0; j <= ROWS; j++) {
-        const row: { x: number; y: number; depth: number; dip: number }[] = [];
-        for (let i = 0; i <= COLS; i++) row.push(warp(project(-1 + (2 * i) / COLS, j / ROWS)));
+        const v = Math.min(1, j / ROWS + flow);
+        const row: Pt[] = [];
+        for (let i = 0; i <= COLS; i++) row.push(warp(project(-1 + (2 * i) / COLS, v)));
         pts.push(row);
       }
 
-      // Batch the ~2,000 grid segments into a few colour buckets: one stroke per bucket per frame.
-      const GLOW = 4;
-      const DEPTH = 4;
+      // Batch the ~2,000 segments into colour buckets: one stroke per bucket per frame.
       const buckets: Path2D[] = Array.from({ length: (GLOW + 1) * (DEPTH + 1) }, () => new Path2D());
-      const bucketOf = (a: { depth: number; dip: number }) =>
-        Math.round(Math.min(1, a.dip * 1.4) * GLOW) * (DEPTH + 1) + Math.round(((a.depth - 0.32) / 0.68) * DEPTH);
-      const seg = (a: { x: number; y: number; depth: number; dip: number }, b: { x: number; y: number }) => {
-        const path = buckets[bucketOf(a)]!;
+      const seg = (a: Pt, b: Pt) => {
+        const k = Math.round(Math.min(1, a.dip * 1.4) * GLOW) * (DEPTH + 1) + Math.round(((a.depth - 0.3) / 0.7) * DEPTH);
+        const path = buckets[Math.max(0, Math.min(buckets.length - 1, k))]!;
         path.moveTo(a.x, a.y);
         path.lineTo(b.x, b.y);
       };
@@ -129,8 +208,8 @@ export function SpacetimeFabric() {
       buckets.forEach((path, k) => {
         // Far lines fade into violet; lines in a well glow ember.
         const glow = Math.floor(k / (DEPTH + 1)) / GLOW;
-        const depth = 0.32 + 0.68 * ((k % (DEPTH + 1)) / DEPTH);
-        const alpha = Math.min(0.85, (0.08 + 0.42 * depth) * (0.75 + 0.6 * glow));
+        const depth = 0.3 + 0.7 * ((k % (DEPTH + 1)) / DEPTH);
+        const alpha = Math.min(0.85, (0.08 + 0.42 * depth) * (0.75 + 0.6 * glow)) * fade;
         const r = Math.round(124 + (255 - 124) * glow);
         const g = Math.round(96 + (138 - 96) * glow);
         const b = Math.round(220 + (76 - 220) * glow);
@@ -138,11 +217,26 @@ export function SpacetimeFabric() {
         ctx.stroke(path);
       });
 
+      // Each ripple's wavefront as a glowing ring, flattened to lie on the fabric.
+      for (const r of ripples) {
+        const age = (t - r.t0) / 1000;
+        const a = Math.max(0, 1 - age / 2.2);
+        // A click can land a moment after this frame's timestamp: nothing to draw yet.
+        if (age <= 0 || a <= 0) continue;
+        const rad = age * 520;
+        ctx.strokeStyle = `rgba(255, 176, 122, ${(0.55 * a).toFixed(3)})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(r.x, r.y, rad, rad * 0.45, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 1;
+
       // The star and the planet, sitting in their wells.
-      const sw = warp({ ...star, depth: 0.32 + 0.68 * 0.42 });
+      const sw = warp(star);
       const halo = ctx.createRadialGradient(sw.x, sw.y, 0, sw.x, sw.y, reach * 0.5);
-      halo.addColorStop(0, "rgba(247, 209, 61, 0.55)");
-      halo.addColorStop(0.25, "rgba(251, 155, 6, 0.22)");
+      halo.addColorStop(0, `rgba(247, 209, 61, ${(0.55 * fade).toFixed(3)})`);
+      halo.addColorStop(0.25, `rgba(251, 155, 6, ${(0.22 * fade).toFixed(3)})`);
       halo.addColorStop(1, "rgba(207, 68, 70, 0)");
       ctx.fillStyle = halo;
       ctx.beginPath();
@@ -157,32 +251,60 @@ export function SpacetimeFabric() {
       const pw = warp({ x: pl.x, y: pl.y, depth: 0.6 });
       ctx.fillStyle = "#7cc4ff";
       ctx.beginPath();
-      ctx.arc(pw.x, pw.y, 3.2, 0, Math.PI * 2);
+      ctx.arc(pw.x, pw.y, 3.4, 0, Math.PI * 2);
       ctx.fill();
 
       if (pointer.strength > 0.01) {
-        const glow = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 60);
-        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.28 * pointer.strength).toFixed(3)})`);
+        const glow = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 70);
+        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.3 * pointer.strength).toFixed(3)})`);
         glow.addColorStop(1, "rgba(255, 138, 76, 0)");
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(pointer.x, pointer.y, 60, 0, Math.PI * 2);
+        ctx.arc(pointer.x, pointer.y, 70, 0, Math.PI * 2);
         ctx.fill();
       }
     };
 
     let frame = 0;
     let running = false;
-    let visible = true;
+    let tick = 0;
+    let cost = 0;
+    let halfRate = false;
     const loop = (t: number) => {
       pointer.x += (pointer.tx - pointer.x) * 0.12;
       pointer.y += (pointer.ty - pointer.y) * 0.12;
       pointer.strength += (pointer.target - pointer.strength) * 0.06;
-      draw(t);
+      pointer.lean += (pointer.leanT - pointer.lean) * 0.05;
+      pointer.tilt += (pointer.tiltT - pointer.tilt) * 0.05;
+      scroll.y += (scroll.ty - scroll.y) * 0.12;
+      for (let i = ripples.length - 1; i >= 0; i--) if (t - ripples[i]!.t0 > 2200) ripples.splice(i, 1);
+      if (t > nextMeteor) {
+        const fromLeft = Math.random() < 0.5;
+        meteors.push({
+          x: fromLeft ? Math.random() * w * 0.5 : w * (0.5 + Math.random() * 0.5),
+          y: Math.random() * h * 0.35,
+          vx: (fromLeft ? 1 : -1) * w * (0.25 + Math.random() * 0.2),
+          vy: h * (0.12 + Math.random() * 0.1),
+          t0: t,
+          life: 900 + Math.random() * 500,
+        });
+        nextMeteor = t + 3500 + Math.random() * 5500;
+      }
+      // Schedule the next frame first: one bad frame must never freeze the backdrop.
       frame = requestAnimationFrame(loop);
+      // On a slow device, draw every other frame (30 fps) rather than block the page.
+      if (halfRate && ++tick % 2) return;
+      const t0 = performance.now();
+      try {
+        draw(t);
+      } catch (err) {
+        console.warn("[spacetime] frame skipped", err);
+      }
+      cost = cost * 0.9 + (performance.now() - t0) * 0.1;
+      if (!halfRate && cost > 9) halfRate = true;
     };
     const start = () => {
-      if (running || reduce || !visible || document.hidden) return;
+      if (running || reduce || document.hidden) return;
       running = true;
       frame = requestAnimationFrame(loop);
     };
@@ -191,48 +313,51 @@ export function SpacetimeFabric() {
       cancelAnimationFrame(frame);
     };
 
-    // Pointer anywhere over the hero (the canvas itself ignores events so links stay clickable).
-    const host = canvas.parentElement ?? canvas;
     const onMove = (e: PointerEvent) => {
-      const r = canvas.getBoundingClientRect();
-      pointer.tx = e.clientX - r.left;
-      pointer.ty = e.clientY - r.top;
+      pointer.tx = e.clientX;
+      pointer.ty = e.clientY;
       if (pointer.x < 0) {
         pointer.x = pointer.tx;
         pointer.y = pointer.ty;
       }
       pointer.target = 1;
+      pointer.leanT = (e.clientX / w) * 2 - 1;
+      pointer.tiltT = (e.clientY / h) * 2 - 1;
     };
     const onLeave = () => {
       pointer.target = 0;
+      pointer.leanT = 0;
+      pointer.tiltT = 0;
+    };
+    const onDown = (e: PointerEvent) => {
+      if (ripples.length < 6) ripples.push({ x: e.clientX, y: e.clientY, t0: performance.now() });
+    };
+    const onScroll = () => {
+      scroll.ty = window.scrollY;
     };
     const onVisibility = () => (document.hidden ? stop() : start());
+    const onResize = () => {
+      resize();
+      if (!running) draw(performance.now());
+    };
 
     resize();
     draw(0);
-    const ro = new ResizeObserver(() => {
-      resize();
-      if (!running) draw(performance.now());
-    });
-    ro.observe(canvas);
-    const io = new IntersectionObserver(([entry]) => {
-      visible = !!entry?.isIntersecting;
-      if (visible) start();
-      else stop();
-    });
-    io.observe(canvas);
+    window.addEventListener("resize", onResize);
     if (!reduce) {
-      host.addEventListener("pointermove", onMove);
-      host.addEventListener("pointerleave", onLeave);
+      window.addEventListener("pointermove", onMove, { passive: true });
+      document.documentElement.addEventListener("pointerleave", onLeave);
+      window.addEventListener("pointerdown", onDown, { passive: true });
+      window.addEventListener("scroll", onScroll, { passive: true });
     }
     document.addEventListener("visibilitychange", onVisibility);
 
     // Begin animating only after the page has loaded and gone idle, so neither the first paint
     // nor the content's own loading competes with the animation.
-    const w8 = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    const win = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
     let idle = 0;
     const whenIdle = () => {
-      idle = w8.requestIdleCallback ? w8.requestIdleCallback(start, { timeout: 4000 }) : window.setTimeout(start, 2000);
+      idle = win.requestIdleCallback ? win.requestIdleCallback(start, { timeout: 4000 }) : window.setTimeout(start, 2000);
     };
     if (document.readyState === "complete") whenIdle();
     else window.addEventListener("load", whenIdle, { once: true });
@@ -240,12 +365,13 @@ export function SpacetimeFabric() {
     return () => {
       window.removeEventListener("load", whenIdle);
       stop();
-      if (w8.cancelIdleCallback) w8.cancelIdleCallback(idle);
+      if (win.cancelIdleCallback) win.cancelIdleCallback(idle);
       else clearTimeout(idle);
-      ro.disconnect();
-      io.disconnect();
-      host.removeEventListener("pointermove", onMove);
-      host.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("pointermove", onMove);
+      document.documentElement.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
