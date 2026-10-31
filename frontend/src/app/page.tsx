@@ -77,8 +77,8 @@ export default function LandingPage() {
 
   return (
     <>
+      <SpacetimeFabric />
       <section className={styles.hero} aria-labelledby="hero-title">
-        <SpacetimeFabric />
         <div className={styles.heroShade} aria-hidden="true" />
         <div className={`container ${styles.heroInner}`}>
           <p className="eyebrow">NASA SPHEREx · moving-object search · Planet X</p>
@@ -192,6 +192,12 @@ export default function LandingPage() {
               <h3>Weigh the evidence</h3>
               <p>Every tracked object with its positions, speed, signal quality, JPL check, and the explanations we can and can&apos;t rule out.</p>
               <span className={styles.modeCta}>Open the case files →</span>
+            </Link>
+            <Link href="/objects/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Objects</span>
+              <h3>Follow one across visits</h3>
+              <p>Each moving body with every sighting linked to it, how far away it is and, once one can be fitted, its orbit in 3D.</p>
+              <span className={styles.modeCta}>Browse objects →</span>
             </Link>
             <Link href="/sky/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Sky map</span>

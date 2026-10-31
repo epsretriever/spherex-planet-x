@@ -13,6 +13,7 @@ export interface Section {
 }
 
 export const SECTIONS: Section[] = [
+  { href: "/", label: "Home", blurb: "What this is and how it works", match: "/" },
   { href: "/explore/", label: "Explore", blurb: "Blink real SPHEREx images and spot what moved", match: "/explore" },
   { href: "/detective/", label: "Detective", blurb: "Every moving object, with the evidence for and against", match: "/detective" },
   { href: "/objects/", label: "Objects", blurb: "Each moving object, tracked across visits, with its distance and orbit", match: "/objects" },
@@ -22,5 +23,6 @@ export const SECTIONS: Section[] = [
 ];
 
 export function isCurrent(pathname: string, s: Section): boolean {
+  if (s.match === "/") return pathname === "/";
   return pathname === s.match || pathname.startsWith(`${s.match}/`);
 }

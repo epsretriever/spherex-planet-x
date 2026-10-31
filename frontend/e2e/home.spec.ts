@@ -57,3 +57,45 @@ test("with reduced motion the fabric is drawn once and left still", async ({ pag
   );
   expect(frames).toBe(0);
 });
+
+test("clicking sends a ripple and the fabric keeps animating", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => m.type() === "warning" && m.text().includes("[spacetime]") && errors.push(m.text()));
+  await page.goto("/");
+  await page.waitForLoadState("load");
+  await page.waitForTimeout(2500);
+  const vp = page.viewportSize()!;
+  await page.mouse.move(vp.width * 0.6, vp.height * 0.6, { steps: 5 });
+  for (let i = 0; i < 3; i++) {
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(120);
+  }
+  const changes = await page.evaluate(
+    () =>
+      new Promise<boolean>((resolve) => {
+        const c = document.querySelector("canvas") as HTMLCanvasElement;
+        const first = c.toDataURL();
+        setTimeout(() => resolve(c.toDataURL() !== first), 400);
+      }),
+  );
+  expect(changes).toBe(true);
+  // Scrolling moves the fabric too.
+  await page.mouse.wheel(0, vp.height);
+  await page.waitForTimeout(600);
+  expect(errors).toEqual([]);
+});
+
+test("with reduced motion the fabric still follows the reader's pointer", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.waitForLoadState("load");
+  const shot = () => page.evaluate(() => (document.querySelector("canvas") as HTMLCanvasElement).toDataURL());
+  const before = await shot();
+  const vp = page.viewportSize()!;
+  await page.mouse.move(vp.width * 0.3, vp.height * 0.4);
+  await page.mouse.move(vp.width * 0.7, vp.height * 0.6, { steps: 10 });
+  await page.waitForTimeout(500);
+  expect(await shot()).not.toBe(before);
+});

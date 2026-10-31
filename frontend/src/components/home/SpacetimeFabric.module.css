@@ -1,8 +1,10 @@
+/* Fixed behind the whole page: the fabric moves with scrolling rather than scrolling away. */
 .canvas {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
   display: block;
   pointer-events: none;
 }
