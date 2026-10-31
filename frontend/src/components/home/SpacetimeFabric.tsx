@@ -110,8 +110,8 @@ export function SpacetimeFabric() {
       const fade = Math.max(0.32, 1 - sp * 0.55);
 
       // Stars at three depths: scroll and the pointer move the near ones more.
-      const px = pointer.lean * 22;
-      const py = pointer.tilt * 14;
+      const px = pointer.lean * 10;
+      const py = pointer.tilt * 6;
       ctx.fillStyle = "rgb(243, 238, 249)";
       for (const s of stars) {
         const k = 0.15 + s.layer * 0.85;
@@ -149,7 +149,7 @@ export function SpacetimeFabric() {
       // stream toward you) and pitches the view toward the horizon; the pointer leans it.
       const horizon = h * (0.36 - Math.min(0.2, sp * 0.12)) + py;
       const flow = (scroll.y * 0.0016 + (reduce ? 0 : t * 0.000015)) % (1 / ROWS);
-      const lean = pointer.lean * 0.2;
+      const lean = pointer.lean * 0.08;
       const project = (u: number, v: number) => {
         const depth = 0.3 + 0.7 * v;
         return {
@@ -171,7 +171,7 @@ export function SpacetimeFabric() {
         return { x: star.x + Math.cos(a) * orbitR * p.r * 1.35, y: star.y + Math.sin(a) * orbitR * p.r * 0.42, mass: p.mass, p };
       });
       const wells: Well[] = [{ x: star.x, y: star.y, mass: 1.0 }, ...planets];
-      if (pointer.strength > 0.01) wells.push({ x: pointer.x, y: pointer.y, mass: 1.9 * pointer.strength });
+      if (pointer.strength > 0.01) wells.push({ x: pointer.x, y: pointer.y, mass: 0.7 * pointer.strength });
 
       const reach = Math.min(w, h) * 0.32;
       const warp = (p: { x: number; y: number; depth: number }): Pt => {
@@ -276,7 +276,7 @@ export function SpacetimeFabric() {
 
       if (pointer.strength > 0.01) {
         const glow = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 70);
-        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.45 * pointer.strength).toFixed(3)})`);
+        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.25 * pointer.strength).toFixed(3)})`);
         glow.addColorStop(1, "rgba(255, 138, 76, 0)");
         ctx.fillStyle = glow;
         ctx.beginPath();
