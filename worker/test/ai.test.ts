@@ -68,11 +68,12 @@ describe("AI helpers", () => {
     }
   });
 
-  it("grounds numbers only in cited paths", () => {
+  it("accepts only numbers that are in the report, however loosely the model cites them", () => {
     expect(grounded("moves 3 arcseconds per hour", ["motion.rate_arcsec_per_hr"], sim)).toBe(true);
-    expect(grounded("moves 4 arcseconds per hour", ["motion.rate_arcsec_per_hr"], sim)).toBe(false);
-    expect(grounded("moves 3 arcseconds per hour", [], sim)).toBe(false);
-    expect(grounded("moves 3", ["motion.no_such_field"], sim)).toBe(false);
+    expect(grounded("moves 3 arcseconds per hour", [], sim)).toBe(true);
+    expect(grounded("moves 3", ["motion.no_such_field"], sim)).toBe(true);
+    expect(grounded("moves 987654 arcseconds per hour", ["motion.rate_arcsec_per_hr"], sim)).toBe(false);
+    expect(grounded("it is 123456.7 AU away", [], sim)).toBe(false);
   });
 
   it("facts keep the report's JSON paths", () => {
@@ -112,7 +113,7 @@ describe("GET /api/candidates/:id/writeup", () => {
     ["an invented number", { ...goodWriteup, paragraphs: ["It moves 7 arcseconds per hour.", "b", "c"] }],
     ["a discovery claim", { ...goodWriteup, verdict: "We discovered a new planet." }],
     ["a Planet X claim", { ...goodWriteup, paragraphs: ["This could be Planet X.", "b", "c"] }],
-    ["an unresolvable citation", { ...goodWriteup, grounded_fields: ["motion.made_up"] }],
+    ["an invented number", { ...goodWriteup, verdict: "It is 987654 AU away." }],
     ["the wrong shape", { verdict: "x", paragraphs: ["only one"], grounded_fields: [] }],
     ["non-JSON text", "Sure! Here is a write-up about the object."],
     ["a model error", new Error("capacity")],

@@ -9,7 +9,9 @@ H = 1 / 24
 
 
 def epochs(*specs):
-    return [EpochInfo(f"e{i:02d}", 60000 + t * H, det, lam) for i, (t, det, lam) in enumerate(specs, 1)]
+    return [
+        EpochInfo(f"e{i:02d}", 60000 + t * H, det, lam) for i, (t, det, lam) in enumerate(specs, 1)
+    ]
 
 
 def test_never_offers_pairs_from_the_same_burst():

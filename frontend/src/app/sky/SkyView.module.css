@@ -249,3 +249,20 @@
 .mapPlaceholder {
   aspect-ratio: 2 / 1.45;
 }
+
+.swEmpty,
+.swFailed {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.swEmpty {
+  background: color-mix(in srgb, var(--cool) 55%, transparent);
+}
+
+.swFailed {
+  border: 1.5px solid var(--warning);
+}

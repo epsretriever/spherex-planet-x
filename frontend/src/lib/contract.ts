@@ -544,7 +544,12 @@ export interface SurveyTile {
   ecliptic_lon_deg: number;
   ecliptic_lat_deg: number;
   size_deg: number;
-  status: "processed" | "pending" | "no_data";
+  /** processed: searched, found a mover (field page); empty: searched, nothing passed vetting;
+   *  failed: the last search failed (see detail); pending: not searched yet; no_data: no repeat visits. */
+  status: "processed" | "empty" | "failed" | "pending" | "no_data";
+  /** Why the last search failed, for failed tiles. */
+  detail?: string | null;
+  m50_study_id?: string | null;
   n_epochs: number;
   n_visits: number;
   first_time_utc: string | null;

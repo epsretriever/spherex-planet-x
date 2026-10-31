@@ -14,6 +14,10 @@ export function facts(s: Subject): Record<string, unknown> {
   const k = s.known_object;
   const out: Record<string, unknown> = {
     classification: s.classification,
+    // "unmatched" before the JPL check has run means "not checked yet", not "unexplained".
+    ...(!k.checked && s.classification === "unmatched"
+      ? { catalog_status: "not yet checked against JPL's catalog; do not call it unexplained or unmatched" }
+      : {}),
     label_plain: s.label_plain,
     summary_plain: s.summary_plain,
     motion: s.motion,

@@ -17,9 +17,11 @@ import styles from "./SkyView.module.css";
 const SKY_DEG2 = 41252.96;
 
 const STATUS: Record<SurveyTile["status"], string> = {
-  processed: "Searched",
+  processed: "Moving objects",
+  empty: "Searched, nothing found",
+  failed: "Search failed",
   pending: "Waiting",
-  no_data: "No SPHEREx data",
+  no_data: "No repeat visits",
 };
 
 function percent(area: number): string {
@@ -71,6 +73,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
   const p9 = hasSourcedRegion(survey.planet_nine) ? survey.planet_nine : null;
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
   const statuses = new Set(tiles.map((t) => t.status));
+  const count = (st: SurveyTile["status"]) => tiles.filter((t) => t.status === st).length.toLocaleString("en-US");
   const t = survey.totals;
   // Tiles with moving objects first, then the rest by longitude.
   const rows = [...tiles].sort((a, b) => Number(b.n_candidates > 0) - Number(a.n_candidates > 0));
@@ -110,11 +113,22 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
         <figcaption className={styles.legend}>
           <ul>
             <li>
-              <span className={styles.swTile} aria-hidden="true" /> Tile we searched{anyDepth ? ", coloured by depth" : ""} (select to open it)
+              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}){anyDepth ? ", coloured by depth" : ""}: select
+              one to open it
             </li>
+            {statuses.has("empty") && (
+              <li>
+                <span className={styles.swEmpty} aria-hidden="true" /> Searched, nothing found ({count("empty")})
+              </li>
+            )}
+            {statuses.has("failed") && (
+              <li>
+                <span className={styles.swFailed} aria-hidden="true" /> Search failed, will be retried ({count("failed")})
+              </li>
+            )}
             {statuses.has("pending") && (
               <li>
-                <span className={styles.swPending} aria-hidden="true" /> Waiting to be searched
+                <span className={styles.swPending} aria-hidden="true" /> Waiting to be searched ({count("pending")})
               </li>
             )}
             <li>
@@ -200,8 +214,9 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
                   </th>
                   <td>
                     <span className={styles.status} data-status={tile.status}>
-                      {STATUS[tile.status]}
+                      {STATUS[tile.status] ?? tile.status}
                     </span>
+                    {tile.status === "failed" && tile.detail && <span className={`mono ${styles.tileId}`}>{tile.detail}</span>}
                   </td>
                   <td className="mono">
                     {fmt(tile.center.ra_deg, 2)}°, {fmt(tile.center.dec_deg, 2)}°

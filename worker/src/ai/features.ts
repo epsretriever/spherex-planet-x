@@ -36,11 +36,30 @@ export interface AiContext {
 const MAX_PARAGRAPH = 700;
 const MAX_ANSWER = 900;
 
-/** Does every cited path resolve, and does every number in `text` match a cited value? */
+/** Every leaf path in `doc` (dot notation, [i] for arrays), for numbers and digit-bearing strings. */
+function leafPaths(doc: unknown, prefix = "", out: string[] = [], depth = 0): string[] {
+  if (depth > 6 || out.length > 2000) return out;
+  if (typeof doc === "number" || (typeof doc === "string" && /\d/.test(doc))) {
+    if (prefix) out.push(prefix);
+  } else if (Array.isArray(doc)) {
+    doc.forEach((v, i) => leafPaths(v, `${prefix}[${i}]`, out, depth + 1));
+  } else if (doc && typeof doc === "object") {
+    for (const [k, v] of Object.entries(doc)) leafPaths(v, prefix ? `${prefix}.${k}` : k, out, depth + 1);
+  }
+  return out;
+}
+
+/**
+ * Is every number in `text` a value from the report? The model's own citations are tried first;
+ * if they are incomplete (models often cite loosely), every value in the report is accepted,
+ * which still rejects any number that is not in the data. Strings with digits (designations,
+ * dates, field names) are removed before numbers are checked.
+ */
 export function grounded(text: string, paths: string[], doc: unknown): boolean {
-  if (paths.length === 0) return !/\d/.test(text);
-  if (paths.some((p) => resolvePath(doc, p) === undefined)) return false;
-  return checkNumbers(text, paths, doc);
+  const cited = paths.filter((p) => resolvePath(doc, p) !== undefined);
+  if (cited.length > 0 && checkNumbers(text, cited, doc)) return true;
+  if (!/\d/.test(text)) return true;
+  return checkNumbers(text, leafPaths(doc), doc);
 }
 
 // --------------------------------------------------------------------------- write-up
@@ -75,8 +94,12 @@ export async function writeup(ctx: AiContext, kind: AiSubjectKind, id: string, s
   const key = `ai:v${PROMPT_VERSION}:writeup:${await sha256(`${ctx.model}\n${input}`)}`;
   const hit = await cacheGet<AiWriteup>(ctx.deps, key);
   if (hit) return { ...hit, cached: true };
-  const fallback = () => templateWriteup(kind, id, s, now);
-  if (!ctx.ai || !(await takeQuota(ctx.db, "writeup", ctx.deps.now()))) return fallback();
+  const fallback = (reason: string) => {
+    console.warn(`writeup ${id}: template (${reason})`);
+    return { ...templateWriteup(kind, id, s, now), fallback_reason: reason };
+  };
+  if (!ctx.ai) return fallback("no_ai_binding");
+  if (!(await takeQuota(ctx.db, "writeup", ctx.deps.now()))) return fallback("daily_cap");
   const out = await runJson(ctx.deps, {
     ai: ctx.ai,
     model: ctx.model,
@@ -89,14 +112,19 @@ export async function writeup(ctx: AiContext, kind: AiSubjectKind, id: string, s
   const paragraphs = strings(out?.paragraphs).map((p) => p.trim()).filter(Boolean);
   const paths = strings(out?.grounded_fields);
   const text = [verdict, ...paragraphs].join(" ");
-  const ok =
-    verdict.length > 0 &&
-    verdict.length <= 300 &&
-    paragraphs.length === 3 &&
-    paragraphs.every((p) => p.length <= MAX_PARAGRAPH) &&
-    !FORBIDDEN.test(text) &&
-    grounded(text, paths, s);
-  if (!ok) return fallback();
+  const problem = !out
+    ? "model_unavailable"
+    : verdict.length === 0 || verdict.length > 300
+      ? "bad_verdict"
+      : paragraphs.length !== 3 || paragraphs.some((p) => p.length > MAX_PARAGRAPH)
+        ? `bad_paragraphs_${paragraphs.length}`
+        : FORBIDDEN.test(text) ||
+            (!s.known_object.checked && /\bunexplained\b|(does not|doesn't|did not|didn't) match/i.test(text))
+          ? "forbidden_claim"
+          : !grounded(text, paths, s)
+            ? "ungrounded_numbers"
+            : null;
+  if (problem) return fallback(problem);
   const result: AiWriteup = {
     schema_version: SCHEMA_VERSION,
     pipeline_version: s.pipeline_version,
