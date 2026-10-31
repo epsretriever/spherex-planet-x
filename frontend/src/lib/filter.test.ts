@@ -103,6 +103,8 @@ describe("applyFilter", () => {
     expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "rate" }))).toEqual(["a", "b", "d"]);
     expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "newest" }))).toEqual(["b", "d", "a"]);
     expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["a", "b", "d"]);
+    const scored = LIST.map((c) => ({ ...c, anomaly_score: c.candidate_id === "d" ? 0.9 : c.candidate_id === "b" ? 0.4 : null }));
+    expect(ids(applyFilter(scored, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["d", "b", "a"]);
   });
 });
 
@@ -113,6 +115,10 @@ describe("filterChips", () => {
     expect(chips.map((x) => x.label)).toEqual(["Unexplained", "Slower than 5″/hr", "In Field f1", "Most unusual: not ranked yet, sorted by score"]);
     expect(chips[1]!.without.rate_max_arcsec_per_hr).toBeNull();
     expect(chips[0]!.without.classification).toEqual([]);
+  });
+
+  it("names the unusual sort once anomaly scores exist", () => {
+    expect(filterChips({ ...EMPTY_FILTER, sort: "unusual" }, undefined, true).map((x) => x.label)).toEqual(["Sorted: most unusual"]);
   });
 
   it("is empty for the default filter", () => {

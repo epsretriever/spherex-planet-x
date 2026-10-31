@@ -40,6 +40,31 @@ export function ScoresPanel({ scores }: { scores: Scores }) {
         </div>
       </dl>
       {scores.definition && <p className={`mono ${styles.note}`}>{scores.definition}</p>}
+      {typeof scores.real_bogus === "number" && Number.isFinite(scores.real_bogus) && (
+        <div className={styles.model} data-testid="model-score">
+          <h3 className={styles.modelTitle}>
+            <span aria-hidden="true">✦</span> Model score
+          </h3>
+          <p className={styles.modelValue}>
+            <span className="mono">{Math.round(Math.max(0, Math.min(1, scores.real_bogus)) * 100)}%</span> chance this is a real object, not a
+            glitch
+          </p>
+          <div className={styles.scoreBar} aria-hidden="true">
+            <div className={styles.modelFill} style={{ width: `${Math.max(0, Math.min(1, scores.real_bogus)) * 100}%` }} />
+          </div>
+          <p className={styles.note}>
+            From a small neural network trained on SPHEREx stamps: planted objects and JPL-confirmed asteroids as real, rejected glitches
+            as bogus. It sits alongside the rule-based score above, which stays the explainable baseline. Each sighting&apos;s stamp can
+            show where the model looked.
+            {scores.real_bogus_model && (
+              <>
+                {" "}
+                Model <span className="mono">{scores.real_bogus_model}</span>.
+              </>
+            )}
+          </p>
+        </div>
+      )}
     </Panel>
   );
 }

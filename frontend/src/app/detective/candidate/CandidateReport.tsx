@@ -18,11 +18,13 @@ import { InjectionPanel } from "@/components/report/InjectionPanel";
 import { KnownObjectPanel } from "@/components/report/KnownObjectPanel";
 import { MeasurementTable } from "@/components/report/MeasurementTable";
 import { MotionPanel } from "@/components/report/MotionPanel";
+import { NeoPanel } from "@/components/report/NeoPanel";
 import { Panel } from "@/components/report/Panel";
 import { ProvenancePanel } from "@/components/report/ProvenancePanel";
 import { ScoresPanel } from "@/components/report/ScoresPanel";
 import { SpectrumPanel } from "@/components/report/SpectrumPanel";
 import { StampStrip } from "@/components/report/StampStrip";
+import { UnusualPanel } from "@/components/report/UnusualPanel";
 import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { SourceDrawer, type SourceSubject } from "@/components/SourceDrawer";
 import { USE_FIXTURES, getCandidate, getCandidates, getWriteup } from "@/lib/api";
@@ -120,8 +122,10 @@ const SECTIONS = [
   ["measurements", "Measurements"],
   ["motion", "Motion"],
   ["known", "Known object"],
+  ["neo", "Orbit odds"],
   ["errors", "Error sources"],
   ["quality", "Quality"],
+  ["unusual", "Unusual"],
   ["spectrum", "Spectrum"],
   ["injection", "Simulated"],
   ["provenance", "Provenance"],
@@ -155,6 +159,8 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
   const present = new Set<string>(["evidence", "explanation", "measurements", "motion", "known", "errors", "quality", "provenance"]);
   if (c.spectrum?.points.length) present.add("spectrum");
   if (c.injection) present.add("injection");
+  if (c.neo_likelihood) present.add("neo");
+  if (c.anomaly) present.add("unusual");
   // Ask appears once the write-up answered, which shows the AI endpoints are live.
   if (aiReady) present.add("ask");
 
@@ -233,8 +239,10 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
           <MotionPanel motion={c.motion} detections={c.detections} />
         </WhenVisible>
         <KnownObjectPanel known={c.known_object} detections={c.detections} />
+        {c.neo_likelihood && <NeoPanel neo={c.neo_likelihood} />}
         <ErrorSourcesPanel errorSources={c.error_sources} vetting={c.vetting} />
         <ScoresPanel scores={c.scores} />
+        {c.anomaly && <UnusualPanel anomaly={c.anomaly} />}
         {c.spectrum && c.spectrum.points.length > 0 && (
           <WhenVisible minHeight={400}>
             <SpectrumPanel spectrum={c.spectrum} />

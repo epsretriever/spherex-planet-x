@@ -43,7 +43,8 @@ test("object with an orbit: visits, 3D orbit with uncertainty, elements, JPL che
 
   const distance = page.getByRole("region", { name: "How far away" });
   await expect(distance.getByText("Main asteroid belt")).toBeVisible();
-  await expect(distance.getByRole("img", { name: /Distance estimate 2\.60 AU, range 2\.10 to 3\.40 AU/ })).toBeVisible();
+  await expect(distance.getByRole("img", { name: /Distance estimate 2\.55 AU, range 2\.31 to 2\.92 AU/ })).toBeVisible();
+  await expect(distance.getByText(/It comes from the orbit/)).toBeVisible();
 
   const history = page.getByRole("region", { name: "History" });
   await expect(history).toContainText("Synthetic: linked 3 detections over 3 visits");

@@ -13,9 +13,11 @@ import { OrbitPanel } from "@/components/orbit/OrbitPanel";
 import { QualityMeter } from "@/components/QualityMeter";
 import { KnownObjectPanel } from "@/components/report/KnownObjectPanel";
 import { MotionPanel } from "@/components/report/MotionPanel";
+import { NeoPanel } from "@/components/report/NeoPanel";
 import { Panel } from "@/components/report/Panel";
 import { ScoresPanel } from "@/components/report/ScoresPanel";
 import { SpectrumPanel } from "@/components/report/SpectrumPanel";
+import { UnusualPanel } from "@/components/report/UnusualPanel";
 import { ReportSkeleton } from "@/components/Skeletons";
 import { WhenVisible } from "@/components/WhenVisible";
 import { getFields, getObject } from "@/lib/api";
@@ -110,9 +112,11 @@ function ObjectPage({ o, seed }: { o: ObjectDetail; seed?: NameSeed }) {
     ["visits", "Visits"],
     ["orbit", "Orbit"],
     ["distance", "Distance"],
+    ...(o.neo_likelihood ? [["neo", "Orbit odds"]] : []),
     ["motion", "Motion"],
     ["known", "Known object"],
     ["quality", "Quality"],
+    ...(o.anomaly ? [["unusual", "Unusual"]] : []),
     ...(o.spectrum?.points.length ? [["spectrum", "Spectrum"]] : []),
     ["history", "History"],
   ] as [string, string][];
@@ -176,12 +180,18 @@ function ObjectPage({ o, seed }: { o: ObjectDetail; seed?: NameSeed }) {
         <div className={styles.sections}>
           <VisitsPanel object={o} fieldName={fieldName} />
           <OrbitPanel object={o} label={name.title} />
-          <DistancePanel distanceClass={o.distance_class} estimate={o.motion.distance_au_estimate} />
+          <DistancePanel
+            distanceClass={o.distance_class}
+            estimate={o.orbit?.helio_distance_au ?? o.motion.distance_au_estimate}
+            from={o.orbit?.helio_distance_au ? "orbit" : "parallax"}
+          />
+          {o.neo_likelihood && <NeoPanel neo={o.neo_likelihood} />}
           <WhenVisible minHeight={700}>
             <MotionPanel motion={o.motion} detections={o.detections} />
           </WhenVisible>
           <KnownObjectPanel known={o.known_object} detections={o.detections} />
           <ScoresPanel scores={o.scores} />
+          {o.anomaly && <UnusualPanel anomaly={o.anomaly} />}
           {o.spectrum && o.spectrum.points.length > 0 && (
             <WhenVisible minHeight={400}>
               <SpectrumPanel spectrum={o.spectrum} />

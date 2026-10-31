@@ -174,7 +174,7 @@ export interface FieldDetail extends Versioned {
   movers: Mover[];
 }
 
-export interface CandidateSummary {
+export interface CandidateSummary extends MlSummary {
   candidate_id: string;
   field_id: string;
   classification: Classification;
@@ -224,6 +224,10 @@ export interface Detection extends WavelengthFields {
   psf_fit_reduced_chi2: number | null;
   stamp: ImageRef;
   source: Source;
+  /** PROPOSED (row 7): the CNN's P(real) for this stamp. */
+  real_bogus?: number | null;
+  /** PROPOSED (row 7): occlusion saliency map for this stamp ("the model looked here"). */
+  saliency?: ImageRef | null;
 }
 
 export type MotionModel = "linear" | "parallax" | "none";
@@ -277,6 +281,36 @@ export interface Scores {
   quality_level: QualityLevel;
   method?: "rule_based_v1";
   definition?: string;
+  /** PROPOSED (row 7): the real-or-bogus CNN's P(real), 0–1, alongside the rule-based score. */
+  real_bogus?: number | null;
+  real_bogus_model?: string | null;
+}
+
+/** PROPOSED (row 7): anomaly ranking (Isolation Forest over object features). */
+export interface Anomaly {
+  /** 0–1, higher is more unusual. */
+  score: number;
+  /** 1 is the most unusual published object. */
+  rank: number;
+  reason_plain: string;
+  features: { name: string; value: number | null; typical: number | null; unit: string; label_plain: string }[];
+}
+
+/** PROPOSED (row 7): Digest2-style orbit-class probabilities from motion and parallax. */
+export interface NeoLikelihood {
+  neo: number;
+  main_belt: number;
+  outer: number;
+  method: string;
+  validated_on: { n: number; accuracy: number } | null;
+}
+
+/** PROPOSED (row 7) summary fields, shared by candidate and object summaries. */
+export interface MlSummary {
+  real_bogus?: number | null;
+  anomaly_score?: number | null;
+  anomaly_reason?: string | null;
+  neo_probability?: number | null;
 }
 
 export interface VettingCheck {
@@ -354,6 +388,8 @@ export interface CandidateDetail extends Versioned {
   injection?: InjectionInfo | null;
   provenance: { run_id: string; generated_utc: string; parameters: Record<string, number | string | boolean> };
   disclaimer?: string;
+  anomaly?: Anomaly | null;
+  neo_likelihood?: NeoLikelihood | null;
 }
 
 export interface RecoveryCell {
@@ -395,7 +431,7 @@ export interface InjectionStudy extends Versioned {
 export type DistanceClass = "neo" | "main_belt" | "jupiter_trojan" | "centaur" | "tno" | "unknown";
 export type OrbitStatus = "none" | "preliminary" | "refined";
 
-export interface ObjectSummary {
+export interface ObjectSummary extends MlSummary {
   object_id: string;
   classification: Classification;
   label_plain: string;
@@ -480,6 +516,8 @@ export interface ObjectDetail extends Versioned {
   disclaimer?: string;
   /** Other objects with the same JPL designation. */
   also_seen_as?: string[];
+  anomaly?: Anomaly | null;
+  neo_likelihood?: NeoLikelihood | null;
 }
 
 export interface ObjectPrediction extends Versioned {
