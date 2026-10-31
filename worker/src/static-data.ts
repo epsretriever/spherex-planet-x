@@ -1,3 +1,4 @@
+import type { OrbitalElements } from "./contract";
 import { ApiError } from "./errors";
 import type { Env } from "./env";
 
@@ -29,4 +30,13 @@ export async function requireStaticJson<T>(env: Env, path: string, what: string)
   const data = await readStaticJson<T>(env, path);
   if (data === null) throw new ApiError(404, `${what} not found`);
   return data;
+}
+
+/**
+ * The orbit of the object a candidate belongs to (objects/obj-<candidate_id>.json), if it has
+ * one. Used to compare it with JPL's when JPL identifies the candidate.
+ */
+export async function orbitOfCandidate(env: Env, candidateId: string): Promise<OrbitalElements | null> {
+  const obj = await readStaticJson<{ orbit?: OrbitalElements | null }>(env, `objects/obj-${candidateId}.json`).catch(() => null);
+  return obj?.orbit ?? null;
 }

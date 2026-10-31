@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "CloneElements": {
+      "additionalProperties": false,
+      "properties": {
+        "a_au": {
+          "title": "A Au",
+          "type": "number"
+        },
+        "e": {
+          "title": "E",
+          "type": "number"
+        },
+        "i_deg": {
+          "title": "I Deg",
+          "type": "number"
+        },
+        "node_deg": {
+          "title": "Node Deg",
+          "type": "number"
+        },
+        "peri_deg": {
+          "title": "Peri Deg",
+          "type": "number"
+        },
+        "mean_anomaly_deg": {
+          "title": "Mean Anomaly Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "a_au",
+        "e",
+        "i_deg",
+        "node_deg",
+        "peri_deg",
+        "mean_anomaly_deg"
+      ],
+      "title": "CloneElements",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Sampled orbits consistent with the detections (the uncertainty cloud).",
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "object_id": {
+      "title": "Object Id",
+      "type": "string"
+    },
+    "epoch_mjd": {
+      "description": "Osculation epoch, MJD (TDB)",
+      "title": "Epoch Mjd",
+      "type": "number"
+    },
+    "frame": {
+      "title": "Frame",
+      "type": "string"
+    },
+    "clones": {
+      "items": {
+        "$ref": "#/$defs/CloneElements"
+      },
+      "title": "Clones",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "object_id",
+    "epoch_mjd",
+    "frame",
+    "clones"
+  ],
+  "title": "OrbitClones",
+  "type": "object"
+}

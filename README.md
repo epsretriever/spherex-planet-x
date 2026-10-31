@@ -120,6 +120,18 @@ SPHEREx data: NASA / JPL-Caltech / IPAC, via the NASA/IPAC Infrared Science Arch
 
 The website lives in [`frontend/`](frontend/): a Next.js static export served by the Cloudflare Worker. See [`frontend/README.md`](frontend/README.md) for setup, scripts and how it talks to the API.
 
+## Orbits
+
+Every moving object gets an orbit (`pipeline/spherex_px/science/orbit.py`). A SPHEREx track spans hours to a couple of days, too short for a unique orbit, so the pipeline maps all the orbits that fit. Statistical ranging (Virtanen et al. 2001) samples the object's distance at its first and last detections, and each sample gives an orbit through those two points. Every orbit is then checked against all the detections, using two-body motion, light time and SPHEREx's real position in space. Least squares refines the best one, and 100 orbit clones carry the uncertainty.
+
+Each object page shows:
+- the distance from the Sun (median and 5–95% range of the clones), which is the robust result;
+- a distance class, named only when most clones agree;
+- the 3D uncertainty cloud;
+- a 60-day prediction whose note says plainly how far it can be trusted.
+
+The method is tested on simulated asteroids observed at real SPHEREx times and positions (`spherex-px orbit-validation`, served at `/api/validation/orbits`). For orbits JPL already knows, the Worker compares ours with JPL Horizons (`/api/validation/jpl-orbits`).
+
 ## Survey
 
 Beyond the three showcase fields, `.github/workflows/survey.yml` searches SPHEREx week segments tile by tile along the ecliptic. It runs on GitHub's machines (they read the images straight from the public `nasa-irsa-spherex` S3 bucket) in 15 parallel shards, keeps every 0.3° tile where the pipeline found a moving object that passed vetting, and commits the result to `main`. Cloudflare then redeploys, and the Worker's cron checks each new candidate against JPL. It runs weekly, on every pipeline change, and on demand (Actions → Survey → Run workflow, where you can list more segments).

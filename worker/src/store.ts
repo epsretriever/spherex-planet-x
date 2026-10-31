@@ -12,10 +12,11 @@
  * copied into D1, until they expire. Without D1, results are kept in KV; without either (local
  * tools), in the per-datacenter Cache API.
  */
-import type { CandidateDetail } from "./contract";
+import type { CandidateDetail, JplOrbitComparison, OrbitalElements } from "./contract";
 import { ensureSchema } from "./db";
 import type { Deps } from "./env";
 import { type Enrichment, cachedEnrichment, enrichKnownObject, storeEnrichment } from "./enrich";
+import { compareOrbit } from "./orbit-compare";
 
 export interface EnrichmentRecord {
   v: 1;
@@ -23,6 +24,8 @@ export interface EnrichmentRecord {
   status: "checked" | "failed";
   enrichment: Enrichment;
   attempted_utc: string;
+  /** Our orbit versus JPL's, when JPL identified the object and it has an orbit (orbit-compare.ts). */
+  orbit_comparison?: JplOrbitComparison | null;
 }
 
 type CandRef = { candidate_id: string; pipeline_version: string };
@@ -143,9 +146,20 @@ export async function readRecords(
   return out;
 }
 
-export async function writeRecord(deps: Deps, c: CandRef, e: Enrichment): Promise<void> {
+export async function writeRecord(
+  deps: Deps,
+  c: CandRef,
+  e: Enrichment,
+  orbitComparison: JplOrbitComparison | null = null,
+): Promise<void> {
   const status = e.known_object.checked ? "checked" : "failed";
-  const rec: EnrichmentRecord = { v: 1, status, enrichment: e, attempted_utc: deps.now().toISOString() };
+  const rec: EnrichmentRecord = {
+    v: 1,
+    status,
+    enrichment: e,
+    attempted_utc: deps.now().toISOString(),
+    ...(orbitComparison ? { orbit_comparison: orbitComparison } : {}),
+  };
   const db = await d1(deps);
   if (db) {
     try {
@@ -192,12 +206,27 @@ async function takeLock(deps: Deps, c: CandRef): Promise<boolean> {
   }
 }
 
-/** Run the JPL lookup for one candidate and store the result. Returns null if another run holds the lock. */
-export async function refreshRecord(deps: Deps, cand: CandidateDetail): Promise<Enrichment | null> {
+/**
+ * Run the JPL lookup for one candidate and store the result. When JPL identifies it and its
+ * object has an orbit, also compare that orbit with JPL's. Returns null if another run holds
+ * the lock.
+ */
+export async function refreshRecord(
+  deps: Deps,
+  cand: CandidateDetail,
+  orbit: OrbitalElements | null = null,
+): Promise<Enrichment | null> {
   if (cand.classification === "injected") return null;
   if (!(await takeLock(deps, cand))) return null;
   const e = await enrichKnownObject(deps, cand);
-  await writeRecord(deps, cand, e);
+  let comparison: JplOrbitComparison | null = null;
+  if (e.matched && e.known_object.designation && orbit) {
+    comparison = await compareOrbit(deps, e.known_object.designation, orbit).catch((err) => {
+      console.error(`orbit comparison for ${cand.candidate_id}:`, err);
+      return null;
+    });
+  }
+  await writeRecord(deps, cand, e, comparison);
   return e;
 }
 

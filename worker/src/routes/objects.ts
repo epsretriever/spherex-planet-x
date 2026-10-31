@@ -4,6 +4,7 @@ import type { Deps, Env } from "../env";
 import type {
   CandidateDetail,
   Classification,
+  JplOrbitComparison,
   ObjectDetail,
   ObjectList,
   ObjectPrediction,
@@ -132,17 +133,19 @@ export async function loadObject(
   let matched = false;
   let cacheable = true;
   let pending = false;
+  let comparison: JplOrbitComparison | null = null;
   if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
     const rec = await readRecord(deps, refOf(obj, obj.pipeline_version));
     if (rec) {
       known = { ...rec.enrichment.known_object, enrichment: "cached" };
       matched = rec.enrichment.matched;
       cacheable = rec.status === "checked";
+      comparison = rec.orbit_comparison ?? null;
     } else {
       const candId = obj.candidate_ids[0]!;
       deps.waitUntil(
         requireStaticJson<CandidateDetail>(env, `candidates/${candId}.json`, "candidate")
-          .then((cand) => refreshRecord(deps, cand))
+          .then((cand) => refreshRecord(deps, cand, obj.orbit))
           .catch((err) => console.error(`background JPL lookup for ${candId}:`, err)),
       );
       known = {
@@ -158,6 +161,7 @@ export async function loadObject(
   }
   const classification: Classification = matched && obj.classification !== "injected" ? "known_object" : obj.classification;
   const next: ObjectDetail = { ...obj, classification, known_object: known };
+  if (next.orbit && comparison) next.orbit = { ...next.orbit, jpl_comparison: comparison };
   next.label_plain = labelPlain(next);
   next.summary_plain = summaryPlain(next);
   next.explanation = buildExplanation(next, now);

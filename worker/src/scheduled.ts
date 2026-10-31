@@ -6,14 +6,15 @@
 import type { CandidateDetail, CandidateList } from "./contract";
 import type { Deps, Env } from "./env";
 import { MAX_SBIDENT_QUERIES } from "./enrich";
-import { readStaticJson } from "./static-data";
+import { ORBIT_COMPARE_CALLS } from "./orbit-compare";
+import { orbitOfCandidate, readStaticJson } from "./static-data";
 import { isStale, readRecord, readRecords, refreshRecord } from "./store";
 
 /** Records copied from KV into D1 per run at most (KV allows 1,000 operations per invocation). */
 const MAX_SINGLE_READS = 300;
 
-/** Upstream calls one candidate can need: SBIdent per visit plus up to 3 Horizons lookups. */
-export const CALLS_PER_CANDIDATE = MAX_SBIDENT_QUERIES + 3;
+/** Upstream calls one candidate can need: SBIdent per visit, up to 3 Horizons lookups, and the orbit comparison. */
+export const CALLS_PER_CANDIDATE = MAX_SBIDENT_QUERIES + 3 + ORBIT_COMPARE_CALLS;
 
 export interface ScheduledReport {
   considered: number;
@@ -56,7 +57,7 @@ export async function refreshStale(env: Env, deps: Deps): Promise<ScheduledRepor
     try {
       const cand = await readStaticJson<CandidateDetail>(env, `candidates/${t.id}.json`);
       if (!cand) continue;
-      const e = await refreshRecord(deps, cand);
+      const e = await refreshRecord(deps, cand, await orbitOfCandidate(env, t.id));
       if (e) report.refreshed.push(t.id);
     } catch (err) {
       console.error(`scheduled JPL lookup for ${t.id}:`, err);
