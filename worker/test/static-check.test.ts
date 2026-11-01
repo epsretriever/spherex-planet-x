@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { CandidateDetail } from "../src/contract";
+import type { CandidateDetail, CandidateList } from "../src/contract";
+import { notCheckedKnownObject } from "../src/enrich";
+import { writeRecord } from "../src/store";
 import { candidate, list } from "./factory";
 import { json, makeClient } from "./helpers";
 
@@ -29,5 +31,17 @@ describe("results checked when the data was published", () => {
     expect(body.classification).toBe("known_object");
     expect(body.known_object).toMatchObject({ checked: true, enrichment: "static", designation: "5193 Tanakawataru (1992 ET)" });
     expect(r.headers.get("cache-control")).toContain("max-age");
+  });
+
+  it("are not hidden by a later lookup that JPL did not answer", async () => {
+    const c = makeClient({ files });
+    const failed = { ...notCheckedKnownObject("JPL SBIdent timed out.", checked.known_object), enrichment: "live" as const };
+    await writeRecord(c.deps, checked, { known_object: failed, matched: false });
+    const detail = (await json(await c.get("/api/candidates/tile-c01"))) as CandidateDetail;
+    expect(detail.known_object).toMatchObject({ checked: true, matched: true, designation: "5193 Tanakawataru (1992 ET)" });
+    const listed = (await json(await c.get("/api/candidates"))) as CandidateList;
+    expect(listed.candidates[0]).toMatchObject({ known_object_checked: true, known_object_matched: true });
+    await c.settle();
+    expect(c.calls).toHaveLength(0);
   });
 });

@@ -3,7 +3,7 @@ import type { AppEnv } from "../app";
 import type { JplOrbitComparison, ObjectList } from "../contract";
 import { ApiError } from "../errors";
 import { requireStaticJson } from "../static-data";
-import { readRecords } from "../store";
+import { readRecords, usableRecord } from "../store";
 
 /**
  * Validation results.
@@ -39,10 +39,10 @@ validation.get("/jpl-orbits", async (c) => {
   const rows: (JplOrbitComparison & { object_id: string })[] = [];
   let identified = 0;
   for (const o of real) {
-    const rec = recs.get(o.candidate_ids[0]!);
-    if (!rec?.enrichment.matched) continue;
+    const rec = usableRecord(recs.get(o.candidate_ids[0]!), o.known_object_checked);
+    if (!(rec ? rec.enrichment.matched : o.known_object_matched)) continue;
     identified += 1;
-    if (rec.orbit_comparison) rows.push({ object_id: o.object_id, ...rec.orbit_comparison });
+    if (rec?.orbit_comparison) rows.push({ object_id: o.object_id, ...rec.orbit_comparison });
   }
   c.header("Cache-Control", "public, max-age=300");
   return c.json({

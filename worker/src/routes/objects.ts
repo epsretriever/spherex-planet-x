@@ -16,7 +16,7 @@ import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
-import { readRecord, readRecords, refreshRecord } from "../store";
+import { readRecord, readRecords, refreshRecord, usableRecord } from "../store";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
 
 export const objects = new Hono<AppEnv>();
@@ -34,7 +34,7 @@ export async function enrichedObjects(env: Env, deps: Deps): Promise<{ list: Obj
   const recs = await readRecords(deps, list.pipeline_version, real.map((s) => refOf(s, list.pipeline_version).candidate_id));
   const out = list.objects.map((s): ObjectSummary => {
     if (s.classification === "injected" || s.candidate_ids.length === 0) return s;
-    const rec = recs.get(refOf(s, list.pipeline_version).candidate_id);
+    const rec = usableRecord(recs.get(refOf(s, list.pipeline_version).candidate_id), s.known_object_checked);
     if (!rec) return s;
     const k = rec.enrichment.known_object;
     const classification: Classification = rec.enrichment.matched ? "known_object" : s.classification;
@@ -136,7 +136,7 @@ export async function loadObject(
   let pending = false;
   let comparison: JplOrbitComparison | null = null;
   if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
-    const rec = await readRecord(deps, refOf(obj, obj.pipeline_version));
+    const rec = usableRecord(await readRecord(deps, refOf(obj, obj.pipeline_version)), obj.known_object.checked);
     if (rec) {
       known = { ...rec.enrichment.known_object, enrichment: "cached" };
       matched = rec.enrichment.matched;

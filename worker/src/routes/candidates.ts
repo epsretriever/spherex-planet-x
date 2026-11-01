@@ -6,7 +6,7 @@ import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, orbitOfCandidate, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
-import { readRecord, readRecords, refreshRecord } from "../store";
+import { readRecord, readRecords, refreshRecord, usableRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
@@ -32,7 +32,7 @@ candidates.get("/", async (c) => {
   // Fold in stored JPL results (one store query; no upstream calls from the list view).
   const real = list.candidates.filter((s) => s.classification !== "injected");
   const recs = await readRecords(deps, list.pipeline_version, real.map((s) => s.candidate_id));
-  const missing = real.find((s) => !recs.has(s.candidate_id));
+  const missing = real.find((s) => !recs.has(s.candidate_id) && !s.known_object_checked);
   if (missing) {
     // Start one background lookup so the list fills in even before the cron runs.
     deps.waitUntil(
@@ -42,7 +42,7 @@ candidates.get("/", async (c) => {
     );
   }
   const enriched = list.candidates.map((s) => {
-    const rec = s.classification === "injected" ? undefined : recs.get(s.candidate_id);
+    const rec = s.classification === "injected" ? null : usableRecord(recs.get(s.candidate_id), s.known_object_checked);
     return rec ? applyToSummary(s, rec.enrichment) : s;
   });
   const filtered = enriched.filter(
@@ -87,7 +87,7 @@ export async function loadCandidate(
   if (cand.classification === "injected") {
     return { detail: applyKnownObject(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
   }
-  const rec = await readRecord(deps, cand);
+  const rec = usableRecord(await readRecord(deps, cand), cand.known_object.checked);
   if (rec) {
     const e: Enrichment = { ...rec.enrichment, known_object: { ...rec.enrichment.known_object, enrichment: "cached" } };
     return {

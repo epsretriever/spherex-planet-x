@@ -108,6 +108,20 @@ export async function readRecord(deps: Deps, c: CandRef): Promise<EnrichmentReco
 }
 
 /**
+ * The stored result to show for a candidate. A lookup that failed (JPL did not answer the
+ * Worker in time) never hides a check made when the data was published (scripts/jpl-check.ts):
+ * then the published check stands. A successful stored lookup is shown, because it is at least
+ * as recent and adds the orbit comparison for matches.
+ */
+export function usableRecord(
+  rec: EnrichmentRecord | null | undefined,
+  publishedChecked: boolean,
+): EnrichmentRecord | null {
+  if (!rec) return null;
+  return rec.status === "checked" || !publishedChecked ? rec : null;
+}
+
+/**
  * Every stored result for these candidates in one D1 query. Records still only in KV are copied
  * into D1 by the cron (scheduled.ts) and by detail views, not here, so a list costs one query
  * however long it is. Without D1, one KV (or cache) read per candidate.
