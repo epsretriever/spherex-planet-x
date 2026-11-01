@@ -10,12 +10,14 @@
 // it was (never called unmatched without a check).
 //
 //   npx vite-node scripts/jpl-check.ts -- frontend/public/data [--recheck-days 7]
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CandidateDetail } from "../worker/src/contract";
+import type { CandidateDetail, Classification, FieldDetail } from "../worker/src/contract";
+
+type Mover = { candidate_id: string; classification: Classification; label_plain: string };
 import { enrichKnownObject } from "../worker/src/enrich";
 import type { Deps } from "../worker/src/env";
-import { applyKnownObject } from "../worker/src/text";
+import { applyKnownObject, labelPlain } from "../worker/src/text";
 
 const args = process.argv.slice(2).filter((a) => a !== "--");
 const dataDir = args.find((a) => !a.startsWith("--")) ?? "frontend/public/data";
@@ -75,6 +77,7 @@ for (const f of files) {
   const k = cand.known_object;
   if (cand.classification === "injected" || (k.checked && k.query_utc && Date.parse(k.query_utc) > fresh)) {
     counts.skipped += 1;
+    if (cand.classification !== "injected") updateMover(cand); // labels written before movers were kept in step
     continue;
   }
   const t0 = Date.now();
@@ -87,10 +90,24 @@ for (const f of files) {
   }
   const next = applyKnownObject(cand, { ...e.known_object, enrichment: "static" }, e.matched, deps.now().toISOString());
   writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`);
+  updateMover(next);
   if (e.matched) counts.matched += 1;
   else counts.no_match += 1;
   const near = e.known_object.nearest ? `${e.known_object.nearest.designation} at ${e.known_object.nearest.separation_arcsec}″` : "";
   rows.push(`| ${cand.candidate_id} | ${e.matched ? "matched" : "no match"} | ${e.known_object.designation ?? near} | | ${secs} s |`);
+}
+
+/** The field's mover for this candidate carries the same label as the candidate list. */
+function updateMover(cand: CandidateDetail) {
+  const fieldPath = join(dataDir, "fields", `${cand.field_id}.json`);
+  if (!existsSync(fieldPath)) return;
+  const field = JSON.parse(readFileSync(fieldPath, "utf8")) as FieldDetail;
+  const movers = ((field as { movers?: Mover[] }).movers ?? []);
+  const m = movers.find((x) => x.candidate_id === cand.candidate_id);
+  if (!m || (m.classification === cand.classification && m.label_plain === labelPlain(cand))) return;
+  m.classification = cand.classification;
+  m.label_plain = labelPlain(cand);
+  writeFileSync(fieldPath, `${JSON.stringify(field, null, 2)}\n`);
 }
 
 console.log(
