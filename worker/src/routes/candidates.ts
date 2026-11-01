@@ -96,6 +96,14 @@ export async function loadCandidate(
       pending: false,
     };
   }
+  // Checked when the data was published (scripts/jpl-check.ts): serve that result.
+  if (cand.known_object.checked) {
+    return {
+      detail: applyKnownObject(cand, cand.known_object, cand.known_object.matched, now),
+      cacheControl: "public, max-age=300",
+      pending: false,
+    };
+  }
   // Nothing stored yet: answer now and look JPL up in the background. The client polls.
   deps.waitUntil(
     orbitOfCandidate(env, id)

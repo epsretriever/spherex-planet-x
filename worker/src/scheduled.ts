@@ -42,8 +42,9 @@ export async function refreshStale(env: Env, deps: Deps): Promise<ScheduledRepor
       rec = await readRecord(deps, { candidate_id: s.candidate_id, pipeline_version: list.pipeline_version });
     }
     if (!isStale(rec, now)) continue;
-    // Missing first, then failed, then the oldest successful result.
-    const rank = !rec ? 0 : rec.status === "failed" ? 1 : 2;
+    // Missing first, then failed, then the oldest successful result; candidates already checked
+    // when the data was published come last (a refresh adds the orbit comparison for matches).
+    const rank = !rec ? (s.known_object_checked ? 3 : 0) : rec.status === "failed" ? 1 : 2;
     const attempted = rec ? Date.parse(rec.attempted_utc) || 0 : 0;
     todo.push({ id: s.candidate_id, rank, attempted });
   }

@@ -142,6 +142,9 @@ export async function loadObject(
       matched = rec.enrichment.matched;
       cacheable = rec.status === "checked";
       comparison = rec.orbit_comparison ?? null;
+    } else if (obj.known_object.checked) {
+      // Checked when the data was published (scripts/jpl-check.ts).
+      matched = obj.known_object.matched;
     } else {
       const candId = obj.candidate_ids[0]!;
       deps.waitUntil(
