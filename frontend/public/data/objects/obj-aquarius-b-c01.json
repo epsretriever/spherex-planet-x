@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
-  "pipeline_version": "0.1.0+git.ea44bad",
-  "build_run_id": "gh-41140078928-1",
+  "pipeline_version": "0.1.0+git.a0f12ad",
+  "build_run_id": "gh-41316531565-1",
   "object_id": "obj-aquarius-b-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -2320,8 +2320,91 @@
     }
   },
   "distance_class": "main_belt",
-  "orbit_status": "none",
-  "orbit": null,
+  "orbit_status": "preliminary",
+  "orbit": {
+    "epoch_mjd": 60828.928215,
+    "a_au": 2.493,
+    "e": 0.0358,
+    "i_deg": 0.298,
+    "node_deg": 279.067,
+    "peri_deg": 204.498,
+    "mean_anomaly_deg": 200.094,
+    "q_au": 2.4038,
+    "method": "ranging",
+    "rms_arcsec": 0.705,
+    "n_detections": 30,
+    "arc_hours": 32.723,
+    "covariance": [
+      [
+        103.189,
+        1.62272,
+        0.108056,
+        28.4653,
+        -366.139,
+        -235.066
+      ],
+      [
+        1.62272,
+        0.0655636,
+        0.000565912,
+        0.149757,
+        -4.14374,
+        -8.93561
+      ],
+      [
+        0.108056,
+        0.000565912,
+        0.000923965,
+        0.218661,
+        -1.46489,
+        0.357336
+      ],
+      [
+        28.4653,
+        0.149757,
+        0.218661,
+        54.5451,
+        -354.664,
+        -22.5641
+      ],
+      [
+        -366.139,
+        -4.14374,
+        -1.46489,
+        -354.664,
+        15911.4,
+        -3917.21
+      ],
+      [
+        -235.066,
+        -8.93561,
+        0.357336,
+        -22.5641,
+        -3917.21,
+        14697.8
+      ]
+    ],
+    "n_clones": 100,
+    "clones_url": "/data/objects/obj-aquarius-b-c01/clones.json",
+    "jpl_comparison": null,
+    "helio_distance_au": {
+      "best": 2.581,
+      "lo": 2.182,
+      "hi": 2.916
+    },
+    "n_ranging_orbits": 323,
+    "reported_orbit": "The arc is too short to fix one orbit, so this is the most circular of the 323 sampled orbits that fit the detections; the clones show the range.",
+    "check_30d": {
+      "time_utc": "2025-07-04T06:58:52Z",
+      "mjd": 60860.29089,
+      "ra_deg": 351.83835,
+      "dec_deg": -3.205997,
+      "sigma_major_arcsec": 861.5,
+      "sigma_minor_arcsec": 21.8,
+      "sigma_pa_deg": 66.7,
+      "vmag_estimate": null
+    }
+  },
   "known_object": {
     "checked": false,
     "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
@@ -2566,14 +2649,14 @@
   },
   "history": [
     {
-      "utc": "2026-10-30T23:16:43Z",
-      "run_id": "gh-41140078928-1",
+      "utc": "2026-11-01T15:15:44Z",
+      "run_id": "gh-41316531565-1",
       "change": "linked 30 detections over 5 visits from 2025-06-02 to 2025-06-04"
     }
   ],
   "provenance": {
-    "run_id": "gh-41140078928-1",
-    "generated_utc": "2026-10-30T23:16:43Z",
+    "run_id": "gh-41316531565-1",
+    "generated_utc": "2026-11-01T15:15:44Z",
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
-  "pipeline_version": "0.1.0+git.ea44bad",
-  "build_run_id": "gh-41140078928-1",
+  "pipeline_version": "0.1.0+git.a0f12ad",
+  "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w231c-l3417-s010-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -794,9 +794,92 @@
     "fit_dof": 16,
     "distance_au_estimate": null
   },
-  "distance_class": "unknown",
-  "orbit_status": "none",
-  "orbit": null,
+  "distance_class": "main_belt",
+  "orbit_status": "preliminary",
+  "orbit": {
+    "epoch_mjd": 60830.357332,
+    "a_au": 2.502,
+    "e": 0.0598,
+    "i_deg": 9.661,
+    "node_deg": 323.899,
+    "peri_deg": 261.593,
+    "mean_anomaly_deg": 85.26,
+    "q_au": 2.3524,
+    "method": "ranging",
+    "rms_arcsec": 0.801,
+    "n_detections": 10,
+    "arc_hours": 11.371,
+    "covariance": [
+      [
+        127.736,
+        1.03849,
+        6.61484,
+        20.0575,
+        316.995,
+        -550.666
+      ],
+      [
+        1.03849,
+        0.0544973,
+        2.34472,
+        -0.297955,
+        2.73088,
+        2.85149
+      ],
+      [
+        6.61484,
+        2.34472,
+        737.074,
+        -70.417,
+        -416.04,
+        1655.64
+      ],
+      [
+        20.0575,
+        -0.297955,
+        -70.417,
+        37.5929,
+        -14.288,
+        -83.2656
+      ],
+      [
+        316.995,
+        2.73088,
+        -416.04,
+        -14.288,
+        5875.34,
+        -9875.73
+      ],
+      [
+        -550.666,
+        2.85149,
+        1655.64,
+        -83.2656,
+        -9875.73,
+        19373.3
+      ]
+    ],
+    "n_clones": 100,
+    "clones_url": "/data/objects/obj-sv-2025w231c-l3417-s010-c01/clones.json",
+    "jpl_comparison": null,
+    "helio_distance_au": {
+      "best": 2.149,
+      "lo": 1.619,
+      "hi": 3.017
+    },
+    "n_ranging_orbits": 275,
+    "reported_orbit": "The arc is too short to fix one orbit, so this is the most circular of the 275 sampled orbits that fit the detections; the clones show the range.",
+    "check_30d": {
+      "time_utc": "2025-07-04T19:55:38Z",
+      "mjd": 60860.830304,
+      "ra_deg": 347.203326,
+      "dec_deg": -4.974903,
+      "sigma_major_arcsec": 5473.8,
+      "sigma_minor_arcsec": 914.5,
+      "sigma_pa_deg": 51.3,
+      "vmag_estimate": null
+    }
+  },
   "known_object": {
     "checked": false,
     "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
@@ -901,14 +984,14 @@
   },
   "history": [
     {
-      "utc": "2026-10-30T23:17:16Z",
-      "run_id": "gh-41140078928-1",
+      "utc": "2026-11-01T15:17:47Z",
+      "run_id": "gh-41316531565-1",
       "change": "linked 10 detections over 3 visits from 2025-06-04 to 2025-06-04"
     }
   ],
   "provenance": {
-    "run_id": "gh-41140078928-1",
-    "generated_utc": "2026-10-30T23:17:16Z",
+    "run_id": "gh-41316531565-1",
+    "generated_utc": "2026-11-01T15:17:47Z",
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
