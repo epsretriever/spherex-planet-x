@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2175-n002-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 27 arcseconds per hour across 10 images over 22.9 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 27 arcseconds per hour across 10 images over 22.9 hours. It matches the known asteroid 4716 Urey (1989 UL5).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2175-n002-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2175-n002"
@@ -877,17 +877,81 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "4716 Urey (1989 UL5)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 215.224074,
+        "predicted_dec_deg": -13.785865,
+        "separation_arcsec": 0.38
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 215.224335,
+        "predicted_dec_deg": -13.786121,
+        "separation_arcsec": 0.88
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 215.224595,
+        "predicted_dec_deg": -13.786372,
+        "separation_arcsec": 1.03
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 215.224855,
+        "predicted_dec_deg": -13.786615,
+        "separation_arcsec": 0.79
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 215.344618,
+        "predicted_dec_deg": -13.852582,
+        "separation_arcsec": 0.42
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 215.344874,
+        "predicted_dec_deg": -13.852834,
+        "separation_arcsec": 0.72
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 215.376835,
+        "predicted_dec_deg": -13.870401,
+        "separation_arcsec": 1.63
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 215.37709,
+        "predicted_dec_deg": -13.870656,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 215.377345,
+        "predicted_dec_deg": -13.870907,
+        "separation_arcsec": 1.36
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 215.377599,
+        "predicted_dec_deg": -13.871149,
+        "separation_arcsec": 0.26
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:36:28.610Z",
     "enrichment": "static"
   },
   "scores": {
@@ -899,7 +963,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 10 SPHEREx exposures spanning 22.9 hours. It moves 26.9 arcseconds per hour toward position angle 120 degrees. A straight-line fit leaves 1.14 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 7.8. Its positions match JPL's prediction for 4716 Urey (1989 UL5) to within 1.6 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[1].snr",
+      "known_object.designation",
+      "known_object.per_epoch[6].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:37:22.118Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -991,11 +1070,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

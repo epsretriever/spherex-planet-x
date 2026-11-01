@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w272a-l0045-s010-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 27 arcseconds per hour across 22 images over 13.1 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 27 arcseconds per hour across 22 images over 13.1 hours. It matches the known asteroid 2918 Salazar (1980 TU4).",
   "thumbnail_url": "/data/candidates/sv-2025w272a-l0045-s010-c01/thumb.webp",
   "field_ids": [
     "sv-2025w272a-l0045-s010"
@@ -1789,17 +1789,153 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2918 Salazar (1980 TU4)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 4.617785,
+        "predicted_dec_deg": 0.799388,
+        "separation_arcsec": 0.77
+      },
+      {
+        "epoch_id": "e02",
+        "predicted_ra_deg": 4.617785,
+        "predicted_dec_deg": 0.799388,
+        "separation_arcsec": 1.97
+      },
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 4.618059,
+        "predicted_dec_deg": 0.799327,
+        "separation_arcsec": 1.12
+      },
+      {
+        "epoch_id": "e04",
+        "predicted_ra_deg": 4.618059,
+        "predicted_dec_deg": 0.799327,
+        "separation_arcsec": 2.08
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 4.618335,
+        "predicted_dec_deg": 0.799271,
+        "separation_arcsec": 1.15
+      },
+      {
+        "epoch_id": "e06",
+        "predicted_ra_deg": 4.618335,
+        "predicted_dec_deg": 0.799271,
+        "separation_arcsec": 0.43
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 4.618613,
+        "predicted_dec_deg": 0.799222,
+        "separation_arcsec": 0.92
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 4.629095,
+        "predicted_dec_deg": 0.80334,
+        "separation_arcsec": 0.26
+      },
+      {
+        "epoch_id": "e10",
+        "predicted_ra_deg": 4.629095,
+        "predicted_dec_deg": 0.80334,
+        "separation_arcsec": 0.29
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 4.629368,
+        "predicted_dec_deg": 0.803278,
+        "separation_arcsec": 1.24
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 4.629643,
+        "predicted_dec_deg": 0.80322,
+        "separation_arcsec": 4.72
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 4.697475,
+        "predicted_dec_deg": 0.826667,
+        "separation_arcsec": 0.48
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 4.697747,
+        "predicted_dec_deg": 0.826605,
+        "separation_arcsec": 1.05
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 4.69802,
+        "predicted_dec_deg": 0.826546,
+        "separation_arcsec": 0.66
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 4.69802,
+        "predicted_dec_deg": 0.826546,
+        "separation_arcsec": 1.42
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 4.698295,
+        "predicted_dec_deg": 0.826494,
+        "separation_arcsec": 1.41
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 4.698295,
+        "predicted_dec_deg": 0.826494,
+        "separation_arcsec": 0.76
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 4.708789,
+        "predicted_dec_deg": 0.830528,
+        "separation_arcsec": 1.03
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 4.70906,
+        "predicted_dec_deg": 0.830465,
+        "separation_arcsec": 0.95
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 4.709333,
+        "predicted_dec_deg": 0.830406,
+        "separation_arcsec": 0.65
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 4.709333,
+        "predicted_dec_deg": 0.830406,
+        "separation_arcsec": 1.78
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 4.709607,
+        "predicted_dec_deg": 0.830354,
+        "separation_arcsec": 0.88
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:10:14.178Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1811,7 +1947,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 22 SPHEREx exposures spanning 13.1 hours. It moves 26.5 arcseconds per hour toward position angle 71 degrees. A straight-line fit leaves 1.47 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 6.1. Its positions match JPL's prediction for 2918 Salazar (1980 TU4) to within 4.7 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[20].snr",
+      "known_object.designation",
+      "known_object.per_epoch[10].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:12:02.926Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1987,11 +2138,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

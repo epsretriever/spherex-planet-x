@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2163-s007-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 26 arcseconds per hour across 18 images over 19.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 26 arcseconds per hour across 18 images over 19.6 hours. It matches the known asteroid 77 Frigga (A862 VA).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2163-s007-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2163-s007"
@@ -1491,17 +1491,129 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "77 Frigga (A862 VA)",
+    "predicted_vmag": 14.0,
+    "per_epoch": [
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 213.633698,
+        "predicted_dec_deg": -14.227759,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 213.633698,
+        "predicted_dec_deg": -14.227759,
+        "separation_arcsec": 0.54
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 213.633968,
+        "predicted_dec_deg": -14.227991,
+        "separation_arcsec": 0.14
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 213.633968,
+        "predicted_dec_deg": -14.227991,
+        "separation_arcsec": 0.29
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 213.667439,
+        "predicted_dec_deg": -14.241713,
+        "separation_arcsec": 0.49
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 213.667439,
+        "predicted_dec_deg": -14.241713,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 213.667707,
+        "predicted_dec_deg": -14.24195,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e36",
+        "predicted_ra_deg": 213.667707,
+        "predicted_dec_deg": -14.24195,
+        "separation_arcsec": 0.39
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 213.767666,
+        "predicted_dec_deg": -14.28326,
+        "separation_arcsec": 0.56
+      },
+      {
+        "epoch_id": "e38",
+        "predicted_ra_deg": 213.767666,
+        "predicted_dec_deg": -14.28326,
+        "separation_arcsec": 0.87
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 213.767983,
+        "predicted_dec_deg": -14.283551,
+        "separation_arcsec": 0.67
+      },
+      {
+        "epoch_id": "e40",
+        "predicted_ra_deg": 213.767983,
+        "predicted_dec_deg": -14.283551,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 213.768246,
+        "predicted_dec_deg": -14.283791,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e42",
+        "predicted_ra_deg": 213.768246,
+        "predicted_dec_deg": -14.283791,
+        "separation_arcsec": 0.44
+      },
+      {
+        "epoch_id": "e43",
+        "predicted_ra_deg": 213.76851,
+        "predicted_dec_deg": -14.284027,
+        "separation_arcsec": 0.77
+      },
+      {
+        "epoch_id": "e44",
+        "predicted_ra_deg": 213.76851,
+        "predicted_dec_deg": -14.284027,
+        "separation_arcsec": 0.56
+      },
+      {
+        "epoch_id": "e45",
+        "predicted_ra_deg": 213.768774,
+        "predicted_dec_deg": -14.284257,
+        "separation_arcsec": 0.56
+      },
+      {
+        "epoch_id": "e46",
+        "predicted_ra_deg": 213.768774,
+        "predicted_dec_deg": -14.284257,
+        "separation_arcsec": 0.82
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:32:34.398Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1513,7 +1625,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 18 SPHEREx exposures spanning 19.6 hours. It moves 26.2 arcseconds per hour toward position angle 113 degrees. A straight-line fit leaves 0.71 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 30.1. Its positions match JPL's prediction for 77 Frigga (A862 VA) to within 0.9 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[9].snr",
+      "known_object.designation",
+      "known_object.per_epoch[9].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:33:30.621Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1661,11 +1788,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

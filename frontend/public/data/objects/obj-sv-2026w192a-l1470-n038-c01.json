@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w192a-l1470-n038-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 37 arcseconds per hour across 7 images over 17.9 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 37 arcseconds per hour across 7 images over 17.9 hours. It matches the known asteroid 40724 (1999 SY8).",
   "thumbnail_url": "/data/candidates/sv-2026w192a-l1470-n038-c01/thumb.webp",
   "field_ids": [
     "sv-2026w192a-l1470-n038"
@@ -653,17 +653,63 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "40724 (1999 SY8)",
+    "predicted_vmag": 18.1,
+    "per_epoch": [
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 150.342699,
+        "predicted_dec_deg": 16.165735,
+        "separation_arcsec": 1.37
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 150.34301,
+        "predicted_dec_deg": 16.165664,
+        "separation_arcsec": 1.39
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 150.343308,
+        "predicted_dec_deg": 16.165589,
+        "separation_arcsec": 1.15
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 150.416534,
+        "predicted_dec_deg": 16.094632,
+        "separation_arcsec": 1.91
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 150.416836,
+        "predicted_dec_deg": 16.094557,
+        "separation_arcsec": 1.38
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 150.477772,
+        "predicted_dec_deg": 16.035501,
+        "separation_arcsec": 0.68
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 150.477772,
+        "predicted_dec_deg": 16.035501,
+        "separation_arcsec": 1.38
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:42:46.879Z",
     "enrichment": "static"
   },
   "scores": {
@@ -675,7 +721,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 7 SPHEREx exposures spanning 17.9 hours. It moves 37.0 arcseconds per hour toward position angle 135 degrees. A straight-line fit leaves 1.42 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.6. Its positions match JPL's prediction for 40724 (1999 SY8) to within 1.9 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[2].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:43:39.540Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -746,11 +807,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

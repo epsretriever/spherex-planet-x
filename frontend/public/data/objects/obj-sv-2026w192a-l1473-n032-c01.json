@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w192a-l1473-n032-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 21 arcseconds per hour across 10 images over 19.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 21 arcseconds per hour across 10 images over 19.6 hours. It matches the known asteroid 2571 Geisei (1981 UC).",
   "thumbnail_url": "/data/candidates/sv-2026w192a-l1473-n032-c01/thumb.webp",
   "field_ids": [
     "sv-2026w192a-l1473-n032"
@@ -878,17 +878,81 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2571 Geisei (1981 UC)",
+    "predicted_vmag": 18.2,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 150.536209,
+        "predicted_dec_deg": 15.519592,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 150.536435,
+        "predicted_dec_deg": 15.51965,
+        "separation_arcsec": 0.22
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 150.536655,
+        "predicted_dec_deg": 15.519708,
+        "separation_arcsec": 0.6
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 150.536869,
+        "predicted_dec_deg": 15.519763,
+        "separation_arcsec": 1.58
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 150.596429,
+        "predicted_dec_deg": 15.487326,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 150.596658,
+        "predicted_dec_deg": 15.487382,
+        "separation_arcsec": 2.48
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 150.596881,
+        "predicted_dec_deg": 15.487439,
+        "separation_arcsec": 0.98
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 150.597098,
+        "predicted_dec_deg": 15.487492,
+        "separation_arcsec": 1.53
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 150.640104,
+        "predicted_dec_deg": 15.464039,
+        "separation_arcsec": 0.64
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 150.640737,
+        "predicted_dec_deg": 15.464192,
+        "separation_arcsec": 0.93
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:43:39.541Z",
     "enrichment": "static"
   },
   "scores": {
@@ -900,7 +964,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 10 SPHEREx exposures spanning 19.6 hours. It moves 21.0 arcseconds per hour toward position angle 119 degrees. A straight-line fit leaves 1.32 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.0. Its positions match JPL's prediction for 2571 Geisei (1981 UC) to within 2.5 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[5].snr",
+      "known_object.designation",
+      "known_object.per_epoch[5].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:44:33.421Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -992,11 +1071,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

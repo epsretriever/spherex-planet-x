@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "candidate_id": "sv-2026w292a-l0240-n020-c01",
   "field_id": "sv-2026w292a-l0240-n020",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 68 arcseconds per hour across 8 images over 11.5 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 68 arcseconds per hour across 8 images over 11.5 hours. It matches the known asteroid 36342 (2000 NX15).",
   "thumbnail_url": "/data/candidates/sv-2026w292a-l0240-n020-c01/thumb.webp",
   "detections": [
     {
@@ -621,18 +621,70 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T20:58:36.790Z",
+    "enrichment": "static",
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
+    "designation": "36342 (2000 NX15)",
+    "predicted_vmag": 19.1,
+    "per_epoch": [
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 21.403179,
+        "predicted_dec_deg": 11.001298,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 21.40446,
+        "predicted_dec_deg": 11.001479,
+        "separation_arcsec": 0.36
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 21.540824,
+        "predicted_dec_deg": 11.074642,
+        "separation_arcsec": 0.64
+      },
+      {
+        "epoch_id": "e36",
+        "predicted_ra_deg": 21.541464,
+        "predicted_dec_deg": 11.074726,
+        "separation_arcsec": 0.06
+      },
+      {
+        "epoch_id": "e38",
+        "predicted_ra_deg": 21.542104,
+        "predicted_dec_deg": 11.07482,
+        "separation_arcsec": 0.79
+      },
+      {
+        "epoch_id": "e40",
+        "predicted_ra_deg": 21.542741,
+        "predicted_dec_deg": 11.074929,
+        "separation_arcsec": 0.72
+      },
+      {
+        "epoch_id": "e42",
+        "predicted_ra_deg": 21.597191,
+        "predicted_dec_deg": 11.104144,
+        "separation_arcsec": 1.73
+      },
+      {
+        "epoch_id": "e44",
+        "predicted_ra_deg": 21.597828,
+        "predicted_dec_deg": 11.104255,
+        "separation_arcsec": 1.06
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
     "motion_consistency": 0.872,
@@ -662,7 +714,7 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 0.77,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
@@ -675,7 +727,7 @@
     {
       "check": "flagged_aperture_pixels",
       "description": "Fraction of detections whose aperture touches pixels SPHEREx flags as unreliable (phantom, dichroic, nonlinear, persistence)",
-      "value": 0.0,
+      "value": 0,
       "threshold": 0.25,
       "passed": true
     },
@@ -690,29 +742,29 @@
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
       "value": 57.9,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
       "value": 0.84,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 5.86,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": false
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": true,
       "threshold": false,
-      "passed": null
+      "passed": false
     }
   ],
   "error_sources": [
@@ -773,8 +825,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "not_ruled_out",
+      "evidence": "Matches 36342 (2000 NX15) (JPL).",
       "from_checks": [
         "known_object_match"
       ]
@@ -783,14 +835,32 @@
       "id": "catalog_gap",
       "label": "A real object missing from the catalogs we checked",
       "explanation": "Some real asteroids are faint or newly found and are not in JPL's database yet.",
-      "status": "unknown",
-      "evidence": "Cannot be ruled out from SPHEREx data alone.",
+      "status": "ruled_out",
+      "evidence": "Already catalogued.",
       "from_checks": [
         "known_object_match"
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 8 SPHEREx exposures spanning 11.5 hours. It moves 67.9 arcseconds per hour toward position angle 62 degrees. A straight-line motion plus orbital-parallax fit leaves 0.77 arcseconds of scatter. SPHEREx's own orbital parallax puts it roughly 1.27 AU away (range 0.79 to 3.24 AU). Its faintest detection has a signal-to-noise ratio of 6.6. Its positions match JPL's prediction for 36342 (2000 NX15) to within 1.7 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "motion.distance_au_estimate.best",
+      "motion.distance_au_estimate.lo",
+      "motion.distance_au_estimate.hi",
+      "detections[7].snr",
+      "known_object.designation",
+      "known_object.per_epoch[6].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:59:34.978Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -862,11 +932,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

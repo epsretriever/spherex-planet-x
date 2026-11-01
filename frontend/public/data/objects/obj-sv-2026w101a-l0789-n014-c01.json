@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w101a-l0789-n014-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 20 arcseconds per hour across 10 images over 22.9 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 20 arcseconds per hour across 10 images over 22.9 hours. It matches the known asteroid 2032 Ethel (1970 OH).",
   "thumbnail_url": "/data/candidates/sv-2026w101a-l0789-n014-c01/thumb.webp",
   "field_ids": [
     "sv-2026w101a-l0789-n014"
@@ -877,17 +877,81 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2032 Ethel (1970 OH)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 77.727727,
+        "predicted_dec_deg": 24.457072,
+        "separation_arcsec": 0.39
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 77.727969,
+        "predicted_dec_deg": 24.457201,
+        "separation_arcsec": 0.82
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 77.728209,
+        "predicted_dec_deg": 24.457329,
+        "separation_arcsec": 0.67
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 77.728448,
+        "predicted_dec_deg": 24.457451,
+        "separation_arcsec": 1.61
+      },
+      {
+        "epoch_id": "e40",
+        "predicted_ra_deg": 77.777404,
+        "predicted_dec_deg": 24.458974,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e42",
+        "predicted_ra_deg": 77.777649,
+        "predicted_dec_deg": 24.459103,
+        "separation_arcsec": 0.28
+      },
+      {
+        "epoch_id": "e44",
+        "predicted_ra_deg": 77.777896,
+        "predicted_dec_deg": 24.459234,
+        "separation_arcsec": 1.4
+      },
+      {
+        "epoch_id": "e47",
+        "predicted_ra_deg": 77.778139,
+        "predicted_dec_deg": 24.459362,
+        "separation_arcsec": 0.12
+      },
+      {
+        "epoch_id": "e50",
+        "predicted_ra_deg": 77.869093,
+        "predicted_dec_deg": 24.462975,
+        "separation_arcsec": 2.26
+      },
+      {
+        "epoch_id": "e52",
+        "predicted_ra_deg": 77.869339,
+        "predicted_dec_deg": 24.463101,
+        "separation_arcsec": 0.68
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:39:24.609Z",
     "enrichment": "static"
   },
   "scores": {
@@ -899,7 +963,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 10 SPHEREx exposures spanning 22.9 hours. It moves 20.3 arcseconds per hour toward position angle 88 degrees. A straight-line fit leaves 1.35 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.0. Its positions match JPL's prediction for 2032 Ethel (1970 OH) to within 2.3 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[1].snr",
+      "known_object.designation",
+      "known_object.per_epoch[8].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:40:17.638Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -991,11 +1070,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w292a-l0240-n029-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 25 arcseconds per hour across 18 images over 24.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 25 arcseconds per hour across 18 images over 24.6 hours. It matches the known asteroid 3095 Omarkhayyam (1980 RT2).",
   "thumbnail_url": "/data/candidates/sv-2026w292a-l0240-n029-c01/thumb.webp",
   "field_ids": [
     "sv-2026w292a-l0240-n029"
@@ -1491,17 +1491,129 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "3095 Omarkhayyam (1980 RT2)",
+    "predicted_vmag": 17.5,
+    "per_epoch": [
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 20.891557,
+        "predicted_dec_deg": 12.032939,
+        "separation_arcsec": 0.28
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 20.891802,
+        "predicted_dec_deg": 12.032939,
+        "separation_arcsec": 0.92
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 20.891802,
+        "predicted_dec_deg": 12.032939,
+        "separation_arcsec": 1.13
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 20.902589,
+        "predicted_dec_deg": 12.038197,
+        "separation_arcsec": 1.26
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 20.902589,
+        "predicted_dec_deg": 12.038197,
+        "separation_arcsec": 0.92
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 20.943067,
+        "predicted_dec_deg": 12.059134,
+        "separation_arcsec": 0.34
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 20.943067,
+        "predicted_dec_deg": 12.059134,
+        "separation_arcsec": 1.89
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 20.994659,
+        "predicted_dec_deg": 12.085172,
+        "separation_arcsec": 0.68
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 20.994901,
+        "predicted_dec_deg": 12.085171,
+        "separation_arcsec": 0.82
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 20.995143,
+        "predicted_dec_deg": 12.085174,
+        "separation_arcsec": 0.72
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 20.995143,
+        "predicted_dec_deg": 12.085174,
+        "separation_arcsec": 0.65
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 20.995384,
+        "predicted_dec_deg": 12.085183,
+        "separation_arcsec": 0.96
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 21.045579,
+        "predicted_dec_deg": 12.111065,
+        "separation_arcsec": 0.15
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 21.04582,
+        "predicted_dec_deg": 12.111062,
+        "separation_arcsec": 0.05
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 21.046061,
+        "predicted_dec_deg": 12.111064,
+        "separation_arcsec": 0.86
+      },
+      {
+        "epoch_id": "e42",
+        "predicted_ra_deg": 21.046061,
+        "predicted_dec_deg": 12.111064,
+        "separation_arcsec": 0.35
+      },
+      {
+        "epoch_id": "e43",
+        "predicted_ra_deg": 21.0463,
+        "predicted_dec_deg": 12.111073,
+        "separation_arcsec": 0.73
+      },
+      {
+        "epoch_id": "e44",
+        "predicted_ra_deg": 21.0463,
+        "predicted_dec_deg": 12.111073,
+        "separation_arcsec": 0.98
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:59:34.979Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1513,7 +1625,25 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 18 SPHEREx exposures spanning 24.6 hours. It moves 25.0 arcseconds per hour toward position angle 63 degrees. A straight-line motion plus orbital-parallax fit leaves 1.09 arcseconds of scatter. SPHEREx's own orbital parallax puts it roughly 2.10 AU away (range 1.34 to 4.77 AU). Its faintest detection has a signal-to-noise ratio of 4.5. Its positions match JPL's prediction for 3095 Omarkhayyam (1980 RT2) to within 1.9 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "motion.distance_au_estimate.best",
+      "motion.distance_au_estimate.lo",
+      "motion.distance_au_estimate.hi",
+      "detections[10].snr",
+      "known_object.designation",
+      "known_object.per_epoch[6].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T21:01:41.735Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1661,11 +1791,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

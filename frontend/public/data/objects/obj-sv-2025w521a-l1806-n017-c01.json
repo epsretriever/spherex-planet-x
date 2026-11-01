@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w521a-l1806-n017-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 29 arcseconds per hour across 16 images over 19.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 29 arcseconds per hour across 16 images over 19.6 hours. It matches the known asteroid 327 Columbia (A892 FE).",
   "thumbnail_url": "/data/candidates/sv-2025w521a-l1806-n017-c01/thumb.webp",
   "field_ids": [
     "sv-2025w521a-l1806-n017"
@@ -1335,17 +1335,117 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "327 Columbia (A892 FE)",
+    "predicted_vmag": 15.5,
+    "per_epoch": [
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 181.215401,
+        "predicted_dec_deg": 1.442547,
+        "separation_arcsec": 0.26
+      },
+      {
+        "epoch_id": "e10",
+        "predicted_ra_deg": 181.215401,
+        "predicted_dec_deg": 1.442547,
+        "separation_arcsec": 0.74
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 181.215671,
+        "predicted_dec_deg": 1.442285,
+        "separation_arcsec": 0.34
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 181.215671,
+        "predicted_dec_deg": 1.442285,
+        "separation_arcsec": 1.26
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 181.215939,
+        "predicted_dec_deg": 1.442031,
+        "separation_arcsec": 0.29
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 181.215939,
+        "predicted_dec_deg": 1.442031,
+        "separation_arcsec": 1.05
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 181.216205,
+        "predicted_dec_deg": 1.441786,
+        "separation_arcsec": 0.46
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 181.216205,
+        "predicted_dec_deg": 1.441786,
+        "separation_arcsec": 1.13
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 181.27295,
+        "predicted_dec_deg": 1.411849,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 181.27295,
+        "predicted_dec_deg": 1.411849,
+        "separation_arcsec": 0.11
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 181.295761,
+        "predicted_dec_deg": 1.399699,
+        "separation_arcsec": 0.24
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 181.295761,
+        "predicted_dec_deg": 1.399699,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 181.35269,
+        "predicted_dec_deg": 1.369232,
+        "separation_arcsec": 0.48
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 181.35269,
+        "predicted_dec_deg": 1.369232,
+        "separation_arcsec": 2.05
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 181.352955,
+        "predicted_dec_deg": 1.368973,
+        "separation_arcsec": 0.54
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 181.352955,
+        "predicted_dec_deg": 1.368973,
+        "separation_arcsec": 0.95
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:25:46.036Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1357,7 +1457,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 16 SPHEREx exposures spanning 19.6 hours. It moves 28.6 arcseconds per hour toward position angle 118 degrees. A straight-line fit leaves 1.14 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.7. Its positions match JPL's prediction for 327 Columbia (A892 FE) to within 2.0 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[13].snr",
+      "known_object.designation",
+      "known_object.per_epoch[13].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:26:56.346Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1491,11 +1606,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

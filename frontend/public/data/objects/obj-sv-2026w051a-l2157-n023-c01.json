@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2157-n023-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 26 arcseconds per hour across 18 images over 19.5 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 26 arcseconds per hour across 18 images over 19.5 hours. It matches the known asteroid 253 Mathilde (A885 VA).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2157-n023-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2157-n023"
@@ -1490,17 +1490,129 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "253 Mathilde (A885 VA)",
+    "predicted_vmag": 16.1,
+    "per_epoch": [
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 214.149778,
+        "predicted_dec_deg": -11.382159,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 214.149778,
+        "predicted_dec_deg": -11.382159,
+        "separation_arcsec": 0.32
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 214.150058,
+        "predicted_dec_deg": -11.382325,
+        "separation_arcsec": 0.51
+      },
+      {
+        "epoch_id": "e10",
+        "predicted_ra_deg": 214.150058,
+        "predicted_dec_deg": -11.382325,
+        "separation_arcsec": 0.49
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 214.150339,
+        "predicted_dec_deg": -11.382484,
+        "separation_arcsec": 0.58
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 214.150339,
+        "predicted_dec_deg": -11.382484,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 214.150619,
+        "predicted_dec_deg": -11.382637,
+        "separation_arcsec": 0.6
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 214.150619,
+        "predicted_dec_deg": -11.382637,
+        "separation_arcsec": 0.62
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 214.209391,
+        "predicted_dec_deg": -11.391673,
+        "separation_arcsec": 0.62
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 214.209391,
+        "predicted_dec_deg": -11.391673,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 214.209669,
+        "predicted_dec_deg": -11.391837,
+        "separation_arcsec": 0.58
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 214.209669,
+        "predicted_dec_deg": -11.391837,
+        "separation_arcsec": 1.68
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 214.209948,
+        "predicted_dec_deg": -11.391997,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 214.209948,
+        "predicted_dec_deg": -11.391997,
+        "separation_arcsec": 0.32
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 214.210226,
+        "predicted_dec_deg": -11.392149,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 214.210226,
+        "predicted_dec_deg": -11.392149,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 214.291995,
+        "predicted_dec_deg": -11.404568,
+        "separation_arcsec": 0.81
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 214.291995,
+        "predicted_dec_deg": -11.404568,
+        "separation_arcsec": 0.32
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:29:26.660Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1512,7 +1624,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 18 SPHEREx exposures spanning 19.5 hours. It moves 26.0 arcseconds per hour toward position angle 99 degrees. A straight-line fit leaves 0.87 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 9.3. Its positions match JPL's prediction for 253 Mathilde (A885 VA) to within 1.7 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[11].snr",
+      "known_object.designation",
+      "known_object.per_epoch[11].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:30:23.601Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1660,11 +1787,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

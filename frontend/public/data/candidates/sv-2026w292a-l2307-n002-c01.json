@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "candidate_id": "sv-2026w292a-l2307-n002-c01",
   "field_id": "sv-2026w292a-l2307-n002",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 31 arcseconds per hour across 16 images over 39.2 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 31 arcseconds per hour across 16 images over 39.2 hours. It matches the known asteroid 13576 Gotoyoshi (1993 HW).",
   "thumbnail_url": "/data/candidates/sv-2026w292a-l2307-n002-c01/thumb.webp",
   "detections": [
     {
@@ -1223,23 +1223,123 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T21:08:29.807Z",
+    "enrichment": "static",
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
+    "designation": "13576 Gotoyoshi (1993 HW)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 228.205421,
+        "predicted_dec_deg": -17.590134,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 228.205723,
+        "predicted_dec_deg": -17.589965,
+        "separation_arcsec": 0.87
+      },
+      {
+        "epoch_id": "e04",
+        "predicted_ra_deg": 228.205723,
+        "predicted_dec_deg": -17.589965,
+        "separation_arcsec": 0.67
+      },
+      {
+        "epoch_id": "e06",
+        "predicted_ra_deg": 228.206001,
+        "predicted_dec_deg": -17.589798,
+        "separation_arcsec": 0.3
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 228.206261,
+        "predicted_dec_deg": -17.589636,
+        "separation_arcsec": 1.52
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 228.231275,
+        "predicted_dec_deg": -17.601727,
+        "separation_arcsec": 0.78
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 228.231574,
+        "predicted_dec_deg": -17.601561,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 228.231854,
+        "predicted_dec_deg": -17.601395,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 228.232114,
+        "predicted_dec_deg": -17.601234,
+        "separation_arcsec": 0.93
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 228.524819,
+        "predicted_dec_deg": -17.730927,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 228.524819,
+        "predicted_dec_deg": -17.730927,
+        "separation_arcsec": 0.94
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 228.525135,
+        "predicted_dec_deg": -17.730768,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 228.525135,
+        "predicted_dec_deg": -17.730768,
+        "separation_arcsec": 0.86
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 228.525433,
+        "predicted_dec_deg": -17.730607,
+        "separation_arcsec": 0.1
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 228.525715,
+        "predicted_dec_deg": -17.730449,
+        "separation_arcsec": 0.43
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 228.525715,
+        "predicted_dec_deg": -17.730449,
+        "separation_arcsec": 1
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
     "motion_consistency": 0.807,
     "snr": 0.95,
-    "artifact_likelihood": 0.0,
+    "artifact_likelihood": 0,
     "overall": 0.767,
     "quality_level": "high",
     "method": "rule_based_v1",
@@ -1264,7 +1364,7 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 1.16,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
@@ -1277,7 +1377,7 @@
     {
       "check": "flagged_aperture_pixels",
       "description": "Fraction of detections whose aperture touches pixels SPHEREx flags as unreliable (phantom, dichroic, nonlinear, persistence)",
-      "value": 0.0,
+      "value": 0,
       "threshold": 0.25,
       "passed": true
     },
@@ -1291,30 +1391,30 @@
     {
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
-      "value": 22.0,
-      "threshold": 3.0,
+      "value": 22,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
       "value": 0.89,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 2.26,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": true,
       "threshold": false,
-      "passed": null
+      "passed": false
     }
   ],
   "error_sources": [
@@ -1375,8 +1475,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "not_ruled_out",
+      "evidence": "Matches 13576 Gotoyoshi (1993 HW) (JPL).",
       "from_checks": [
         "known_object_match"
       ]
@@ -1385,14 +1485,32 @@
       "id": "catalog_gap",
       "label": "A real object missing from the catalogs we checked",
       "explanation": "Some real asteroids are faint or newly found and are not in JPL's database yet.",
-      "status": "unknown",
-      "evidence": "Cannot be ruled out from SPHEREx data alone.",
+      "status": "ruled_out",
+      "evidence": "Already catalogued.",
       "from_checks": [
         "known_object_match"
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 16 SPHEREx exposures spanning 39.2 hours. It moves 30.9 arcseconds per hour toward position angle 115 degrees. A straight-line motion plus orbital-parallax fit leaves 1.16 arcseconds of scatter. SPHEREx's own orbital parallax puts it roughly 1.51 AU away (range 1.05 to 2.68 AU). Its faintest detection has a signal-to-noise ratio of 8.0. Its positions match JPL's prediction for 13576 Gotoyoshi (1993 HW) to within 1.5 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "motion.distance_au_estimate.best",
+      "motion.distance_au_estimate.lo",
+      "motion.distance_au_estimate.hi",
+      "detections[2].snr",
+      "known_object.designation",
+      "known_object.per_epoch[4].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T21:09:27.450Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1520,11 +1638,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

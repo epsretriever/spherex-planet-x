@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2169-n023-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 24 arcseconds per hour across 22 images over 39.2 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 24 arcseconds per hour across 22 images over 39.2 hours. It matches the known asteroid 240 Vanadis (A884 QB).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2169-n023-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2169-n023"
@@ -1800,17 +1800,153 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "240 Vanadis (A884 QB)",
+    "predicted_vmag": 14.8,
+    "per_epoch": [
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 215.234425,
+        "predicted_dec_deg": -11.714003,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 215.234425,
+        "predicted_dec_deg": -11.714003,
+        "separation_arcsec": 0.09
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 215.234687,
+        "predicted_dec_deg": -11.71419,
+        "separation_arcsec": 0.68
+      },
+      {
+        "epoch_id": "e10",
+        "predicted_ra_deg": 215.234687,
+        "predicted_dec_deg": -11.71419,
+        "separation_arcsec": 0.68
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 215.234948,
+        "predicted_dec_deg": -11.714371,
+        "separation_arcsec": 0.56
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 215.234948,
+        "predicted_dec_deg": -11.714371,
+        "separation_arcsec": 1.52
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 215.235207,
+        "predicted_dec_deg": -11.714545,
+        "separation_arcsec": 0.38
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 215.289601,
+        "predicted_dec_deg": -11.728304,
+        "separation_arcsec": 0.28
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 215.289601,
+        "predicted_dec_deg": -11.728304,
+        "separation_arcsec": 0.51
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 215.28986,
+        "predicted_dec_deg": -11.72849,
+        "separation_arcsec": 0.58
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 215.290119,
+        "predicted_dec_deg": -11.728671,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 215.290119,
+        "predicted_dec_deg": -11.728671,
+        "separation_arcsec": 0.59
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 215.290377,
+        "predicted_dec_deg": -11.728844,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 215.290377,
+        "predicted_dec_deg": -11.728844,
+        "separation_arcsec": 0.35
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 215.494538,
+        "predicted_dec_deg": -11.780671,
+        "separation_arcsec": 0.41
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 215.494538,
+        "predicted_dec_deg": -11.780671,
+        "separation_arcsec": 0.29
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 215.494789,
+        "predicted_dec_deg": -11.780858,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 215.494789,
+        "predicted_dec_deg": -11.780858,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 215.495041,
+        "predicted_dec_deg": -11.781044,
+        "separation_arcsec": 0.41
+      },
+      {
+        "epoch_id": "e32",
+        "predicted_ra_deg": 215.495041,
+        "predicted_dec_deg": -11.781044,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 215.495292,
+        "predicted_dec_deg": -11.781226,
+        "separation_arcsec": 0.38
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 215.495292,
+        "predicted_dec_deg": -11.781226,
+        "separation_arcsec": 0.47
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:35:27.059Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1822,7 +1958,25 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 22 SPHEREx exposures spanning 39.2 hours. It moves 24.3 arcseconds per hour toward position angle 105 degrees. A straight-line motion plus orbital-parallax fit leaves 1.73 arcseconds of scatter. SPHEREx's own orbital parallax puts it roughly 1.90 AU away (range 1.31 to 3.47 AU). Its faintest detection has a signal-to-noise ratio of 26.4. Its positions match JPL's prediction for 240 Vanadis (A884 QB) to within 1.5 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "motion.distance_au_estimate.best",
+      "motion.distance_au_estimate.lo",
+      "motion.distance_au_estimate.hi",
+      "detections[8].snr",
+      "known_object.designation",
+      "known_object.per_epoch[5].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:36:28.609Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1998,11 +2152,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

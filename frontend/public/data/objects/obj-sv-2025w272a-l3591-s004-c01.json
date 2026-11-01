@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w272a-l3591-s004-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 21 arcseconds per hour across 9 images over 21.3 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 21 arcseconds per hour across 9 images over 21.3 hours. It matches the known asteroid 13537 (1991 SG).",
   "thumbnail_url": "/data/candidates/sv-2025w272a-l3591-s004-c01/thumb.webp",
   "field_ids": [
     "sv-2025w272a-l3591-s004"
@@ -803,17 +803,75 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "13537 (1991 SG)",
+    "predicted_vmag": 18.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 359.211931,
+        "predicted_dec_deg": -0.839421,
+        "separation_arcsec": 2.62
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 359.212161,
+        "predicted_dec_deg": -0.839545,
+        "separation_arcsec": 0.35
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 359.240054,
+        "predicted_dec_deg": -0.836808,
+        "separation_arcsec": 1.71
+      },
+      {
+        "epoch_id": "e12",
+        "predicted_ra_deg": 359.240054,
+        "predicted_dec_deg": -0.836808,
+        "separation_arcsec": 3.91
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 359.286271,
+        "predicted_dec_deg": -0.832509,
+        "separation_arcsec": 1.25
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 359.286499,
+        "predicted_dec_deg": -0.832633,
+        "separation_arcsec": 1.43
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 359.331886,
+        "predicted_dec_deg": -0.828396,
+        "separation_arcsec": 1.95
+      },
+      {
+        "epoch_id": "e36",
+        "predicted_ra_deg": 359.332109,
+        "predicted_dec_deg": -0.828523,
+        "separation_arcsec": 0.84
+      },
+      {
+        "epoch_id": "e38",
+        "predicted_ra_deg": 359.332336,
+        "predicted_dec_deg": -0.828648,
+        "separation_arcsec": 1.77
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:16:11.643Z",
     "enrichment": "static"
   },
   "scores": {
@@ -825,7 +883,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 9 SPHEREx exposures spanning 21.3 hours. It moves 20.5 arcseconds per hour toward position angle 85 degrees. A straight-line fit leaves 2.09 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.9. Its positions match JPL's prediction for 13537 (1991 SG) to within 3.9 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[8].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:17:21.191Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -910,11 +983,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

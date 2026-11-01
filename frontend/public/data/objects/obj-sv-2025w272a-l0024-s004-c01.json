@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w272a-l0024-s004-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 49 arcseconds per hour across 20 images over 13.1 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 49 arcseconds per hour across 20 images over 13.1 hours. It matches the known asteroid 2399 Terradas (1971 MA).",
   "thumbnail_url": "/data/candidates/sv-2025w272a-l0024-s004-c01/thumb.webp",
   "field_ids": [
     "sv-2025w272a-l0024-s004"
@@ -1648,17 +1648,141 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2399 Terradas (1971 MA)",
+    "predicted_vmag": 17.0,
+    "per_epoch": [
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 2.434371,
+        "predicted_dec_deg": 0.518579,
+        "separation_arcsec": 0.88
+      },
+      {
+        "epoch_id": "e04",
+        "predicted_ra_deg": 2.434371,
+        "predicted_dec_deg": 0.518579,
+        "separation_arcsec": 0.7
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 2.434888,
+        "predicted_dec_deg": 0.518445,
+        "separation_arcsec": 0.44
+      },
+      {
+        "epoch_id": "e06",
+        "predicted_ra_deg": 2.434888,
+        "predicted_dec_deg": 0.518445,
+        "separation_arcsec": 0.78
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 2.435409,
+        "predicted_dec_deg": 0.518319,
+        "separation_arcsec": 0.51
+      },
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 2.435409,
+        "predicted_dec_deg": 0.518319,
+        "separation_arcsec": 0.2
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 2.435933,
+        "predicted_dec_deg": 0.518204,
+        "separation_arcsec": 0.54
+      },
+      {
+        "epoch_id": "e10",
+        "predicted_ra_deg": 2.435933,
+        "predicted_dec_deg": 0.518204,
+        "separation_arcsec": 0.62
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 2.499503,
+        "predicted_dec_deg": 0.535116,
+        "separation_arcsec": 0.68
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 2.500021,
+        "predicted_dec_deg": 0.534984,
+        "separation_arcsec": 1.21
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 2.500021,
+        "predicted_dec_deg": 0.534984,
+        "separation_arcsec": 1.21
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 2.500543,
+        "predicted_dec_deg": 0.534863,
+        "separation_arcsec": 0.99
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 2.500543,
+        "predicted_dec_deg": 0.534863,
+        "separation_arcsec": 0.16
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 2.501068,
+        "predicted_dec_deg": 0.534759,
+        "separation_arcsec": 0.14
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 2.521277,
+        "predicted_dec_deg": 0.540576,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 2.521277,
+        "predicted_dec_deg": 0.540576,
+        "separation_arcsec": 0.26
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 2.606993,
+        "predicted_dec_deg": 0.562583,
+        "separation_arcsec": 0.62
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 2.606993,
+        "predicted_dec_deg": 0.562583,
+        "separation_arcsec": 0.12
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 2.607509,
+        "predicted_dec_deg": 0.562449,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 2.607509,
+        "predicted_dec_deg": 0.562449,
+        "separation_arcsec": 0.76
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:02:44.216Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1670,7 +1794,25 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 20 SPHEREx exposures spanning 13.1 hours. It moves 49.1 arcseconds per hour toward position angle 76 degrees. A straight-line motion plus orbital-parallax fit leaves 0.70 arcseconds of scatter. SPHEREx's own orbital parallax puts it roughly 1.55 AU away (range 1.06 to 2.87 AU). Its faintest detection has a signal-to-noise ratio of 5.5. Its positions match JPL's prediction for 2399 Terradas (1971 MA) to within 1.2 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "motion.distance_au_estimate.best",
+      "motion.distance_au_estimate.lo",
+      "motion.distance_au_estimate.hi",
+      "detections[12].snr",
+      "known_object.designation",
+      "known_object.per_epoch[9].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:03:54.076Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1832,11 +1974,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

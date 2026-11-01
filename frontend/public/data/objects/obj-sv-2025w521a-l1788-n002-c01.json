@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w521a-l1788-n002-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 25 arcseconds per hour across 9 images over 39.2 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 25 arcseconds per hour across 9 images over 39.2 hours. It matches the known asteroid 2509 Chukotka (1977 NG).",
   "thumbnail_url": "/data/candidates/sv-2025w521a-l1788-n002-c01/thumb.webp",
   "field_ids": [
     "sv-2025w521a-l1788-n002"
@@ -802,17 +802,75 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2509 Chukotka (1977 NG)",
+    "predicted_vmag": 18.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 178.887192,
+        "predicted_dec_deg": 0.73328,
+        "separation_arcsec": 1.4
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 178.887434,
+        "predicted_dec_deg": 0.733042,
+        "separation_arcsec": 1.31
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 178.887675,
+        "predicted_dec_deg": 0.732812,
+        "separation_arcsec": 1.32
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 178.887915,
+        "predicted_dec_deg": 0.732593,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 179.087599,
+        "predicted_dec_deg": 0.634257,
+        "separation_arcsec": 2.89
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 179.087834,
+        "predicted_dec_deg": 0.63402,
+        "separation_arcsec": 0.78
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 179.088069,
+        "predicted_dec_deg": 0.63379,
+        "separation_arcsec": 0.74
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 179.126957,
+        "predicted_dec_deg": 0.614632,
+        "separation_arcsec": 0.51
+      },
+      {
+        "epoch_id": "e32",
+        "predicted_ra_deg": 179.12719,
+        "predicted_dec_deg": 0.614401,
+        "separation_arcsec": 1.46
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:20:35.955Z",
     "enrichment": "static"
   },
   "scores": {
@@ -824,7 +882,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 9 SPHEREx exposures spanning 39.2 hours. It moves 24.6 arcseconds per hour toward position angle 116 degrees. A straight-line fit leaves 1.81 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.6. Its positions match JPL's prediction for 2509 Chukotka (1977 NG) to within 2.9 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[4].snr",
+      "known_object.designation",
+      "known_object.per_epoch[4].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:21:30.772Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -909,11 +982,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w222b-l1917-s007-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 6 arcseconds per hour across 7 images over 16.3 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 6.1 arcseconds per hour across 7 images over 16.3 hours. It matches the known asteroid 10489 Keinonen (1985 TJ1).",
   "thumbnail_url": "/data/candidates/sv-2025w222b-l1917-s007-c01/thumb.webp",
   "field_ids": [
     "sv-2025w222b-l1917-s007"
@@ -649,17 +649,63 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "10489 Keinonen (1985 TJ1)",
+    "predicted_vmag": 17.7,
+    "per_epoch": [
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 190.612095,
+        "predicted_dec_deg": -5.136517,
+        "separation_arcsec": 0.79
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 190.612084,
+        "predicted_dec_deg": -5.13642,
+        "separation_arcsec": 0.63
+      },
+      {
+        "epoch_id": "e47",
+        "predicted_ra_deg": 190.603018,
+        "predicted_dec_deg": -5.15659,
+        "separation_arcsec": 0.19
+      },
+      {
+        "epoch_id": "e49",
+        "predicted_ra_deg": 190.603007,
+        "predicted_dec_deg": -5.156494,
+        "separation_arcsec": 1.59
+      },
+      {
+        "epoch_id": "e51",
+        "predicted_ra_deg": 190.602986,
+        "predicted_dec_deg": -5.156399,
+        "separation_arcsec": 1.02
+      },
+      {
+        "epoch_id": "e53",
+        "predicted_ra_deg": 190.600997,
+        "predicted_dec_deg": -5.161764,
+        "separation_arcsec": 1.36
+      },
+      {
+        "epoch_id": "e55",
+        "predicted_ra_deg": 190.600995,
+        "predicted_dec_deg": -5.161669,
+        "separation_arcsec": 0.97
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T19:51:03.724Z",
     "enrichment": "static"
   },
   "scores": {
@@ -671,7 +717,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 7 SPHEREx exposures spanning 16.3 hours. It moves 6.12 arcseconds per hour toward position angle 204 degrees. A straight-line fit leaves 1.14 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 7.8. Its positions match JPL's prediction for 10489 Keinonen (1985 TJ1) to within 1.6 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[5].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T19:51:58.465Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -742,11 +803,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

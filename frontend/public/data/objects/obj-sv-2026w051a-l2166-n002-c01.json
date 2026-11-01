@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2166-n002-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 52 arcseconds per hour across 7 images over 19.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 52 arcseconds per hour across 7 images over 19.6 hours. It matches the known asteroid 10084 Rossparker (1990 QC5).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2166-n002-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2166-n002"
@@ -650,17 +650,63 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "10084 Rossparker (1990 QC5)",
+    "predicted_vmag": 18.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 214.299103,
+        "predicted_dec_deg": -13.428449,
+        "separation_arcsec": 2.15
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 214.299629,
+        "predicted_dec_deg": -13.428842,
+        "separation_arcsec": 2.84
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 214.366436,
+        "predicted_dec_deg": -13.455658,
+        "separation_arcsec": 0.69
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 214.366961,
+        "predicted_dec_deg": -13.456057,
+        "separation_arcsec": 1.53
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 214.367486,
+        "predicted_dec_deg": -13.456447,
+        "separation_arcsec": 1.08
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 214.569498,
+        "predicted_dec_deg": -13.53836,
+        "separation_arcsec": 2.51
+      },
+      {
+        "epoch_id": "e43",
+        "predicted_ra_deg": 214.570021,
+        "predicted_dec_deg": -13.53875,
+        "separation_arcsec": 1.6
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:33:30.621Z",
     "enrichment": "static"
   },
   "scores": {
@@ -672,7 +718,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 7 SPHEREx exposures spanning 19.6 hours. It moves 52.4 arcseconds per hour toward position angle 113 degrees. A straight-line fit leaves 2.12 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.7. Its positions match JPL's prediction for 10084 Rossparker (1990 QC5) to within 2.8 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[5].snr",
+      "known_object.designation",
+      "known_object.per_epoch[1].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:34:33.618Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -743,11 +804,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

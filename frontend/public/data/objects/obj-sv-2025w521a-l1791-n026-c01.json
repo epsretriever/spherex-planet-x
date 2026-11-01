@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w521a-l1791-n026-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 29 arcseconds per hour across 17 images over 36.0 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 29 arcseconds per hour across 17 images over 36.0 hours. It matches the known asteroid 5193 Tanakawataru (1992 ET).",
   "thumbnail_url": "/data/candidates/sv-2025w521a-l1791-n026-c01/thumb.webp",
   "field_ids": [
     "sv-2025w521a-l1791-n026"
@@ -1418,17 +1418,123 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "5193 Tanakawataru (1992 ET)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 180.176294,
+        "predicted_dec_deg": 2.872029,
+        "separation_arcsec": 0.57
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 180.176593,
+        "predicted_dec_deg": 2.871803,
+        "separation_arcsec": 0.41
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 180.176891,
+        "predicted_dec_deg": 2.871585,
+        "separation_arcsec": 0.41
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 180.240184,
+        "predicted_dec_deg": 2.851103,
+        "separation_arcsec": 1.11
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 180.240184,
+        "predicted_dec_deg": 2.851103,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 180.265515,
+        "predicted_dec_deg": 2.842865,
+        "separation_arcsec": 1.91
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 180.265515,
+        "predicted_dec_deg": 2.842865,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 180.328748,
+        "predicted_dec_deg": 2.822243,
+        "separation_arcsec": 0.24
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 180.329043,
+        "predicted_dec_deg": 2.82202,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 180.329336,
+        "predicted_dec_deg": 2.821806,
+        "separation_arcsec": 0.49
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 180.329336,
+        "predicted_dec_deg": 2.821806,
+        "separation_arcsec": 2.62
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 180.329628,
+        "predicted_dec_deg": 2.821602,
+        "separation_arcsec": 0.64
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 180.453579,
+        "predicted_dec_deg": 2.781824,
+        "separation_arcsec": 1.66
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 180.45387,
+        "predicted_dec_deg": 2.781603,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 180.45387,
+        "predicted_dec_deg": 2.781603,
+        "separation_arcsec": 2.8
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 180.45416,
+        "predicted_dec_deg": 2.781389,
+        "separation_arcsec": 0.39
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 180.454452,
+        "predicted_dec_deg": 2.781183,
+        "separation_arcsec": 0.77
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:21:30.772Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1440,7 +1546,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 17 SPHEREx exposures spanning 36.0 hours. It moves 29.2 arcseconds per hour toward position angle 108 degrees. A straight-line fit leaves 2.54 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.6. Its positions match JPL's prediction for 5193 Tanakawataru (1992 ET) to within 2.8 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[10].snr",
+      "known_object.designation",
+      "known_object.per_epoch[14].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:22:59.442Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1581,11 +1702,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

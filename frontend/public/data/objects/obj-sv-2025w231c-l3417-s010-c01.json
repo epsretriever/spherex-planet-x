@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w231c-l3417-s010-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 35 arcseconds per hour across 10 images over 11.4 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 35 arcseconds per hour across 10 images over 11.4 hours. It matches the known asteroid 7217 Dacke (1979 QX3).",
   "thumbnail_url": "/data/candidates/sv-2025w231c-l3417-s010-c01/thumb.webp",
   "field_ids": [
     "sv-2025w231c-l3417-s010"
@@ -881,17 +881,81 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "7217 Dacke (1979 QX3)",
+    "predicted_vmag": 16.9,
+    "per_epoch": [
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 343.511442,
+        "predicted_dec_deg": -8.285597,
+        "separation_arcsec": 3.11
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 343.511442,
+        "predicted_dec_deg": -8.285597,
+        "separation_arcsec": 0.61
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 343.524907,
+        "predicted_dec_deg": -8.277116,
+        "separation_arcsec": 0.6
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 343.524907,
+        "predicted_dec_deg": -8.277116,
+        "separation_arcsec": 0.76
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 343.604966,
+        "predicted_dec_deg": -8.226357,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 343.604966,
+        "predicted_dec_deg": -8.226357,
+        "separation_arcsec": 0.44
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 343.605282,
+        "predicted_dec_deg": -8.226321,
+        "separation_arcsec": 0.38
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 343.605282,
+        "predicted_dec_deg": -8.226321,
+        "separation_arcsec": 0.83
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 343.605598,
+        "predicted_dec_deg": -8.226282,
+        "separation_arcsec": 0.48
+      },
+      {
+        "epoch_id": "e32",
+        "predicted_ra_deg": 343.605598,
+        "predicted_dec_deg": -8.226282,
+        "separation_arcsec": 0.86
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T19:58:49.876Z",
     "enrichment": "static"
   },
   "scores": {
@@ -903,7 +967,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 10 SPHEREx exposures spanning 11.4 hours. It moves 35.1 arcseconds per hour toward position angle 57 degrees. A straight-line fit leaves 1.09 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 10.7. Its positions match JPL's prediction for 7217 Dacke (1979 QX3) to within 3.1 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[0].snr",
+      "known_object.designation",
+      "known_object.per_epoch[0].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T19:59:43.295Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -995,11 +1074,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

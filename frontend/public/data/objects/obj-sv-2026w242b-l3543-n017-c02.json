@@ -5,7 +5,7 @@
   "object_id": "obj-sv-2026w242b-l3543-n017-c02",
   "classification": "unconfirmed_pair",
   "label_plain": "Unconfirmed pair",
-  "summary_plain": "Moves about 70 arcseconds per hour across 6 images over 13.0 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "summary_plain": "Moves about 70 arcseconds per hour across 6 images over 13.0 hours. Only two sightings, so the motion is unconfirmed.",
   "thumbnail_url": "/data/candidates/sv-2026w242b-l3543-n017-c02/thumb.webp",
   "field_ids": [
     "sv-2026w242b-l3543-n017"
@@ -573,17 +573,23 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
+    "checked": true,
+    "not_checked_reason": null,
     "matched": false,
-    "catalogs_checked": [],
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
     "designation": null,
     "predicted_vmag": null,
     "per_epoch": [],
-    "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "nearest": {
+      "designation": "661589 (2004 VV134)",
+      "separation_arcsec": 112.1
+    },
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:54:25.196Z",
     "enrichment": "static"
   },
   "scores": {
@@ -595,7 +601,24 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 6 SPHEREx exposures spanning 13.0 hours. It moves 69.9 arcseconds per hour toward position angle 152 degrees. A straight-line fit leaves 2.32 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 7.1. No catalogued asteroid or comet in JPL SBIdent and JPL Horizons was predicted within 15 arcseconds at every epoch. The closest catalogued object, 661589 (2004 VV134), was 112.1 arcseconds away. Two sightings are not enough to confirm motion, so treat this as unconfirmed.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[3].snr",
+      "known_object.catalogs_checked",
+      "known_object.search_radius_arcsec",
+      "known_object.nearest.designation",
+      "known_object.nearest.separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:55:01.963Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -659,11 +682,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

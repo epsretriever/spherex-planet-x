@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w192a-l1458-n038-c02",
-  "classification": "unconfirmed_pair",
-  "label_plain": "Unconfirmed pair",
-  "summary_plain": "Moves about 44 arcseconds per hour across 11 images over 18.0 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 44 arcseconds per hour across 11 images over 18.0 hours. It matches the known asteroid 2656 Evenkia (1979 HD5).",
   "thumbnail_url": "/data/candidates/sv-2026w192a-l1458-n038-c02/thumb.webp",
   "field_ids": [
     "sv-2026w192a-l1458-n038"
@@ -956,17 +956,87 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2656 Evenkia (1979 HD5)",
+    "predicted_vmag": 17.5,
+    "per_epoch": [
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 149.316402,
+        "predicted_dec_deg": 16.54398,
+        "separation_arcsec": 0.94
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 149.316866,
+        "predicted_dec_deg": 16.544016,
+        "separation_arcsec": 1.99
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 149.316866,
+        "predicted_dec_deg": 16.544016,
+        "separation_arcsec": 2.34
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 149.317323,
+        "predicted_dec_deg": 16.544051,
+        "separation_arcsec": 0.91
+      },
+      {
+        "epoch_id": "e36",
+        "predicted_ra_deg": 149.317323,
+        "predicted_dec_deg": 16.544051,
+        "separation_arcsec": 1.47
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 149.526763,
+        "predicted_dec_deg": 16.454413,
+        "separation_arcsec": 1.21
+      },
+      {
+        "epoch_id": "e38",
+        "predicted_ra_deg": 149.526763,
+        "predicted_dec_deg": 16.454413,
+        "separation_arcsec": 0.69
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 149.527233,
+        "predicted_dec_deg": 16.454445,
+        "separation_arcsec": 1.67
+      },
+      {
+        "epoch_id": "e40",
+        "predicted_ra_deg": 149.527233,
+        "predicted_dec_deg": 16.454445,
+        "separation_arcsec": 0.63
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 149.527696,
+        "predicted_dec_deg": 16.454478,
+        "separation_arcsec": 1.83
+      },
+      {
+        "epoch_id": "e42",
+        "predicted_ra_deg": 149.527696,
+        "predicted_dec_deg": 16.454478,
+        "separation_arcsec": 0.81
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:41:18.784Z",
     "enrichment": "static"
   },
   "scores": {
@@ -978,7 +1048,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 11 SPHEREx exposures spanning 18.0 hours. It moves 44.4 arcseconds per hour toward position angle 114 degrees. A straight-line fit leaves 1.56 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 5.8. Its positions match JPL's prediction for 2656 Evenkia (1979 HD5) to within 2.3 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[3].snr",
+      "known_object.designation",
+      "known_object.per_epoch[2].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:41:54.326Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1077,11 +1162,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

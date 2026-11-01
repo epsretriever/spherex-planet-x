@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w242b-l3540-n011-c02",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 42 arcseconds per hour across 17 images over 19.5 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 42 arcseconds per hour across 17 images over 19.5 hours. It matches the known asteroid 440 Theodora (A898 TB).",
   "thumbnail_url": "/data/candidates/sv-2026w242b-l3540-n011-c02/thumb.webp",
   "field_ids": [
     "sv-2026w242b-l3540-n011"
@@ -1413,17 +1413,123 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "440 Theodora (A898 TB)",
+    "predicted_vmag": 16.3,
+    "per_epoch": [
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 353.907508,
+        "predicted_dec_deg": -1.509079,
+        "separation_arcsec": 0.55
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 353.907508,
+        "predicted_dec_deg": -1.509079,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 353.907906,
+        "predicted_dec_deg": -1.509063,
+        "separation_arcsec": 0.2
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 353.907906,
+        "predicted_dec_deg": -1.509063,
+        "separation_arcsec": 0.66
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 353.908301,
+        "predicted_dec_deg": -1.509041,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 353.908301,
+        "predicted_dec_deg": -1.509041,
+        "separation_arcsec": 1.11
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 353.908693,
+        "predicted_dec_deg": -1.509012,
+        "separation_arcsec": 0.18
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 353.908693,
+        "predicted_dec_deg": -1.509012,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 353.99281,
+        "predicted_dec_deg": -1.467828,
+        "separation_arcsec": 0.91
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 353.99281,
+        "predicted_dec_deg": -1.467828,
+        "separation_arcsec": 0.41
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 353.993207,
+        "predicted_dec_deg": -1.467813,
+        "separation_arcsec": 0.3
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 353.993602,
+        "predicted_dec_deg": -1.467796,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 353.993602,
+        "predicted_dec_deg": -1.467796,
+        "separation_arcsec": 1.32
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 353.993994,
+        "predicted_dec_deg": -1.467772,
+        "separation_arcsec": 0.53
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 353.993994,
+        "predicted_dec_deg": -1.467772,
+        "separation_arcsec": 1.42
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 354.111506,
+        "predicted_dec_deg": -1.410324,
+        "separation_arcsec": 0.82
+      },
+      {
+        "epoch_id": "e32",
+        "predicted_ra_deg": 354.111506,
+        "predicted_dec_deg": -1.410324,
+        "separation_arcsec": 0.83
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:52:09.495Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1435,7 +1541,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 17 SPHEREx exposures spanning 19.5 hours. It moves 41.9 arcseconds per hour toward position angle 64 degrees. A straight-line fit leaves 0.88 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 6.2. Its positions match JPL's prediction for 440 Theodora (A898 TB) to within 1.4 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[6].snr",
+      "known_object.designation",
+      "known_object.per_epoch[14].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:53:02.514Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1576,11 +1697,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

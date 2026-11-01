@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w242b-l3534-n017-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 59 arcseconds per hour across 9 images over 22.8 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 59 arcseconds per hour across 9 images over 22.8 hours. It matches the known asteroid 8079 Bernardlovell (1986 XF1).",
   "thumbnail_url": "/data/candidates/sv-2026w242b-l3534-n017-c01/thumb.webp",
   "field_ids": [
     "sv-2026w242b-l3534-n017"
@@ -801,17 +801,75 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "8079 Bernardlovell (1986 XF1)",
+    "predicted_vmag": 18.1,
+    "per_epoch": [
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 353.118694,
+        "predicted_dec_deg": -1.10841,
+        "separation_arcsec": 0.5
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 353.119242,
+        "predicted_dec_deg": -1.108341,
+        "separation_arcsec": 0.7
+      },
+      {
+        "epoch_id": "e15",
+        "predicted_ra_deg": 353.332537,
+        "predicted_dec_deg": -1.000465,
+        "separation_arcsec": 0.57
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 353.333085,
+        "predicted_dec_deg": -1.000399,
+        "separation_arcsec": 0.67
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 353.333629,
+        "predicted_dec_deg": -1.000328,
+        "separation_arcsec": 0.11
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 353.33417,
+        "predicted_dec_deg": -1.000248,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 353.450825,
+        "predicted_dec_deg": -0.940617,
+        "separation_arcsec": 0.87
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 353.451372,
+        "predicted_dec_deg": -0.940554,
+        "separation_arcsec": 1.78
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 353.451917,
+        "predicted_dec_deg": -0.940487,
+        "separation_arcsec": 2.02
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:47:52.531Z",
     "enrichment": "static"
   },
   "scores": {
@@ -823,7 +881,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 9 SPHEREx exposures spanning 22.8 hours. It moves 58.8 arcseconds per hour toward position angle 63 degrees. A straight-line fit leaves 1.28 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.7. Its positions match JPL's prediction for 8079 Bernardlovell (1986 XF1) to within 2.0 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[6].snr",
+      "known_object.designation",
+      "known_object.per_epoch[8].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:48:46.551Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -908,11 +981,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

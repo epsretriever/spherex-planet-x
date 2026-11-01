@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "candidate_id": "sv-2025w222b-l1926-s007-c01",
   "field_id": "sv-2025w222b-l1926-s007",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 5 arcseconds per hour across 10 images over 63.6 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 5.5 arcseconds per hour across 10 images over 2.7 days. It matches the known asteroid 4842 Atsushi (1989 WK).",
   "thumbnail_url": "/data/candidates/sv-2025w222b-l1926-s007-c01/thumb.webp",
   "detections": [
     {
@@ -766,23 +766,87 @@
     "distance_au_estimate": null
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T19:51:58.466Z",
+    "enrichment": "static",
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
+    "designation": "4842 Atsushi (1989 WK)",
+    "predicted_vmag": 17.2,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 191.271528,
+        "predicted_dec_deg": -5.566819,
+        "separation_arcsec": 1.16
+      },
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 191.271595,
+        "predicted_dec_deg": -5.566542,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e06",
+        "predicted_ra_deg": 191.271641,
+        "predicted_dec_deg": -5.566264,
+        "separation_arcsec": 1.34
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 191.271667,
+        "predicted_dec_deg": -5.565991,
+        "separation_arcsec": 1.45
+      },
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 191.271667,
+        "predicted_dec_deg": -5.565991,
+        "separation_arcsec": 0.89
+      },
+      {
+        "epoch_id": "e47",
+        "predicted_ra_deg": 191.358759,
+        "predicted_dec_deg": -5.539432,
+        "separation_arcsec": 1.11
+      },
+      {
+        "epoch_id": "e49",
+        "predicted_ra_deg": 191.358845,
+        "predicted_dec_deg": -5.53917,
+        "separation_arcsec": 0.46
+      },
+      {
+        "epoch_id": "e51",
+        "predicted_ra_deg": 191.358913,
+        "predicted_dec_deg": -5.53891,
+        "separation_arcsec": 0.3
+      },
+      {
+        "epoch_id": "e53",
+        "predicted_ra_deg": 191.364769,
+        "predicted_dec_deg": -5.538742,
+        "separation_arcsec": 0.22
+      },
+      {
+        "epoch_id": "e55",
+        "predicted_ra_deg": 191.364869,
+        "predicted_dec_deg": -5.538483,
+        "separation_arcsec": 0.93
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
     "motion_consistency": 0.593,
     "snr": 0.755,
-    "artifact_likelihood": 0.0,
+    "artifact_likelihood": 0,
     "overall": 0.448,
     "quality_level": "medium",
     "method": "rule_based_v1",
@@ -807,7 +871,7 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 2.44,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
@@ -820,7 +884,7 @@
     {
       "check": "flagged_aperture_pixels",
       "description": "Fraction of detections whose aperture touches pixels SPHEREx flags as unreliable (phantom, dichroic, nonlinear, persistence)",
-      "value": 0.0,
+      "value": 0,
       "threshold": 0.25,
       "passed": true
     },
@@ -835,29 +899,29 @@
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
       "value": 82.7,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
       "value": 1.44,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 1.37,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": true,
       "threshold": false,
-      "passed": null
+      "passed": false
     }
   ],
   "error_sources": [
@@ -918,8 +982,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "not_ruled_out",
+      "evidence": "Matches 4842 Atsushi (1989 WK) (JPL).",
       "from_checks": [
         "known_object_match"
       ]
@@ -928,14 +992,29 @@
       "id": "catalog_gap",
       "label": "A real object missing from the catalogs we checked",
       "explanation": "Some real asteroids are faint or newly found and are not in JPL's database yet.",
-      "status": "unknown",
-      "evidence": "Cannot be ruled out from SPHEREx data alone.",
+      "status": "ruled_out",
+      "evidence": "Already catalogued.",
       "from_checks": [
         "known_object_match"
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 10 SPHEREx exposures spanning 63.6 hours. It moves 5.45 arcseconds per hour toward position angle 73 degrees. A straight-line fit leaves 2.44 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 6.1. Its positions match JPL's prediction for 4842 Atsushi (1989 WK) to within 1.4 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[3].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T19:53:32.443Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1021,11 +1100,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

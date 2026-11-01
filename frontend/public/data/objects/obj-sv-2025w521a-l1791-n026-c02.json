@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2025w521a-l1791-n026-c02",
-  "classification": "likely_artifact",
-  "label_plain": "Likely artifact",
-  "summary_plain": "Moves about 22 arcseconds per hour across 18 images over 55.4 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 22 arcseconds per hour across 18 images over 2.3 days. It matches the known asteroid 3662 Dezhnev (1980 RU2).",
   "thumbnail_url": "/data/candidates/sv-2025w521a-l1791-n026-c02/thumb.webp",
   "field_ids": [
     "sv-2025w521a-l1791-n026"
@@ -1487,17 +1487,129 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "3662 Dezhnev (1980 RU2)",
+    "predicted_vmag": 18.0,
+    "per_epoch": [
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 180.007758,
+        "predicted_dec_deg": 2.795096,
+        "separation_arcsec": 0.94
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 180.007966,
+        "predicted_dec_deg": 2.794848,
+        "separation_arcsec": 0.69
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 180.008173,
+        "predicted_dec_deg": 2.794608,
+        "separation_arcsec": 0.71
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 180.008378,
+        "predicted_dec_deg": 2.794375,
+        "separation_arcsec": 2.24
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 180.068375,
+        "predicted_dec_deg": 2.754786,
+        "separation_arcsec": 0.37
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 180.068375,
+        "predicted_dec_deg": 2.754786,
+        "separation_arcsec": 1.7
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 180.111158,
+        "predicted_dec_deg": 2.726127,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 180.111362,
+        "predicted_dec_deg": 2.725883,
+        "separation_arcsec": 0.96
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 180.111564,
+        "predicted_dec_deg": 2.725645,
+        "separation_arcsec": 0.46
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 180.111765,
+        "predicted_dec_deg": 2.725417,
+        "separation_arcsec": 0.11
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 180.195162,
+        "predicted_dec_deg": 2.669477,
+        "separation_arcsec": 1.25
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 180.195561,
+        "predicted_dec_deg": 2.668996,
+        "separation_arcsec": 1.25
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 180.195761,
+        "predicted_dec_deg": 2.668765,
+        "separation_arcsec": 0.27
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 180.277338,
+        "predicted_dec_deg": 2.613389,
+        "separation_arcsec": 1.24
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 180.277534,
+        "predicted_dec_deg": 2.613148,
+        "separation_arcsec": 0.93
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 180.277729,
+        "predicted_dec_deg": 2.612914,
+        "separation_arcsec": 1.55
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 180.292991,
+        "predicted_dec_deg": 2.60295,
+        "separation_arcsec": 0.99
+      },
+      {
+        "epoch_id": "e43",
+        "predicted_ra_deg": 180.293186,
+        "predicted_dec_deg": 2.6027,
+        "separation_arcsec": 0.43
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:22:59.443Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1509,7 +1621,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 18 SPHEREx exposures spanning 55.4 hours. It moves 22.4 arcseconds per hour toward position angle 124 degrees. A straight-line fit leaves 4.53 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.7. Its positions match JPL's prediction for 3662 Dezhnev (1980 RU2) to within 2.2 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[10].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:24:45.104Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1657,11 +1784,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

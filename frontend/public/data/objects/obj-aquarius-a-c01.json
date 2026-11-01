@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-aquarius-a-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 43 arcseconds per hour across 13 images over 23.0 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 43 arcseconds per hour across 13 images over 23.0 hours. It matches the known asteroid 2410 Morrison (1981 AF).",
   "thumbnail_url": "/data/candidates/aquarius-a-c01/thumb.webp",
   "field_ids": [
     "aquarius-a"
@@ -1105,17 +1105,99 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "2410 Morrison (1981 AF)",
+    "predicted_vmag": 17.4,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 346.400378,
+        "predicted_dec_deg": -6.429471,
+        "separation_arcsec": 0.42
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 346.401236,
+        "predicted_dec_deg": -6.429522,
+        "separation_arcsec": 0.74
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 346.401661,
+        "predicted_dec_deg": -6.429537,
+        "separation_arcsec": 0.44
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 346.529204,
+        "predicted_dec_deg": -6.383617,
+        "separation_arcsec": 0.98
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 346.529634,
+        "predicted_dec_deg": -6.383649,
+        "separation_arcsec": 0.89
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 346.54834,
+        "predicted_dec_deg": -6.377155,
+        "separation_arcsec": 0.69
+      },
+      {
+        "epoch_id": "e16",
+        "predicted_ra_deg": 346.548767,
+        "predicted_dec_deg": -6.377183,
+        "separation_arcsec": 0.9
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 346.54919,
+        "predicted_dec_deg": -6.377203,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 346.549611,
+        "predicted_dec_deg": -6.377211,
+        "separation_arcsec": 0.12
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 346.658499,
+        "predicted_dec_deg": -6.33822,
+        "separation_arcsec": 1.23
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 346.658922,
+        "predicted_dec_deg": -6.338247,
+        "separation_arcsec": 0.74
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 346.659343,
+        "predicted_dec_deg": -6.338265,
+        "separation_arcsec": 1.6
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 346.659761,
+        "predicted_dec_deg": -6.338273,
+        "separation_arcsec": 0.22
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T19:39:53.520Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1127,7 +1209,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 13 SPHEREx exposures spanning 23.0 hours. It moves 42.9 arcseconds per hour toward position angle 70 degrees. A straight-line fit leaves 1.19 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 9.8. Its positions match JPL's prediction for 2410 Morrison (1981 AF) to within 1.6 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[10].snr",
+      "known_object.designation",
+      "known_object.per_epoch[11].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T19:42:55.125Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1240,11 +1337,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

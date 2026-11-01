@@ -5,7 +5,7 @@
   "field_id": "sv-2026w242b-l3543-n017",
   "classification": "unconfirmed_pair",
   "label_plain": "Unconfirmed pair",
-  "summary_plain": "Moves about 70 arcseconds per hour across 6 images over 13.0 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "summary_plain": "Moves about 70 arcseconds per hour across 6 images over 13.0 hours. Only two sightings, so the motion is unconfirmed.",
   "thumbnail_url": "/data/candidates/sv-2026w242b-l3543-n017-c02/thumb.webp",
   "detections": [
     {
@@ -468,24 +468,30 @@
     "distance_au_estimate": null
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T20:54:25.196Z",
+    "enrichment": "static",
     "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "designation": null,
     "predicted_vmag": null,
     "per_epoch": [],
-    "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "nearest": {
+      "designation": "661589 (2004 VV134)",
+      "separation_arcsec": 112.1
+    },
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
-    "motion_consistency": 0.0,
+    "motion_consistency": 0,
     "snr": 0.889,
-    "artifact_likelihood": 0.0,
-    "overall": 0.0,
+    "artifact_likelihood": 0,
+    "overall": 0,
     "quality_level": "low",
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
@@ -509,20 +515,20 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 2.32,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": null
     },
     {
       "check": "motion_fit_pvalue",
       "description": "Chi-square probability of the motion fit given the position errors (informational)",
-      "value": 3.14e-6,
+      "value": 0.00000314,
       "threshold": null,
       "passed": null
     },
     {
       "check": "flagged_aperture_pixels",
       "description": "Fraction of detections whose aperture touches pixels SPHEREx flags as unreliable (phantom, dichroic, nonlinear, persistence)",
-      "value": 0.0,
+      "value": 0,
       "threshold": 0.25,
       "passed": true
     },
@@ -537,29 +543,29 @@
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
       "value": 18.8,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
       "value": 1.63,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 2.2,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": false,
       "threshold": false,
-      "passed": null
+      "passed": true
     }
   ],
   "error_sources": [
@@ -620,8 +626,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "ruled_out",
+      "evidence": "No match in JPL SBIdent and JPL Horizons within 15 arcsec.",
       "from_checks": [
         "known_object_match"
       ]
@@ -637,7 +643,24 @@
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 6 SPHEREx exposures spanning 13.0 hours. It moves 69.9 arcseconds per hour toward position angle 152 degrees. A straight-line fit leaves 2.32 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 7.1. No catalogued asteroid or comet in JPL SBIdent and JPL Horizons was predicted within 15 arcseconds at every epoch. The closest catalogued object, 661589 (2004 VV134), was 112.1 arcseconds away. Two sightings are not enough to confirm motion, so treat this as unconfirmed.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[3].snr",
+      "known_object.catalogs_checked",
+      "known_object.search_radius_arcsec",
+      "known_object.nearest.designation",
+      "known_object.nearest.separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:55:01.963Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -695,11 +718,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

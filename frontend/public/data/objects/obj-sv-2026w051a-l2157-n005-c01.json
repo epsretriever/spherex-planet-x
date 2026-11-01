@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "build_run_id": "gh-41316531565-1",
   "object_id": "obj-sv-2026w051a-l2157-n005-c01",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 29 arcseconds per hour across 12 images over 9.8 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 29 arcseconds per hour across 12 images over 9.8 hours. It matches the known asteroid 495 Eulalia (A902 UL).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2157-n005-c01/thumb.webp",
   "field_ids": [
     "sv-2026w051a-l2157-n005"
@@ -1034,17 +1034,93 @@
     }
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
     "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "designation": "495 Eulalia (A902 UL)",
+    "predicted_vmag": 16.5,
+    "per_epoch": [
+      {
+        "epoch_id": "e01",
+        "predicted_ra_deg": 213.477529,
+        "predicted_dec_deg": -13.062065,
+        "separation_arcsec": 0.63
+      },
+      {
+        "epoch_id": "e02",
+        "predicted_ra_deg": 213.477529,
+        "predicted_dec_deg": -13.062065,
+        "separation_arcsec": 1.37
+      },
+      {
+        "epoch_id": "e03",
+        "predicted_ra_deg": 213.50308,
+        "predicted_dec_deg": -13.069132,
+        "separation_arcsec": 1.03
+      },
+      {
+        "epoch_id": "e04",
+        "predicted_ra_deg": 213.50308,
+        "predicted_dec_deg": -13.069132,
+        "separation_arcsec": 0.59
+      },
+      {
+        "epoch_id": "e05",
+        "predicted_ra_deg": 213.503386,
+        "predicted_dec_deg": -13.069341,
+        "separation_arcsec": 0.73
+      },
+      {
+        "epoch_id": "e06",
+        "predicted_ra_deg": 213.503386,
+        "predicted_dec_deg": -13.069341,
+        "separation_arcsec": 0.28
+      },
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 213.554762,
+        "predicted_dec_deg": -13.083695,
+        "separation_arcsec": 0.22
+      },
+      {
+        "epoch_id": "e08",
+        "predicted_ra_deg": 213.554762,
+        "predicted_dec_deg": -13.083695,
+        "separation_arcsec": 2.1
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 213.555068,
+        "predicted_dec_deg": -13.083913,
+        "separation_arcsec": 0.71
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 213.555373,
+        "predicted_dec_deg": -13.084124,
+        "separation_arcsec": 0.58
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 213.555678,
+        "predicted_dec_deg": -13.084327,
+        "separation_arcsec": 0.63
+      },
+      {
+        "epoch_id": "e14",
+        "predicted_ra_deg": 213.555678,
+        "predicted_dec_deg": -13.084327,
+        "separation_arcsec": 0.47
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)",
+    "query_utc": "2026-11-01T20:27:57.221Z",
     "enrichment": "static"
   },
   "scores": {
@@ -1056,7 +1132,22 @@
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 12 SPHEREx exposures spanning 9.8 hours. It moves 29.1 arcseconds per hour toward position angle 106 degrees. A straight-line fit leaves 0.99 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 8.8. Its positions match JPL's prediction for 495 Eulalia (A902 UL) to within 2.1 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[1].snr",
+      "known_object.designation",
+      "known_object.per_epoch[7].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:28:51.502Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1162,11 +1253,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

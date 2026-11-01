@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "candidate_id": "sv-2026w051a-l2160-n005-c01",
   "field_id": "sv-2026w051a-l2160-n005",
-  "classification": "unmatched",
-  "label_plain": "Unexplained",
-  "summary_plain": "Moves about 28 arcseconds per hour across 23 images over 37.5 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 28 arcseconds per hour across 23 images over 37.5 hours. It matches the known asteroid 495 Eulalia (A902 UL).",
   "thumbnail_url": "/data/candidates/sv-2026w051a-l2160-n005-c01/thumb.webp",
   "detections": [
     {
@@ -394,7 +394,7 @@
       "y_grid": 36.436,
       "flux_ujy": 841.18,
       "flux_err_ujy": 93.46,
-      "snr": 9.0,
+      "snr": 9,
       "wavelength_um_center": 3.9599,
       "bandwidth_um": 0.0362,
       "wavelength_um_range": [
@@ -1061,7 +1061,7 @@
       "y_pix": 689.23,
       "x_grid": 50.521,
       "y_grid": 7.398,
-      "flux_ujy": 1388.0,
+      "flux_ujy": 1388,
       "flux_err_ujy": 61.5,
       "snr": 22.57,
       "wavelength_um_center": 1.433,
@@ -1732,23 +1732,165 @@
     "distance_au_estimate": null
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T20:31:23.332Z",
+    "enrichment": "static",
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
+    "designation": "495 Eulalia (A902 UL)",
+    "predicted_vmag": 16.5,
+    "per_epoch": [
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 213.747366,
+        "predicted_dec_deg": -13.138265,
+        "separation_arcsec": 0.55
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 213.747366,
+        "predicted_dec_deg": -13.138265,
+        "separation_arcsec": 0.72
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 213.747666,
+        "predicted_dec_deg": -13.138483,
+        "separation_arcsec": 0.32
+      },
+      {
+        "epoch_id": "e20",
+        "predicted_ra_deg": 213.747666,
+        "predicted_dec_deg": -13.138483,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 213.747965,
+        "predicted_dec_deg": -13.138694,
+        "separation_arcsec": 0.65
+      },
+      {
+        "epoch_id": "e22",
+        "predicted_ra_deg": 213.747965,
+        "predicted_dec_deg": -13.138694,
+        "separation_arcsec": 0.99
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 213.748265,
+        "predicted_dec_deg": -13.138896,
+        "separation_arcsec": 0.85
+      },
+      {
+        "epoch_id": "e24",
+        "predicted_ra_deg": 213.748265,
+        "predicted_dec_deg": -13.138896,
+        "separation_arcsec": 0.15
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 213.88609,
+        "predicted_dec_deg": -13.17734,
+        "separation_arcsec": 0.23
+      },
+      {
+        "epoch_id": "e26",
+        "predicted_ra_deg": 213.88609,
+        "predicted_dec_deg": -13.17734,
+        "separation_arcsec": 0.33
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 213.886385,
+        "predicted_dec_deg": -13.177551,
+        "separation_arcsec": 0.92
+      },
+      {
+        "epoch_id": "e28",
+        "predicted_ra_deg": 213.886385,
+        "predicted_dec_deg": -13.177551,
+        "separation_arcsec": 0.8
+      },
+      {
+        "epoch_id": "e29",
+        "predicted_ra_deg": 213.923212,
+        "predicted_dec_deg": -13.187608,
+        "separation_arcsec": 0.31
+      },
+      {
+        "epoch_id": "e30",
+        "predicted_ra_deg": 213.923212,
+        "predicted_dec_deg": -13.187608,
+        "separation_arcsec": 0.52
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 213.923505,
+        "predicted_dec_deg": -13.187824,
+        "separation_arcsec": 0.79
+      },
+      {
+        "epoch_id": "e32",
+        "predicted_ra_deg": 213.923505,
+        "predicted_dec_deg": -13.187824,
+        "separation_arcsec": 0.1
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 213.923799,
+        "predicted_dec_deg": -13.188034,
+        "separation_arcsec": 0.4
+      },
+      {
+        "epoch_id": "e34",
+        "predicted_ra_deg": 213.923799,
+        "predicted_dec_deg": -13.188034,
+        "separation_arcsec": 0.56
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 213.924093,
+        "predicted_dec_deg": -13.188235,
+        "separation_arcsec": 1.02
+      },
+      {
+        "epoch_id": "e36",
+        "predicted_ra_deg": 213.924093,
+        "predicted_dec_deg": -13.188235,
+        "separation_arcsec": 0.11
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 214.034534,
+        "predicted_dec_deg": -13.218736,
+        "separation_arcsec": 0.75
+      },
+      {
+        "epoch_id": "e38",
+        "predicted_ra_deg": 214.034534,
+        "predicted_dec_deg": -13.218736,
+        "separation_arcsec": 0.64
+      },
+      {
+        "epoch_id": "e40",
+        "predicted_ra_deg": 214.034824,
+        "predicted_dec_deg": -13.218946,
+        "separation_arcsec": 0.69
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
     "motion_consistency": 0.599,
     "snr": 0.982,
-    "artifact_likelihood": 0.0,
+    "artifact_likelihood": 0,
     "overall": 0.589,
     "quality_level": "medium",
     "method": "rule_based_v1",
@@ -1765,7 +1907,7 @@
     {
       "check": "per_detection_snr_min",
       "description": "Lowest signal-to-noise ratio among the detections",
-      "value": 9.0,
+      "value": 9,
       "threshold": 4.5,
       "passed": true
     },
@@ -1773,7 +1915,7 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 2.4,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
@@ -1786,7 +1928,7 @@
     {
       "check": "flagged_aperture_pixels",
       "description": "Fraction of detections whose aperture touches pixels SPHEREx flags as unreliable (phantom, dichroic, nonlinear, persistence)",
-      "value": 0.0,
+      "value": 0,
       "threshold": 0.25,
       "passed": true
     },
@@ -1801,29 +1943,29 @@
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
       "value": 6.3,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
-      "value": 0.0,
-      "threshold": 4.0,
+      "value": 0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 1.7,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": true,
       "threshold": false,
-      "passed": null
+      "passed": false
     }
   ],
   "error_sources": [
@@ -1884,8 +2026,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "not_ruled_out",
+      "evidence": "Matches 495 Eulalia (A902 UL) (JPL).",
       "from_checks": [
         "known_object_match"
       ]
@@ -1894,14 +2036,29 @@
       "id": "catalog_gap",
       "label": "A real object missing from the catalogs we checked",
       "explanation": "Some real asteroids are faint or newly found and are not in JPL's database yet.",
-      "status": "unknown",
-      "evidence": "Cannot be ruled out from SPHEREx data alone.",
+      "status": "ruled_out",
+      "evidence": "Already catalogued.",
       "from_checks": [
         "known_object_match"
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 23 SPHEREx exposures spanning 37.5 hours. It moves 28.0 arcseconds per hour toward position angle 106 degrees. A straight-line fit leaves 2.40 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 9.0. Its positions match JPL's prediction for 495 Eulalia (A902 UL) to within 1.0 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[5].snr",
+      "known_object.designation",
+      "known_object.per_epoch[18].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:32:34.397Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1960,7 +2117,7 @@
       {
         "band_index": 28,
         "wavelength_um": 1.433,
-        "flux_ujy": 1388.0,
+        "flux_ujy": 1388,
         "flux_err_ujy": 61.5,
         "epoch_id": "e31"
       },
@@ -2078,11 +2235,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },

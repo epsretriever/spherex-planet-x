@@ -3,9 +3,9 @@
   "pipeline_version": "0.1.0+git.a0f12ad",
   "candidate_id": "sv-2025w521a-l1791-n026-c02",
   "field_id": "sv-2025w521a-l1791-n026",
-  "classification": "likely_artifact",
-  "label_plain": "Likely artifact",
-  "summary_plain": "Moves about 22 arcseconds per hour across 18 images over 55.4 hours. Not yet checked against JPL's catalog of known asteroids and comets.",
+  "classification": "known_object",
+  "label_plain": "Known asteroid",
+  "summary_plain": "Moves about 22 arcseconds per hour across 18 images over 2.3 days. It matches the known asteroid 3662 Dezhnev (1980 RU2).",
   "thumbnail_url": "/data/candidates/sv-2025w521a-l1791-n026-c02/thumb.webp",
   "detections": [
     {
@@ -684,7 +684,7 @@
       "ra_deg": 180.1117885,
       "dec_deg": 2.7253983,
       "pos_err_arcsec": 0.893,
-      "x_pix": 1563.0,
+      "x_pix": 1563,
       "y_pix": 295.35,
       "x_grid": 145.515,
       "y_grid": 78.023,
@@ -1058,7 +1058,7 @@
       "y_pix": 1810.11,
       "x_grid": 48.451,
       "y_grid": 12.345,
-      "flux_ujy": 447.0,
+      "flux_ujy": 447,
       "flux_err_ujy": 56.12,
       "snr": 7.97,
       "wavelength_um_center": 1.1405,
@@ -1358,18 +1358,130 @@
     "distance_au_estimate": null
   },
   "known_object": {
-    "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
-    "matched": false,
-    "catalogs_checked": [],
-    "search_radius_arcsec": 15.0,
-    "designation": null,
-    "predicted_vmag": null,
-    "per_epoch": [],
+    "checked": true,
+    "not_checked_reason": null,
+    "search_radius_arcsec": 15,
+    "query_utc": "2026-11-01T20:22:59.443Z",
+    "enrichment": "static",
+    "matched": true,
+    "catalogs_checked": [
+      "JPL SBIdent",
+      "JPL Horizons"
+    ],
+    "designation": "3662 Dezhnev (1980 RU2)",
+    "predicted_vmag": 18,
+    "per_epoch": [
+      {
+        "epoch_id": "e07",
+        "predicted_ra_deg": 180.007758,
+        "predicted_dec_deg": 2.795096,
+        "separation_arcsec": 0.94
+      },
+      {
+        "epoch_id": "e09",
+        "predicted_ra_deg": 180.007966,
+        "predicted_dec_deg": 2.794848,
+        "separation_arcsec": 0.69
+      },
+      {
+        "epoch_id": "e11",
+        "predicted_ra_deg": 180.008173,
+        "predicted_dec_deg": 2.794608,
+        "separation_arcsec": 0.71
+      },
+      {
+        "epoch_id": "e13",
+        "predicted_ra_deg": 180.008378,
+        "predicted_dec_deg": 2.794375,
+        "separation_arcsec": 2.24
+      },
+      {
+        "epoch_id": "e17",
+        "predicted_ra_deg": 180.068375,
+        "predicted_dec_deg": 2.754786,
+        "separation_arcsec": 0.37
+      },
+      {
+        "epoch_id": "e18",
+        "predicted_ra_deg": 180.068375,
+        "predicted_dec_deg": 2.754786,
+        "separation_arcsec": 1.7
+      },
+      {
+        "epoch_id": "e19",
+        "predicted_ra_deg": 180.111158,
+        "predicted_dec_deg": 2.726127,
+        "separation_arcsec": 0.47
+      },
+      {
+        "epoch_id": "e21",
+        "predicted_ra_deg": 180.111362,
+        "predicted_dec_deg": 2.725883,
+        "separation_arcsec": 0.96
+      },
+      {
+        "epoch_id": "e23",
+        "predicted_ra_deg": 180.111564,
+        "predicted_dec_deg": 2.725645,
+        "separation_arcsec": 0.46
+      },
+      {
+        "epoch_id": "e25",
+        "predicted_ra_deg": 180.111765,
+        "predicted_dec_deg": 2.725417,
+        "separation_arcsec": 0.11
+      },
+      {
+        "epoch_id": "e27",
+        "predicted_ra_deg": 180.195162,
+        "predicted_dec_deg": 2.669477,
+        "separation_arcsec": 1.25
+      },
+      {
+        "epoch_id": "e31",
+        "predicted_ra_deg": 180.195561,
+        "predicted_dec_deg": 2.668996,
+        "separation_arcsec": 1.25
+      },
+      {
+        "epoch_id": "e33",
+        "predicted_ra_deg": 180.195761,
+        "predicted_dec_deg": 2.668765,
+        "separation_arcsec": 0.27
+      },
+      {
+        "epoch_id": "e35",
+        "predicted_ra_deg": 180.277338,
+        "predicted_dec_deg": 2.613389,
+        "separation_arcsec": 1.24
+      },
+      {
+        "epoch_id": "e37",
+        "predicted_ra_deg": 180.277534,
+        "predicted_dec_deg": 2.613148,
+        "separation_arcsec": 0.93
+      },
+      {
+        "epoch_id": "e39",
+        "predicted_ra_deg": 180.277729,
+        "predicted_dec_deg": 2.612914,
+        "separation_arcsec": 1.55
+      },
+      {
+        "epoch_id": "e41",
+        "predicted_ra_deg": 180.292991,
+        "predicted_dec_deg": 2.60295,
+        "separation_arcsec": 0.99
+      },
+      {
+        "epoch_id": "e43",
+        "predicted_ra_deg": 180.293186,
+        "predicted_dec_deg": 2.6027,
+        "separation_arcsec": 0.43
+      }
+    ],
     "nearest": null,
-    "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "observer": "SPHEREx (geocentric JPL predictions corrected with the spacecraft position from the FITS headers)"
   },
   "scores": {
     "motion_consistency": 0.245,
@@ -1399,7 +1511,7 @@
       "check": "motion_fit_rms",
       "description": "Scatter of the detections about the fitted motion, arcsec",
       "value": 4.53,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": false
     },
     {
@@ -1427,29 +1539,29 @@
       "check": "edge_distance",
       "description": "Smallest distance of a detection from the edge of the image data, pixels",
       "value": 19.3,
-      "threshold": 3.0,
+      "threshold": 3,
       "passed": true
     },
     {
       "check": "not_static",
       "description": "Highest combined forced-photometry S/N at the object's first position in any other visit (a static star would be detected there)",
       "value": 1.39,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "flux_consistent_across_lambda",
       "description": "Ratio of the 90th to 10th percentile detection flux across the wavelengths sampled",
       "value": 1.8,
-      "threshold": 4.0,
+      "threshold": 4,
       "passed": true
     },
     {
       "check": "known_object_match",
       "description": "Matched to a known asteroid or comet by JPL (filled in at request time)",
-      "value": null,
+      "value": true,
       "threshold": false,
-      "passed": null
+      "passed": false
     }
   ],
   "error_sources": [
@@ -1510,8 +1622,8 @@
       "id": "known_object",
       "label": "A catalogued asteroid or comet",
       "explanation": "Most moving dots in SPHEREx images are asteroids that are already known.",
-      "status": "unknown",
-      "evidence": "Checked against JPL when the report is opened.",
+      "status": "not_ruled_out",
+      "evidence": "Matches 3662 Dezhnev (1980 RU2) (JPL).",
       "from_checks": [
         "known_object_match"
       ]
@@ -1520,14 +1632,29 @@
       "id": "catalog_gap",
       "label": "A real object missing from the catalogs we checked",
       "explanation": "Some real asteroids are faint or newly found and are not in JPL's database yet.",
-      "status": "unknown",
-      "evidence": "Cannot be ruled out from SPHEREx data alone.",
+      "status": "ruled_out",
+      "evidence": "Already catalogued.",
       "from_checks": [
         "known_object_match"
       ]
     }
   ],
-  "explanation": null,
+  "explanation": {
+    "text": "Detected in 18 SPHEREx exposures spanning 55.4 hours. It moves 22.4 arcseconds per hour toward position angle 124 degrees. A straight-line fit leaves 4.53 arcseconds of scatter. Its faintest detection has a signal-to-noise ratio of 4.7. Its positions match JPL's prediction for 3662 Dezhnev (1980 RU2) to within 2.2 arcseconds at every epoch.",
+    "generator": "template_v1",
+    "grounded_fields": [
+      "motion.n_detections",
+      "motion.time_span_hours",
+      "motion.rate_arcsec_per_hr",
+      "motion.position_angle_deg",
+      "motion.fit_residual_rms_arcsec",
+      "detections[10].snr",
+      "known_object.designation",
+      "known_object.per_epoch[3].separation_arcsec"
+    ],
+    "numeric_check": "passed",
+    "generated_utc": "2026-11-01T20:24:45.104Z"
+  },
   "spectrum": {
     "units": {
       "wavelength": "um",
@@ -1551,7 +1678,7 @@
       {
         "band_index": 18,
         "wavelength_um": 1.1405,
-        "flux_ujy": 447.0,
+        "flux_ujy": 447,
         "flux_err_ujy": 56.12,
         "epoch_id": "e37"
       },
@@ -1669,11 +1796,11 @@
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
-      "sighting_radius_arcsec": 9.0,
-      "static_forced_snr": 4.0,
-      "link_tolerance_arcsec": 18.0,
+      "sighting_radius_arcsec": 9,
+      "static_forced_snr": 4,
+      "link_tolerance_arcsec": 18,
       "min_track_clusters": 3,
-      "max_fit_rms_arcsec": 6.0,
+      "max_fit_rms_arcsec": 6,
       "field_size_deg": 0.3
     }
   },
