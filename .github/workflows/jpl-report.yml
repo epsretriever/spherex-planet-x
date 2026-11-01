@@ -1,0 +1,32 @@
+# JPL known-object report: how many published candidates JPL identifies, which it does not,
+# and why (nearest catalogued object and its separation, or why the check has not run).
+# Runs on demand and when the report script changes; the result is in the job summary and
+# the jpl-report artifact.
+name: JPL report
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/jpl-report.mjs
+      - .github/workflows/jpl-report.yml
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/jpl-report.mjs --base https://spherex-planet-x.bodhishanbhag.workers.dev >> "$GITHUB_STEP_SUMMARY"
+      - run: cat jpl-report.json | head -c 60000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jpl-report
+          path: jpl-report.json
+          retention-days: 14
