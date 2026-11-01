@@ -16,7 +16,15 @@ import astropy.units as u
 from astropy.coordinates import BarycentricMeanEcliptic, SkyCoord
 
 from . import schemas as S
-from .orbits import clones_doc, distance_class_of, orbit_for, orbital_elements, prediction_doc
+from .linking import link, merged_detections
+from .orbits import (
+    clones_doc,
+    distance_class_of,
+    linked_orbit,
+    orbit_for,
+    orbital_elements,
+    prediction_doc,
+)
 
 # Distance classes from a heliocentric-ish distance estimate (AU). Parallax distances are from
 # the observer, so only well-separated ranges are classified; everything else is "unknown".
@@ -89,6 +97,63 @@ def object_from_candidate(
         ],
         provenance=c.provenance,
     )
+
+
+#: Classification of a linked object: the most informative of its tracklets'.
+_CLASS_RANK = {
+    S.Classification.known_object: 0,
+    S.Classification.unmatched: 1,
+    S.Classification.unconfirmed_pair: 2,
+    S.Classification.likely_artifact: 3,
+}
+
+
+def object_from_group(
+    members: list[S.CandidateDetail],
+    primary: S.CandidateDetail,
+    build_run_id: str | None,
+    orbit,
+    links,
+) -> S.ObjectDetail:
+    """One object from tracklets in several tiles that linking showed are one body. The
+    primary (most detections) supplies the images, scores and JPL lookup; detections are the
+    union, each exposure once."""
+    o = object_from_candidate(primary, build_run_id, orbit)
+    tagged = [
+        S.ObjectDetection(**d.model_dump(), field_id=m.field_id, candidate_id=m.candidate_id)
+        for m in members
+        for d in m.detections
+    ]
+    keep = {id(d) for d in merged_detections([tagged])}
+    dets = sorted((d for d in tagged if id(d) in keep), key=lambda d: d.mjd)
+    others = [m for m in members if m.candidate_id != primary.candidate_id]
+    fields = list(dict.fromkeys([primary.field_id, *(m.field_id for m in others)]))
+    best = min((m.classification for m in members), key=lambda c: _CLASS_RANK.get(c, 9))
+    o.classification = best
+    o.field_ids = fields
+    o.candidate_ids = [primary.candidate_id, *(m.candidate_id for m in others)]
+    o.detections = dets
+    o.explanation = None
+    o.links = [
+        S.ObjectLink(
+            candidate_a=lk.a,
+            candidate_b=lk.b,
+            method=lk.method,
+            joint_rms_arcsec=lk.joint_rms_arcsec,
+        )
+        for lk in links
+    ]
+    methods = sorted({lk.method.replace("_", " ") for lk in links})
+    o.history.append(
+        S.ObjectHistoryEntry(
+            utc=primary.provenance.generated_utc,
+            run_id=primary.provenance.run_id,
+            change=f"linked {len(members)} tracklets from {len(fields)} tiles ({', '.join(methods)}): "
+            f"{len(dets)} detections over {_visits(dets)} visits from {dets[0].time_utc[:10]} "
+            f"to {dets[-1].time_utc[:10]}",
+        )
+    )
+    return o
 
 
 def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
@@ -276,10 +341,21 @@ def write_objects_and_survey(
     real = [c for c in cands if c.classification != "injected"]
     orbits = fit_orbits(out_dir, real)
     stamp = datetime.fromisoformat(now.replace("Z", "+00:00")) if now else datetime.now(UTC)
+    by_id = {c.candidate_id: c for c in real}
+    groups, links = link(real, {cid: rec.fit() for cid, rec in orbits.items()})
     objects = []
-    for c in real:
-        orbit = orbits.get(c.candidate_id)
-        o = object_from_candidate(c, run_id, orbit)
+    for g in groups:
+        if len(g) == 1:
+            orbit = orbits.get(g[0])
+            o = object_from_candidate(by_id[g[0]], run_id, orbit)
+        else:
+            members = [by_id[x] for x in g]
+            primary = max(members, key=lambda c: (len(c.detections), c.candidate_id))
+            dets = merged_detections([m.detections for m in members])
+            orbit = linked_orbit(out_dir, primary.candidate_id, dets)
+            o = object_from_group(
+                members, primary, run_id, orbit, [lk for lk in links if lk.a in g]
+            )
         objects.append(o)
         write_json(obj_dir / f"{o.object_id}.json", o)
         if orbit:

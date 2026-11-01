@@ -826,6 +826,49 @@
       "title": "ObjectHistoryEntry",
       "type": "object"
     },
+    "ObjectLink": {
+      "additionalProperties": false,
+      "description": "Why two tracklets (candidates from different tiles) were joined into one object.",
+      "properties": {
+        "candidate_a": {
+          "title": "Candidate A",
+          "type": "string"
+        },
+        "candidate_b": {
+          "title": "Candidate B",
+          "type": "string"
+        },
+        "method": {
+          "description": "shared_detections: the same exposures show the same source in both; orbit: one tracklet's orbit clones predict the other",
+          "enum": [
+            "shared_detections",
+            "orbit"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "joint_rms_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Residual rms of one orbit fitted to both tracklets' detections",
+          "title": "Joint Rms Arcsec"
+        }
+      },
+      "required": [
+        "candidate_a",
+        "candidate_b",
+        "method",
+        "joint_rms_arcsec"
+      ],
+      "title": "ObjectLink",
+      "type": "object"
+    },
     "OrbitStatus": {
       "enum": [
         "none",
@@ -1386,6 +1429,15 @@
         "type": "string"
       },
       "title": "Candidate Ids",
+      "type": "array"
+    },
+    "links": {
+      "default": [],
+      "description": "How this object's tracklets were linked (empty for one tracklet)",
+      "items": {
+        "$ref": "#/$defs/ObjectLink"
+      },
+      "title": "Links",
       "type": "array"
     },
     "also_seen_as": {

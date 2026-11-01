@@ -382,6 +382,18 @@ export interface OrbitClones extends Envelope {
   clones: { a_au: number; e: number; i_deg: number; node_deg: number; peri_deg: number; mean_anomaly_deg: number }[];
 }
 
+/** validation/linking.json: cross-tile linking tested on split real tracks and shifted decoys. */
+export interface LinkingValidation extends Envelope {
+  generated_utc: string;
+  method: string;
+  n_tracks: number;
+  n_eligible: number;
+  completeness: number | null;
+  completeness_eligible: number | null;
+  false_link_rate_by_offset_arcsec: Record<string, number | null>;
+  rows: { candidate_id: string; eligible: boolean; n_a: number; n_b: number; gap_hours: number; rejoined: boolean; decoys_linked: Record<string, boolean> }[];
+}
+
 /** validation/orbits.json: orbit fitting tested on simulated asteroids with SPHEREx's real geometry. */
 export interface OrbitValidation extends Envelope {
   generated_utc: string;
@@ -456,6 +468,8 @@ export interface ObjectDetail extends Envelope {
   thumbnail_url: string;
   field_ids: string[];
   candidate_ids: string[];
+  /** How this object's tracklets (candidates from different tiles) were linked; empty for one tracklet. */
+  links?: { candidate_a: string; candidate_b: string; method: "shared_detections" | "orbit"; joint_rms_arcsec: number | null }[];
   /** Other objects matched to the same JPL designation. */
   also_seen_as?: string[];
   detections: ObjectDetection[];

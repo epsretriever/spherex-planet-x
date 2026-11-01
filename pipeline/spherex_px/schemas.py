@@ -873,6 +873,31 @@ class OrbitValidation(Envelope):
     rows: list[OrbitValidationRow]
 
 
+class LinkingValidationRow(Model):
+    candidate_id: str
+    eligible: bool = Field(description="Both halves have the visits an orbit link needs")
+    n_a: int
+    n_b: int
+    gap_hours: float
+    rejoined: bool
+    decoys_linked: dict[str, bool] = Field(
+        description="Shifted copies of the second half, by offset in arcsec"
+    )
+
+
+class LinkingValidation(Envelope):
+    """Cross-tile linking tested on real tracks split in two, and on shifted decoys."""
+
+    generated_utc: str
+    method: str
+    n_tracks: int
+    n_eligible: int
+    completeness: float | None
+    completeness_eligible: float | None
+    false_link_rate_by_offset_arcsec: dict[str, float | None]
+    rows: list[LinkingValidationRow]
+
+
 class CloneElements(Model):
     a_au: float
     e: float
@@ -943,6 +968,20 @@ class ObjectList(Envelope):
     )
 
 
+class ObjectLink(Model):
+    """Why two tracklets (candidates from different tiles) were joined into one object."""
+
+    candidate_a: str
+    candidate_b: str
+    method: Literal["shared_detections", "orbit"] = Field(
+        description="shared_detections: the same exposures show the same source in both; "
+        "orbit: one tracklet's orbit clones predict the other"
+    )
+    joint_rms_arcsec: float | None = Field(
+        description="Residual rms of one orbit fitted to both tracklets' detections"
+    )
+
+
 class ObjectDetail(Envelope):
     build_run_id: str | None = None
     object_id: str
@@ -952,6 +991,9 @@ class ObjectDetail(Envelope):
     thumbnail_url: str
     field_ids: list[str]
     candidate_ids: list[str]
+    links: list[ObjectLink] = Field(
+        default=[], description="How this object's tracklets were linked (empty for one tracklet)"
+    )
     also_seen_as: list[str] = Field(default=[], description="Objects with the same JPL designation")
     detections: list[ObjectDetection]
     motion: Motion
@@ -1270,6 +1312,7 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "ObjectPrediction": ObjectPrediction,
     "OrbitClones": OrbitClones,
     "OrbitValidation": OrbitValidation,
+    "LinkingValidation": LinkingValidation,
     "Survey": Survey,
     "AiWriteup": AiWriteup,
     "AskRequest": AskRequest,

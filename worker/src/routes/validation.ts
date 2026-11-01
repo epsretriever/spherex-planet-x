@@ -9,6 +9,8 @@ import { readRecords } from "../store";
  * Validation results.
  * - /api/validation/orbits: the orbit method on simulated asteroids (static, from
  *   `spherex-px orbit-validation`).
+ * - /api/validation/linking: cross-tile linking on split real tracks and shifted decoys
+ *   (static, from `spherex-px linking-validation`).
  * - /api/validation/jpl-orbits: our orbits versus JPL's for every object JPL identified
  *   (from the comparisons stored with the JPL results, orbit-compare.ts).
  */
@@ -16,6 +18,12 @@ export const validation = new Hono<AppEnv>();
 
 validation.get("/orbits", async (c) => {
   const doc = await requireStaticJson<unknown>(c.env, "validation/orbits.json", "orbit validation");
+  c.header("Cache-Control", "public, max-age=300");
+  return c.json(doc);
+});
+
+validation.get("/linking", async (c) => {
+  const doc = await requireStaticJson<unknown>(c.env, "validation/linking.json", "linking validation");
   c.header("Cache-Control", "public, max-age=300");
   return c.json(doc);
 });

@@ -212,6 +212,21 @@ def _planet_nine(args: argparse.Namespace) -> int:
     return 0
 
 
+def _linking_validation(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .linking import run_validation
+
+    doc = run_validation(Path(args.out) if args.out else DEFAULT_OUT)
+    print(
+        f"{doc.n_tracks} tracks ({doc.n_eligible} with two multi-visit halves): rejoined "
+        f"{doc.completeness_eligible} of eligible; false links by offset "
+        f"{doc.false_link_rate_by_offset_arcsec}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -284,6 +299,9 @@ def main(argv: list[str] | None = None) -> int:
     p9.add_argument("--describe", action="store_true", help="also log the record's contents")
     p9.add_argument("--out")
     p9.set_defaults(func=_planet_nine)
+    lv = sub.add_parser("linking-validation", help="test cross-tile linking on split real tracks")
+    lv.add_argument("--out")
+    lv.set_defaults(func=_linking_validation)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

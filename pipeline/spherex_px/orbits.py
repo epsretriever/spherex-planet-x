@@ -28,7 +28,7 @@ from .science import orbit as O
 log = logging.getLogger(__name__)
 
 #: Bump when the fit changes, so cached orbits are refitted.
-ORBIT_VERSION = "1"
+ORBIT_VERSION = "2"
 PREDICTION_DAYS = 60
 
 
@@ -116,29 +116,40 @@ def orbit_path(out_dir: Path, candidate_id: str) -> Path:
     return out_dir / "candidates" / candidate_id / "orbit.json"
 
 
+def cached_orbit(path: Path, dets: list[S.Detection], label: str) -> OrbitRecord | None:
+    """The orbit cached at `path` if it was fitted to exactly these detections, else fit it."""
+    h = input_hash(dets)
+    if path.exists():
+        rec = OrbitRecord.model_validate_json(path.read_text())
+        if rec.input_hash == h:
+            return rec
+    try:
+        rec = fit_detections(dets, seed=int(h[:8], 16))
+    except (ValueError, np.linalg.LinAlgError, FloatingPointError):
+        # A fit that fails numerically means no orbit, never a failed publish.
+        log.exception("%s: orbit fit failed", label)
+        rec = None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if rec is not None:
+        path.write_text(rec.model_dump_json())
+        log.info(
+            "%s: %s orbit, a=%.2f AU e=%.2f", label, rec.status, rec.elements[0], rec.elements[1]
+        )
+    return rec
+
+
 def orbit_for(out_dir: Path, c: S.CandidateDetail) -> OrbitRecord | None:
     """The cached orbit for a candidate, fitting (and caching) it when missing or stale."""
     if c.classification == S.Classification.injected or c.motion.model == S.MotionModel.none:
         return None
-    p = orbit_path(out_dir, c.candidate_id)
-    h = input_hash(c.detections)
-    if p.exists():
-        rec = OrbitRecord.model_validate_json(p.read_text())
-        if rec.input_hash == h:
-            return rec
-    seed = int(h[:8], 16)
-    rec = fit_detections(c.detections, seed=seed)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    if rec is not None:
-        p.write_text(rec.model_dump_json())
-        log.info(
-            "%s: %s orbit, a=%.2f AU e=%.2f",
-            c.candidate_id,
-            rec.status,
-            rec.elements[0],
-            rec.elements[1],
-        )
-    return rec
+    return cached_orbit(orbit_path(out_dir, c.candidate_id), c.detections, c.candidate_id)
+
+
+def linked_orbit(out_dir: Path, primary_id: str, dets: list[S.Detection]) -> OrbitRecord | None:
+    """Orbit over all detections of a linked group, cached next to its primary candidate."""
+    return cached_orbit(
+        out_dir / "candidates" / primary_id / "orbit-linked.json", dets, f"{primary_id} (linked)"
+    )
 
 
 def _sym(m: np.ndarray) -> list[list[float]]:
