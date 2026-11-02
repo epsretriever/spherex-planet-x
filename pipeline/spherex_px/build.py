@@ -623,6 +623,8 @@ def summary_of(c: S.CandidateDetail) -> S.CandidateSummary:
         known_object_checked=c.known_object.checked,
         known_object_matched=c.known_object.matched,
         known_object_designation=c.known_object.designation,
+        reporting_status=c.reporting.status if c.reporting else None,
+        reporting_measurements_passed=c.reporting.measurements_passed if c.reporting else None,
     )
 
 
@@ -685,6 +687,9 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     runs = {f.build_run_id for f in fields if f.build_run_id}
     run_id = sorted(runs)[-1] if runs else build_run_id()
     now = utc_now()
+    from .objects import attach_reporting
+
+    attach_reporting(out_dir, cands)
     order = {"showcase": 0, "run": 1}
     fields.sort(key=lambda f: (order.get(f.origin, 2), f.field_id))
     write_json(

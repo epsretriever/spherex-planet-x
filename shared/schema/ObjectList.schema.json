@@ -159,6 +159,31 @@
           ],
           "title": "Known Object Designation"
         },
+        "reporting_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportingStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "reporting.status of the detail; null in data published before it"
+        },
+        "reporting_measurements_passed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "reporting.measurements_passed of the detail",
+          "title": "Reporting Measurements Passed"
+        },
         "also_seen_as": {
           "default": [],
           "description": "Objects with the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker",
@@ -211,6 +236,15 @@
         "high"
       ],
       "title": "QualityLevel",
+      "type": "string"
+    },
+    "ReportingStatus": {
+      "enum": [
+        "ready",
+        "incomplete",
+        "not_ready"
+      ],
+      "title": "ReportingStatus",
       "type": "string"
     }
   },

@@ -369,6 +369,14 @@ class KnownObject(Model):
     )
     observer: str | None = Field(default=None, description="Observer location used for predictions")
     query_utc: str | None = None
+    visits_queried: int | None = Field(
+        default=None,
+        description="SPHEREx visits sent to JPL SBIdent (one per visit, at most 6, spread evenly); "
+        "null when the check predates this field or did not run",
+    )
+    visits_answered: int | None = Field(
+        default=None, description="Of visits_queried, how many JPL SBIdent answered"
+    )
     enrichment: Literal["static", "live", "cached", "pending"] = Field(
         default="static",
         description="static: as written by the offline pipeline (not checked); pending: the Worker "
@@ -396,6 +404,45 @@ class VettingCheck(Model):
     value: float | int | bool | str | None
     threshold: float | int | bool | str | None
     passed: bool | None = Field(description="null when the check could not be evaluated")
+
+
+class ReportingStatus(StrEnum):
+    ready = "ready"  # passes every test below: a candidate for reporting
+    incomplete = "incomplete"  # measurements pass; the JPL check is missing or partial
+    not_ready = "not_ready"  # fails at least one test
+
+
+class ReportingCriterion(Model):
+    id: str
+    label: str
+    passed: bool | None = Field(description="null when it has not been evaluated yet")
+    value: float | int | bool | str | None
+    threshold: float | int | bool | str | None
+    source: Literal["pipeline", "jpl"] = Field(
+        description="pipeline: set when the data is published; jpl: set by the Worker from the "
+        "JPL check it serves"
+    )
+
+
+REPORTING_DEFINITION = (
+    "A candidate for reporting passes every test: it is unmatched, seen in at least 3 visits, "
+    "fits straight-line motion and an orbit closely, shows no sign of an imaging artifact, and "
+    "JPL answered for every visit with no known asteroid or comet at or near its position. It "
+    "is not in any catalog we checked. That does not make it a new object: it may be a known "
+    "object JPL's search missed, or an error our tests did not catch. Nothing is reported to "
+    "the Minor Planet Center without the team's review."
+)
+
+
+class Reporting(Model):
+    status: ReportingStatus
+    label_plain: str
+    summary_plain: str
+    measurements_passed: bool = Field(
+        description="Every pipeline criterion passed (everything except the JPL check)"
+    )
+    criteria: list[ReportingCriterion]
+    definition: str = REPORTING_DEFINITION
 
 
 class ErrorSource(Model):
@@ -478,6 +525,12 @@ class CandidateSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    reporting_status: ReportingStatus | None = Field(
+        default=None, description="reporting.status of the detail; null in data published before it"
+    )
+    reporting_measurements_passed: bool | None = Field(
+        default=None, description="reporting.measurements_passed of the detail"
+    )
 
 
 class CandidateList(Envelope):
@@ -507,6 +560,9 @@ class CandidateDetail(Envelope):
     motion: Motion
     known_object: KnownObject
     scores: Scores
+    reporting: Reporting | None = Field(
+        default=None, description="Whether this is a candidate for reporting, test by test"
+    )
     vetting: list[VettingCheck]
     error_sources: list[ErrorSource]
     explanation: Explanation | None
@@ -924,6 +980,12 @@ class ObjectSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    reporting_status: ReportingStatus | None = Field(
+        default=None, description="reporting.status of the detail; null in data published before it"
+    )
+    reporting_measurements_passed: bool | None = Field(
+        default=None, description="reporting.measurements_passed of the detail"
+    )
     also_seen_as: list[str] = Field(
         default=[],
         description="Objects with the same JPL designation (the same asteroid in other tiles), "
@@ -960,6 +1022,9 @@ class ObjectDetail(Envelope):
     orbit: OrbitalElements | None
     known_object: KnownObject
     scores: Scores
+    reporting: Reporting | None = Field(
+        default=None, description="Whether this is a candidate for reporting, test by test"
+    )
     explanation: Explanation | None
     spectrum: Spectrum | None
     history: list[ObjectHistoryEntry]

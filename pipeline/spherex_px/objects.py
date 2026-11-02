@@ -77,6 +77,7 @@ def object_from_candidate(
         orbit=orbital_elements(orbit, object_id_for(c.candidate_id)) if orbit else None,
         known_object=c.known_object,
         scores=c.scores,
+        reporting=c.reporting,
         explanation=c.explanation,
         spectrum=c.spectrum,
         history=[
@@ -115,7 +116,27 @@ def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
         known_object_checked=o.known_object.checked,
         known_object_matched=o.known_object.matched,
         known_object_designation=o.known_object.designation,
+        reporting_status=o.reporting.status if o.reporting else None,
+        reporting_measurements_passed=o.reporting.measurements_passed if o.reporting else None,
     )
+
+
+def attach_reporting(out_dir: Path, cands: list[S.CandidateDetail]) -> None:
+    """Set each candidate's reporting block from its vetting and orbit, rewriting changed files."""
+    from .build import write_json
+    from .reporting import reporting_of
+
+    orbits = fit_orbits(out_dir, [c for c in cands if c.classification != "injected"])
+    for c in cands:
+        orbit = orbits.get(c.candidate_id)
+        rep = reporting_of(
+            c,
+            S.OrbitStatus(orbit.status) if orbit else S.OrbitStatus.none,
+            orbit.rms_arcsec if orbit else None,
+        )
+        if rep != c.reporting:
+            c.reporting = rep
+            write_json(out_dir / "candidates" / f"{c.candidate_id}.json", c)
 
 
 def tile_from_field(f: S.FieldDetail, n_candidates: int) -> S.SurveyTile:

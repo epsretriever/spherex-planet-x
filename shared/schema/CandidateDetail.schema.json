@@ -608,6 +608,32 @@
           "default": null,
           "title": "Query Utc"
         },
+        "visits_queried": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SPHEREx visits sent to JPL SBIdent (one per visit, at most 6, spread evenly); null when the check predates this field or did not run",
+          "title": "Visits Queried"
+        },
+        "visits_answered": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Of visits_queried, how many JPL SBIdent answered",
+          "title": "Visits Answered"
+        },
         "enrichment": {
           "default": "static",
           "description": "static: as written by the offline pipeline (not checked); pending: the Worker has started a JPL lookup in the background; live/cached: filled by the Worker from JPL (live = this request, cached = a stored result)",
@@ -826,6 +852,141 @@
         "high"
       ],
       "title": "QualityLevel",
+      "type": "string"
+    },
+    "Reporting": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/ReportingStatus"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        },
+        "summary_plain": {
+          "title": "Summary Plain",
+          "type": "string"
+        },
+        "measurements_passed": {
+          "description": "Every pipeline criterion passed (everything except the JPL check)",
+          "title": "Measurements Passed",
+          "type": "boolean"
+        },
+        "criteria": {
+          "items": {
+            "$ref": "#/$defs/ReportingCriterion"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "definition": {
+          "default": "A candidate for reporting passes every test: it is unmatched, seen in at least 3 visits, fits straight-line motion and an orbit closely, shows no sign of an imaging artifact, and JPL answered for every visit with no known asteroid or comet at or near its position. It is not in any catalog we checked. That does not make it a new object: it may be a known object JPL's search missed, or an error our tests did not catch. Nothing is reported to the Minor Planet Center without the team's review.",
+          "title": "Definition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "label_plain",
+        "summary_plain",
+        "measurements_passed",
+        "criteria"
+      ],
+      "title": "Reporting",
+      "type": "object"
+    },
+    "ReportingCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "passed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null when it has not been evaluated yet",
+          "title": "Passed"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Threshold"
+        },
+        "source": {
+          "description": "pipeline: set when the data is published; jpl: set by the Worker from the JPL check it serves",
+          "enum": [
+            "pipeline",
+            "jpl"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "passed",
+        "value",
+        "threshold",
+        "source"
+      ],
+      "title": "ReportingCriterion",
+      "type": "object"
+    },
+    "ReportingStatus": {
+      "enum": [
+        "ready",
+        "incomplete",
+        "not_ready"
+      ],
+      "title": "ReportingStatus",
       "type": "string"
     },
     "Scores": {
@@ -1202,6 +1363,18 @@
     },
     "scores": {
       "$ref": "#/$defs/Scores"
+    },
+    "reporting": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Reporting"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Whether this is a candidate for reporting, test by test"
     },
     "vetting": {
       "items": {
