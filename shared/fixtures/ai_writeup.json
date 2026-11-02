@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.1",
+  "pipeline_version": "0.1.0+git.a0f12ad",
+  "subject_kind": "candidate",
+  "subject_id": "sv-2025w272a-l0027-s004-c01",
+  "verdict": "The object is a known asteroid that matches 2399 Terradas (1971 MA).",
+  "paragraphs": [
+    "The object was seen moving about 49 arcseconds per hour across 30 images taken over 19.6 hours. It was detected in 6 separate visits.",
+    "The object matches the known asteroid 2399 Terradas (1971 MA) in JPL's catalog, with a predicted magnitude of 17.",
+    "The measurement is confident, with a scatter of 1.1 arcsec about the fitted motion and a signal-to-noise ratio as low as 5.5, but the object's motion is steady and consistent across the detections."
+  ],
+  "grounded_fields": [
+    "motion.rate_arcsec_per_hr",
+    "motion.n_detections",
+    "motion.time_span_hours",
+    "known_object.matched",
+    "known_object.designation",
+    "known_object.predicted_vmag",
+    "vetting.check.min_detections.value",
+    "vetting.check.per_detection_snr_min.value",
+    "vetting.check.motion_fit_rms.value"
+  ],
+  "numeric_check": "passed",
+  "source": "ai",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "label_plain": "AI-written from the measurements below",
+  "cached": false,
+  "generated_utc": "2026-11-02T15:52:17.806Z"
+}
