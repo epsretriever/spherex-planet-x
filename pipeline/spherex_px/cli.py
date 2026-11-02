@@ -212,6 +212,19 @@ def _planet_nine(args: argparse.Namespace) -> int:
     return 0
 
 
+def _carry_jpl_checks(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .carry import carry_jpl_checks
+
+    c = carry_jpl_checks(Path(args.previous), Path(args.rebuilt))
+    print(
+        f"carried {c['carried']} JPL checks; to check afresh: {c['changed']} changed, "
+        f"{c['new']} new, {c['unchecked_before']} never checked"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -264,6 +277,13 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
     sl.set_defaults(func=_survey_ledger)
+    cj = sub.add_parser(
+        "carry-jpl-checks",
+        help="copy JPL checks from the previous candidates to rebuilt ones with the same detections",
+    )
+    cj.add_argument("previous", help="candidates directory before the rebuild")
+    cj.add_argument("rebuilt", help="rebuilt candidates directory")
+    cj.set_defaults(func=_carry_jpl_checks)
     ov = sub.add_parser(
         "orbit-validation", help="test orbit fitting on simulated asteroids (SPHEREx geometry)"
     )
