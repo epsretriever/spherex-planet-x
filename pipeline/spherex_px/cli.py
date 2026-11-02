@@ -212,6 +212,20 @@ def _planet_nine(args: argparse.Namespace) -> int:
     return 0
 
 
+def _request_build(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .requests import build_request, write_result
+
+    r = build_request(
+        args.request_id, args.ra, args.dec, Path(args.out) if args.out else DEFAULT_OUT
+    )
+    write_result(r, Path(args.result))
+    print(f"{args.request_id}: {r.status}: {r.message}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -264,6 +278,13 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
     sl.set_defaults(func=_survey_ledger)
+    rq = sub.add_parser("request-build", help="build a field for a visitor's sky request")
+    rq.add_argument("request_id")
+    rq.add_argument("--ra", type=float, required=True)
+    rq.add_argument("--dec", type=float, required=True)
+    rq.add_argument("--result", default="request-result.json")
+    rq.add_argument("--out")
+    rq.set_defaults(func=_request_build)
     ov = sub.add_parser(
         "orbit-validation", help="test orbit fitting on simulated asteroids (SPHEREx geometry)"
     )
