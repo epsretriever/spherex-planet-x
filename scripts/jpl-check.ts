@@ -110,11 +110,22 @@ function updateMover(cand: CandidateDetail) {
   writeFileSync(fieldPath, `${JSON.stringify(field, null, 2)}\n`);
 }
 
+// Totals over every published candidate, after this run.
+const totals = { real: 0, checked: 0, matched: 0 };
+for (const f of files) {
+  const c = JSON.parse(readFileSync(join(dir, f), "utf8")) as CandidateDetail;
+  if (c.classification === "injected") continue;
+  totals.real += 1;
+  if (c.known_object.checked) totals.checked += 1;
+  if (c.known_object.checked && c.known_object.matched) totals.matched += 1;
+}
+
 console.log(
   [
     `## JPL check of ${files.length} published candidates`,
     "",
-    `- matched to a known asteroid or comet: ${counts.matched}`,
+    `- now checked: ${totals.checked} of ${totals.real} (${totals.matched} matched to a known asteroid or comet)`,
+    `- this run, matched to a known asteroid or comet: ${counts.matched}`,
     `- checked, no catalogued object within ${15}″ at every detection: ${counts.no_match}`,
     `- JPL did not answer (left unchanged, retried next run): ${counts.not_answered}`,
     `- skipped (injected, or checked in the last ${recheckDays} days): ${counts.skipped}`,

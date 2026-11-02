@@ -60,7 +60,7 @@ jobs:
           git add -A frontend/public/data
           if git diff --cached --quiet; then echo "no changes"; exit 0; fi
           branch="${GITHUB_HEAD_REF:-${{ github.event_name == 'workflow_run' && 'main' || github.ref_name }}}"
-          git commit -m "JPL check: $(grep -m1 'matched to a known' jpl-check.md | sed 's/^- //')" \
+          git commit -m "JPL check: $(grep -m1 '^- now checked' jpl-check.md | sed 's/^- //')" \
             -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           for i in 1 2 3; do
             git pull --rebase origin "$branch" && git push origin "HEAD:$branch" && exit 0
