@@ -49,7 +49,7 @@ jobs:
       - name: Check candidates against JPL
         run: |
           npx vite-node scripts/jpl-check.ts -- frontend/public/data \
-            --recheck-days "${{ inputs.recheck_days || '7' }}" | tee jpl-check.md
+            --recheck-days "${{ inputs.recheck_days || '7' }}" --max-minutes 240 | tee jpl-check.md
           cat jpl-check.md >> "$GITHUB_STEP_SUMMARY"
       - name: Rebuild the lists from the checked candidates
         run: spherex-px publish

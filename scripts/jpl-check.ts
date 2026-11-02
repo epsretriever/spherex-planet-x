@@ -23,6 +23,11 @@ const args = process.argv.slice(2).filter((a) => a !== "--");
 const dataDir = args.find((a) => !a.startsWith("--")) ?? "frontend/public/data";
 const rd = args.indexOf("--recheck-days");
 const recheckDays = rd >= 0 ? Number(args[rd + 1]) : 7;
+// Stop starting lookups after this long, so the job always gets to publish and commit what it
+// checked (the job itself is limited to 300 minutes). The rest wait for the next run.
+const mm = args.indexOf("--max-minutes");
+const maxMinutes = mm >= 0 ? Number(args[mm + 1]) : 240;
+const started = Date.now();
 
 const TIMEOUT_MS = 120_000;
 const RETRIES = 2;
@@ -67,8 +72,17 @@ const deps: Deps = {
 };
 
 const dir = join(dataDir, "candidates");
-const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
-const counts = { matched: 0, no_match: 0, not_answered: 0, skipped: 0 };
+// Never-checked candidates first, then the oldest checks, so a time limit costs the least.
+const lastChecked = (f: string) => {
+  const k = (JSON.parse(readFileSync(join(dir, f), "utf8")) as CandidateDetail).known_object;
+  return k.checked && k.query_utc ? Date.parse(k.query_utc) : 0;
+};
+const files = readdirSync(dir)
+  .filter((f) => f.endsWith(".json"))
+  .map((f) => ({ f, t: lastChecked(f) }))
+  .sort((a, b) => a.t - b.t || a.f.localeCompare(b.f))
+  .map((x) => x.f);
+const counts = { matched: 0, no_match: 0, not_answered: 0, skipped: 0, deferred: 0 };
 const rows: string[] = [];
 const fresh = Date.now() - recheckDays * 86_400_000;
 for (const f of files) {
@@ -77,7 +91,19 @@ for (const f of files) {
   const k = cand.known_object;
   if (cand.classification === "injected" || (k.checked && k.query_utc && Date.parse(k.query_utc) > fresh)) {
     counts.skipped += 1;
-    if (cand.classification !== "injected") updateMover(cand); // labels written before movers were kept in step
+    if (cand.classification !== "injected") {
+      // A check carried over from an earlier build (spherex-px carry-jpl-checks) arrives with
+      // the pipeline's classification and label; bring them in step with the check.
+      const next = applyKnownObject(cand, k, k.matched, deps.now().toISOString());
+      if (next.classification !== cand.classification || next.label_plain !== cand.label_plain) {
+        writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`);
+      }
+      updateMover(next);
+    }
+    continue;
+  }
+  if ((Date.now() - started) / 60_000 > maxMinutes) {
+    counts.deferred += 1;
     continue;
   }
   const t0 = Date.now();
@@ -129,6 +155,7 @@ console.log(
     `- checked, no catalogued object within ${15}″ at every detection: ${counts.no_match}`,
     `- JPL did not answer (left unchanged, retried next run): ${counts.not_answered}`,
     `- skipped (injected, or checked in the last ${recheckDays} days): ${counts.skipped}`,
+    `- deferred to the next run (${maxMinutes}-minute limit reached): ${counts.deferred}`,
     "",
     "| candidate | result | object | reason | time |",
     "|---|---|---|---|---|",
