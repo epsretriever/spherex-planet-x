@@ -128,9 +128,11 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 - `motion`: `model` (`linear | parallax | none`), `n_detections`, `time_span_hours`, `rate_arcsec_per_hr`, `rate_err_arcsec_per_hr`, `position_angle_deg`, `ra_rate_arcsec_per_hr`, `dec_rate_arcsec_per_hr`, `fit_residual_rms_arcsec`, `fit_chi2`, `fit_dof`, `distance_au_estimate {best, lo, hi} | null`.
 - Plain-language text after a failed lookup: when a stored lookup could not reach JPL, `summary_plain` says the catalog couldn't be reached and the check is retried automatically. Never-checked and pending candidates keep their own wording.
 - `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`, `enrichment` (`static | live | cached | pending`).
+  - `visits_queried`, `visits_answered` (additive, nullable): how many SPHEREx visits the lookup sent to JPL SBIdent (one per visit, at most 6, spread evenly) and how many it answered. `null` in checks made before these fields existed.
   - `catalogs_checked` lists **only services we actually queried**: `"JPL SBIdent"` and/or `"JPL Horizons"`. The model rejects anything else, so MPC can never appear unless we start calling it and update the contract.
 - `scores`: `motion_consistency`, `snr`, `artifact_likelihood`, `overall` (all in [0, 1]), `quality_level` (`low | medium | high`), `method: "rule_based_v1"`, `definition`. **The score is a rule-based ranking, not a probability.** Nothing in the UI or text may describe it as a classifier probability. Thresholds: `high` if `overall ≥ 0.6`, `medium` if `≥ 0.3`, else `low`.
 - `vetting[]`: raw checks `{check, description, value, threshold, passed}`. `passed` is `null` when a check couldn't be evaluated.
+- `reporting`: whether this is a candidate for reporting to the Minor Planet Center, test by test (additive; `null` for injected candidates, which are never reported; absent in data published before it). See [Candidates for reporting](#candidates-for-reporting).
 - `error_sources[]`: the frontend checklist, derived from `vetting` as `{id, label, explanation, status, evidence, from_checks}`. `status` is `ruled_out | not_ruled_out | unknown`. The ids are fixed:
 
   | id | label | derived from |
@@ -148,6 +150,36 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 - `injection`: present only when `classification == "injected"`: `{study_id, injection_id, injected {mag_ab, flux_ujy, model, rate_arcsec_per_hr, position_angle_deg, distance_au}, recovered, recovered_rate_arcsec_per_hr, position_error_arcsec}`.
 - `provenance`: `{run_id, generated_utc, parameters}`.
 - `disclaimer`: a fixed integrity statement.
+
+### Candidates for reporting
+
+`CandidateDetail.reporting` and `ObjectDetail.reporting` are `Reporting {status, label_plain, summary_plain, measurements_passed, criteria[], definition}`. `CandidateSummary` and `ObjectSummary` add `reporting_status` and `reporting_measurements_passed` (both nullable).
+
+`status` is `ready` when every criterion passed, `not_ready` when any failed, and `incomplete` otherwise (something not evaluated yet). The labels are fixed:
+
+| `status` | `label_plain` |
+|---|---|
+| `ready` | Not in any catalog we checked — candidate for reporting |
+| `incomplete` | Catalog check incomplete |
+| `not_ready` | Not a candidate for reporting |
+
+`criteria[]` are `{id, label, passed (bool or null when not evaluated), value, threshold, source}`:
+
+| id | test | source |
+|---|---|---|
+| `unmatched` | `classification == "unmatched"` | pipeline |
+| `visits` | seen in ≥ 3 visits (`vetting.min_detections`) | pipeline |
+| `motion_fit` | `vetting.motion_fit_rms` passed (≤ 3″) | pipeline |
+| `artifact_likelihood` | `scores.artifact_likelihood` ≤ 0.2 | pipeline |
+| `artifact_checks` | every artifact check passed: `flagged_aperture_pixels`, `psf_like_shape`, `edge_distance`, `not_static`, `flux_consistent_across_lambda` | pipeline |
+| `orbit_fit` | an orbit exists with `rms_arcsec` ≤ 1.5″ | pipeline |
+| `jpl_every_visit` | JPL SBIdent answered for every visit queried (`visits_answered == visits_queried`) | jpl |
+| `jpl_no_match` | checked and not matched | jpl |
+| `jpl_nothing_nearby` | no known object within 60″ (`known_object.nearest`) | jpl |
+
+`measurements_passed` is true when every `pipeline` criterion passed. `spherex-px publish` evaluates the pipeline criteria, and the JPL criteria from a check written into the data at publish time (unevaluated otherwise). The Worker re-evaluates the JPL criteria from whichever catalog check it serves, in detail views and list rows (`pipeline/spherex_px/reporting.py` and `worker/src/reporting.ts` follow the same rules; `shared/fixtures/reporting_jpl_cases.json` keeps them equal). A report whose JPL lookup is `pending` is never `ready`.
+
+`ready` means **not in any catalog we checked**. It never means new or discovered: the object may be a known one JPL's search missed (SBIdent's fast mode, a 0.1° search box, or a poorly known orbit), or an error the tests did not catch. Nothing is submitted automatically; the team reviews each candidate before anything goes to the Minor Planet Center. The frontend must use these labels as given and must not describe a `ready` candidate as new, a discovery, or Planet X.
 
 ## Provenance (`source`)
 
@@ -181,8 +213,8 @@ Synthetic moving objects are injected into the **real** cutouts of the published
 
 An object is one solar-system body: every detection linked to it, across visits and, once cross-field linking runs (build-plan row 6), across fields. Until then each candidate is one object, with `object_id = "obj-<candidate_id>"`.
 
-- `ObjectSummary`: `object_id`, `classification`, `label_plain`, `summary_plain`, `thumbnail_url`, `field_ids`, `candidate_ids`, `n_detections`, `n_visits` (clusters of exposures more than 30 minutes apart), `first_time_utc`, `last_time_utc`, `arc_hours`, `rate_arcsec_per_hr`, `distance_class`, `distance_au_estimate`, `orbit_status`, `overall_score`, `quality_level`, `known_object_checked`, `known_object_matched`, `known_object_designation`.
-- `ObjectDetail`: the same identity fields, plus `detections[]` (each a `Detection` with `field_id` and `candidate_id`), `motion`, `distance_class`, `orbit_status`, `orbit`, `known_object`, `scores`, `explanation`, `spectrum`, `history[] {utc, run_id, change}`, `provenance` and `disclaimer`.
+- `ObjectSummary`: `object_id`, `classification`, `label_plain`, `summary_plain`, `thumbnail_url`, `field_ids`, `candidate_ids`, `n_detections`, `n_visits` (clusters of exposures more than 30 minutes apart), `first_time_utc`, `last_time_utc`, `arc_hours`, `rate_arcsec_per_hr`, `distance_class`, `distance_au_estimate`, `orbit_status`, `overall_score`, `quality_level`, `known_object_checked`, `known_object_matched`, `known_object_designation`, `reporting_status`, `reporting_measurements_passed`.
+- `ObjectDetail`: the same identity fields, plus `detections[]` (each a `Detection` with `field_id` and `candidate_id`), `motion`, `distance_class`, `orbit_status`, `orbit`, `known_object`, `scores`, `reporting`, `explanation`, `spectrum`, `history[] {utc, run_id, change}`, `provenance` and `disclaimer`.
 - `distance_class`: `neo` (< 1.3 AU) · `main_belt` (1.8–4.2) · `jupiter_trojan` (4.8–5.6) · `centaur` (6–30) · `tno` (> 30) · `unknown`, from the distance from the Sun. With an orbit it is the class that at least 68% of the orbit clones fall in, and `unknown` when they spread over several classes (common for distant objects seen over a day or two: `validation/orbits.json` measures how often and how reliable a named class is); without an orbit, the parallax distance's best estimate. Gaps between ranges, and objects without a distance, are `unknown`.
 - `orbit_status`: `none | preliminary | refined`. `orbit` is `OrbitalElements {epoch_mjd (TDB), a_au, e, i_deg, node_deg, peri_deg, mean_anomaly_deg (heliocentric J2000 ecliptic), q_au, method: ranging | least_squares, rms_arcsec, n_detections, arc_hours, covariance (6x6, [a, e, i, node, peri, M]) | null, n_clones, clones_url, jpl_comparison | null, helio_distance_au {best, lo, hi}, n_ranging_orbits, reported_orbit, check_30d}`, or null. `check_30d` is our predicted geocentric position 30 days after the last detection (a `PredictionPoint`: clones' centre and 1-σ ellipse).
   - `jpl_comparison {designation, delta_a_au, delta_e, delta_i_deg (ours − JPL's), position_error_arcsec_30d, jpl_a_au, jpl_e, jpl_i_deg, inside_3sigma_30d, jpl_helio_distance_au, our_helio_distance_au, distance_in_interval}`: added by the Worker when JPL identifies the object. With the JPL lookup it asks Horizons for JPL's osculating elements at our epoch (heliocentric, J2000 ecliptic) and JPL's geocentric position at `check_30d`, and stores the differences with the JPL result (two more Horizons calls per identified object, made by the background lookup or the cron, never while a visitor waits).
