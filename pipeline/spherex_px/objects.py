@@ -116,7 +116,7 @@ def object_from_group(
     links,
 ) -> S.ObjectDetail:
     """One object from tracklets in several tiles that linking showed are one body. The
-    primary (most detections) supplies the images, scores and JPL lookup; detections are the
+    primary (JPL-matched or checked first, then most detections) supplies the images, scores and JPL lookup; detections are the
     union, each exposure once."""
     o = object_from_candidate(primary, build_run_id, orbit)
     tagged = [
@@ -350,7 +350,17 @@ def write_objects_and_survey(
             o = object_from_candidate(by_id[g[0]], run_id, orbit)
         else:
             members = [by_id[x] for x in g]
-            primary = max(members, key=lambda c: (len(c.detections), c.candidate_id))
+            # The primary supplies the JPL result the Worker serves: a matched or checked
+            # tracklet first, so the object's classification and catalog check agree.
+            primary = max(
+                members,
+                key=lambda c: (
+                    c.known_object.checked and c.known_object.matched,
+                    c.known_object.checked,
+                    len(c.detections),
+                    c.candidate_id,
+                ),
+            )
             dets = merged_detections([m.detections for m in members])
             orbit = linked_orbit(out_dir, primary.candidate_id, dets)
             o = object_from_group(
