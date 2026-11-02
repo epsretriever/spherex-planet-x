@@ -1005,6 +1005,30 @@ class ObjectList(Envelope):
     )
 
 
+class ReportingCounts(Model):
+    ready: int
+    incomplete: int
+    not_ready: int
+    not_evaluated: int
+
+
+class ReportingSubmission(Model):
+    automatic: Literal[False] = False
+    station_code_configured: bool
+    how_plain: str
+
+
+class ReportingQueue(Envelope):
+    """GET /api/reporting (served by the Worker): objects that are candidates for reporting."""
+
+    generated_utc: str
+    label_plain: str
+    counts: ReportingCounts
+    objects: list[ObjectSummary] = Field(description="reporting_status == 'ready' only")
+    ades_urls: dict[str, str]
+    submission: ReportingSubmission
+
+
 class ObjectDetail(Envelope):
     build_run_id: str | None = None
     object_id: str
@@ -1331,6 +1355,7 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "RunStatus": RunStatus,
     "ErrorResponse": ErrorResponse,
     "ObjectList": ObjectList,
+    "ReportingQueue": ReportingQueue,
     "ObjectDetail": ObjectDetail,
     "ObjectPrediction": ObjectPrediction,
     "OrbitClones": OrbitClones,

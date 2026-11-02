@@ -10,13 +10,16 @@ import type {
   ObjectPrediction,
   ObjectSummary,
   PlanetNineRegion,
+  ReportingQueue,
+  ReportingStatus,
   Survey,
 } from "../contract";
 import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
-import { applyReporting, summaryStatus } from "../reporting";
+import { adesXml } from "../ades";
+import { REPORTING_LABELS, REPORTING_STATUSES, applyReporting, summaryStatus } from "../reporting";
 import { readRecord, readRecords, refreshRecord } from "../store";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
 
@@ -110,8 +113,11 @@ export function mergeByDesignation(items: ObjectSummary[]): ObjectSummary[] {
 objects.get("/", async (c) => {
   const paging = pageParams((n) => c.req.query(n));
   const dedupe = c.req.query("dedupe") !== "false";
+  const statuses = c.req.queries("reporting_status") ?? [];
+  for (const st of statuses) if (!REPORTING_STATUSES.includes(st as ReportingStatus)) throw badRequest(`unknown reporting_status '${st}'`);
   const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
-  const page = paginate(dedupe ? mergeByDesignation(all) : all, paging);
+  const rows = dedupe ? mergeByDesignation(all) : all;
+  const page = paginate(statuses.length ? rows.filter((o) => statuses.includes(o.reporting_status ?? "")) : rows, paging);
   c.header("Cache-Control", "public, max-age=60");
   return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, objects: page.items });
 });
@@ -195,7 +201,56 @@ objects.get("/:objectId/prediction", async (c) => {
 objects.get("/:objectId/ades.xml", async (c) => {
   const id = c.req.param("objectId");
   if (!ID_RE.test(id)) throw badRequest("invalid object_id");
-  throw new ApiError(404, `ADES export for '${id}' is not available yet`);
+  const deps = c.get("deps");
+  const { detail, pending } = await loadObject(c.env, deps, id);
+  if (detail.classification === "injected") {
+    throw new ApiError(404, `object '${id}' is a simulated (injected) source and is never reported`);
+  }
+  const xml = adesXml(detail, {
+    stationCode: c.env.MPC_STATION_CODE,
+    submitter: c.env.ADES_SUBMITTER,
+    generatedUtc: deps.now().toISOString(),
+  });
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Disposition": `inline; filename="${id}.ades.xml"`,
+      // The JPL result (and so the comments) can change while a lookup is pending.
+      "Cache-Control": pending ? "no-store" : "public, max-age=300",
+      "X-ADES-Status": c.env.MPC_STATION_CODE ? "draft" : "draft; station code not configured",
+    },
+  });
+});
+
+/**
+ * Candidates for reporting: the objects that pass every test, with counts by status and how a
+ * submission is made. Nothing is submitted from here (docs/api-contract.md, "ADES export").
+ */
+export const reporting = new Hono<AppEnv>();
+
+reporting.get("/", async (c) => {
+  const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
+  const rows = mergeByDesignation(all).filter((o) => o.classification !== "injected");
+  const counts = { ready: 0, incomplete: 0, not_ready: 0, not_evaluated: 0 };
+  for (const o of rows) counts[o.reporting_status ?? "not_evaluated"] += 1;
+  const ready = rows.filter((o) => o.reporting_status === "ready");
+  c.header("Cache-Control", "public, max-age=60");
+  return c.json<ReportingQueue>({
+    schema_version: "1.1",
+    pipeline_version: list.pipeline_version,
+    generated_utc: c.get("deps").now().toISOString(),
+    label_plain: REPORTING_LABELS.ready,
+    counts,
+    objects: ready,
+    ades_urls: Object.fromEntries(ready.map((o) => [o.object_id, `/api/objects/${o.object_id}/ades.xml`])),
+    submission: {
+      automatic: false,
+      station_code_configured: Boolean(c.env.MPC_STATION_CODE),
+      how_plain:
+        "Nothing is submitted automatically. A team member reviews each candidate (images, every test, the JPL check), " +
+        "downloads its ADES file, and submits it to the Minor Planet Center under the team's observatory code and contact details.",
+    },
+  });
 });
 
 export const survey = new Hono<AppEnv>();

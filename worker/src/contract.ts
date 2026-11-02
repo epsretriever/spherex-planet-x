@@ -181,6 +181,16 @@ export interface KnownObject {
 
 export type ReportingStatus = "ready" | "incomplete" | "not_ready";
 
+/** GET /api/reporting: objects that are candidates for reporting. Nothing is submitted automatically. */
+export interface ReportingQueue extends Envelope {
+  generated_utc: string;
+  label_plain: string;
+  counts: { ready: number; incomplete: number; not_ready: number; not_evaluated: number };
+  objects: ObjectSummary[];
+  ades_urls: Record<string, string>;
+  submission: { automatic: false; station_code_configured: boolean; how_plain: string };
+}
+
 export interface ReportingCriterion {
   id: string;
   label: string;

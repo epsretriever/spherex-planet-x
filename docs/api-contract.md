@@ -50,10 +50,11 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 | `GET /api/coverage?ra_deg=&dec_deg=&radius_deg=` | `Coverage` | **Live** IRSA TAP (`https://irsa.ipac.caltech.edu/TAP/sync`). |
 | `POST /api/runs` | `ErrorResponse` (501) | Pixel processing can't run inside a Worker. Runs are produced offline with `spherex-px run --ra ... --dec ...` and published with the static data. The endpoint returns 501 with instructions instead of pretending to queue work. |
 | `GET /api/runs/{run_id}` | `RunStatus` | Static `data/runs/{run_id}.json` for runs built offline. `field_id` points at the resulting field. |
-| `GET /api/objects?dedupe=true&limit=&offset=` | `ObjectList` | Static `data/objects.json`, with stored JPL results folded in as for candidates. Objects matched to the same JPL designation (the same asteroid in neighbouring tiles or other weeks) are merged: the one with the most detections stays, the others are listed in its `also_seen_as`, and their `field_ids`, `candidate_ids`, `n_detections`, `n_visits` and time span are added to it. Unmatched objects are never merged. `dedupe=false` returns every object as built. Paged after merging. |
+| `GET /api/objects?dedupe=true&reporting_status=&limit=&offset=` | `ObjectList` | Static `data/objects.json`, with stored JPL results folded in as for candidates. Objects matched to the same JPL designation (the same asteroid in neighbouring tiles or other weeks) are merged: the one with the most detections stays, the others are listed in its `also_seen_as`, and their `field_ids`, `candidate_ids`, `n_detections`, `n_visits` and time span are added to it. Unmatched objects are never merged. `dedupe=false` returns every object as built. `reporting_status` filters after merging (see [ADES export](#ades-export)). Paged after merging. |
 | `GET /api/objects/{object_id}` | `ObjectDetail` | Static `data/objects/{object_id}.json`, with the stored JPL result of its first linked candidate, or `enrichment: "pending"` while the first lookup runs. `also_seen_as` lists the other objects with the same JPL designation. |
 | `GET /api/objects/{object_id}/prediction?days=30` | `ObjectPrediction` | Static `data/objects/{object_id}/prediction.json`, trimmed to `days` (1–60). `404` while the object has no orbit. |
-| `GET /api/objects/{object_id}/ades.xml` | ADES XML | Minor Planet Center ADES export (build-plan row 9). `404` until then. |
+| `GET /api/objects/{object_id}/ades.xml` | ADES XML | The object's astrometry in the Minor Planet Center's ADES 2022 XML, as a draft for the team to vet (see [ADES export](#ades-export)). `404` for injected objects. |
+| `GET /api/reporting` | `ReportingQueue` | Candidates for reporting: objects whose `reporting_status` is `ready`, with counts by status (see [ADES export](#ades-export)). |
 | `GET /api/validation/jpl-orbits` | summary | Our orbits versus JPL's for every identified object (see Objects). |
 | `GET /api/validation/orbits` | `OrbitValidation` | Static `data/validation/orbits.json` (see [Objects](#objects-objectsummary-objectdetail-objectprediction)). |
 | `GET /api/survey` | `Survey` | Static `data/survey.json`: survey tiles, their status and totals. The Worker adds `totals.n_known_objects`: distinct JPL designations among matched objects, so an asteroid seen in several tiles counts once. |
@@ -180,6 +181,25 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 `measurements_passed` is true when every `pipeline` criterion passed. `spherex-px publish` evaluates the pipeline criteria, and the JPL criteria from a check written into the data at publish time (unevaluated otherwise). The Worker re-evaluates the JPL criteria from whichever catalog check it serves, in detail views and list rows (`pipeline/spherex_px/reporting.py` and `worker/src/reporting.ts` follow the same rules; `shared/fixtures/reporting_jpl_cases.json` keeps them equal). A report whose JPL lookup is `pending` is never `ready`.
 
 `ready` means **not in any catalog we checked**. It never means new or discovered: the object may be a known one JPL's search missed (SBIdent's fast mode, a 0.1° search box, or a poorly known orbit), or an error the tests did not catch. Nothing is submitted automatically; the team reviews each candidate before anything goes to the Minor Planet Center. The frontend must use these labels as given and must not describe a `ready` candidate as new, a discovery, or Planet X.
+
+### ADES export
+
+`GET /api/objects/{object_id}/ades.xml` returns the object's astrometry as ADES 2022 XML (`application/xml`; `X-ADES-Status: draft`, or `draft; station code not configured`) with one `<obsBlock>`:
+
+- `obsContext`: observatory `mpcCode` from the Worker variable `MPC_STATION_CODE` (`XXX` until it is set, which the MPC will not accept); submitter and measurers from `ADES_SUBMITTER`; observers "SPHEREx mission (NASA/JPL-Caltech), public archive data"; telescope SPHEREx (0.2 m reflector, `CMO`: HgCdTe arrays read out by CMOS multiplexers); comment lines that mark the file as a draft not submitted, the pipeline version, the JPL check and the reporting status.
+- One `<optical>` per exposure time. Simultaneous detectors (one SPHEREx exposure images the same sky at several wavelengths) are one observation: the detection with the highest S/N is kept. Each has `trkSub` (`SPX` + 5 characters, stable per object), `permID` / `provID` when JPL matched a numbered or provisionally designated object, `mode: CMO`, `stn`, the spacecraft's geocentric position from the image header (`sys: ICRF_KM`, `ctr: 399`, `pos1..3` in km), `obsTime` (exposure midpoint, UTC, ms), `ra`, `dec`, `rmsRA` and `rmsDec` (our measured `pos_err_arcsec`), `astCat: Gaia3`, and `remarks` with the SPHEREx `obs_id`, band and S/N. No magnitude is written: SPHEREx's narrow infrared bands have no MPC photometric band.
+
+`GET /api/objects?reporting_status=ready` (repeatable; `ready | incomplete | not_ready`, anything else `400`) filters the object list.
+
+`GET /api/reporting` → `ReportingQueue {schema_version, pipeline_version, generated_utc, label_plain, counts {ready, incomplete, not_ready, not_evaluated}, objects[] (ObjectSummary, ready only, merged by JPL designation as in /api/objects), ades_urls {object_id: url}, submission {automatic: false, station_code_configured, how_plain}}`. Injected objects are never listed.
+
+**Submitting (by the team, never by this service).** Nothing is submitted automatically. For each `ready` object a team member:
+
+1. reviews it: the images and stamps, every reporting criterion, the JPL check (and, for anything unusual, a fresh check with JPL's Small-Body Identification tool and the MPC's own MPChecker);
+2. confirms the details that only the team can: an MPC observatory code covering these SPHEREx measurements (set `MPC_STATION_CODE`; the MPC assigns codes and explains how to request one), the submitter and contact (`ADES_SUBMITTER`), and the astrometric reference catalog of the SPHEREx Level 2 solution (`astCat`, against the SPHEREx Explanatory Supplement);
+3. downloads `ades.xml`, validates it with the MPC's ADES tools, and submits it through the MPC's submission service under the team's name.
+
+A `ready` object is "not in any catalog we checked"; the submission is astrometry of an unidentified object, never a discovery claim.
 
 ## Provenance (`source`)
 

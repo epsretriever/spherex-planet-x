@@ -11,6 +11,8 @@ import type { KnownObject, Reporting, ReportingCriterion, ReportingStatus } from
 /** Kept identical to NEARBY_KNOWN_ARCSEC in pipeline/spherex_px/reporting.py. */
 export const NEARBY_KNOWN_ARCSEC = 60;
 
+export const REPORTING_STATUSES: readonly ReportingStatus[] = ["ready", "incomplete", "not_ready"];
+
 export const REPORTING_LABELS: Record<ReportingStatus, string> = {
   ready: "Not in any catalog we checked — candidate for reporting",
   incomplete: "Catalog check incomplete",

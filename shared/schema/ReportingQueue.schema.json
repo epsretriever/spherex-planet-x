@@ -1,0 +1,363 @@
+{
+  "$defs": {
+    "Classification": {
+      "description": "Backend-owned label. The frontend never upgrades it.\n\nFrontend display: unmatched -> \"Unexplained\", unconfirmed_pair -> \"Unconfirmed pair\",\ninjected -> \"SIMULATED\".",
+      "enum": [
+        "known_object",
+        "unmatched",
+        "likely_artifact",
+        "unconfirmed_pair",
+        "injected"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "DistanceClass": {
+      "description": "Where in the solar system an object probably is, from its parallax distance or orbit.",
+      "enum": [
+        "neo",
+        "main_belt",
+        "jupiter_trojan",
+        "centaur",
+        "tno",
+        "unknown"
+      ],
+      "title": "DistanceClass",
+      "type": "string"
+    },
+    "DistanceEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "best": {
+          "title": "Best",
+          "type": "number"
+        },
+        "lo": {
+          "title": "Lo",
+          "type": "number"
+        },
+        "hi": {
+          "title": "Hi",
+          "type": "number"
+        }
+      },
+      "required": [
+        "best",
+        "lo",
+        "hi"
+      ],
+      "title": "DistanceEstimate",
+      "type": "object"
+    },
+    "ObjectSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "classification": {
+          "$ref": "#/$defs/Classification"
+        },
+        "label_plain": {
+          "title": "Label Plain",
+          "type": "string"
+        },
+        "summary_plain": {
+          "title": "Summary Plain",
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "title": "Thumbnail Url",
+          "type": "string"
+        },
+        "field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Ids",
+          "type": "array"
+        },
+        "candidate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidate Ids",
+          "type": "array"
+        },
+        "n_detections": {
+          "title": "N Detections",
+          "type": "integer"
+        },
+        "n_visits": {
+          "description": "Separate visits (clusters of exposures hours apart)",
+          "title": "N Visits",
+          "type": "integer"
+        },
+        "first_time_utc": {
+          "title": "First Time Utc",
+          "type": "string"
+        },
+        "last_time_utc": {
+          "title": "Last Time Utc",
+          "type": "string"
+        },
+        "arc_hours": {
+          "title": "Arc Hours",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rate Arcsec Per Hr"
+        },
+        "distance_class": {
+          "$ref": "#/$defs/DistanceClass"
+        },
+        "distance_au_estimate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DistanceEstimate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "orbit_status": {
+          "$ref": "#/$defs/OrbitStatus"
+        },
+        "overall_score": {
+          "title": "Overall Score",
+          "type": "number"
+        },
+        "quality_level": {
+          "$ref": "#/$defs/QualityLevel"
+        },
+        "known_object_checked": {
+          "title": "Known Object Checked",
+          "type": "boolean"
+        },
+        "known_object_matched": {
+          "title": "Known Object Matched",
+          "type": "boolean"
+        },
+        "known_object_designation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Known Object Designation"
+        },
+        "reporting_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportingStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "reporting.status of the detail; null in data published before it"
+        },
+        "reporting_measurements_passed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "reporting.measurements_passed of the detail",
+          "title": "Reporting Measurements Passed"
+        },
+        "also_seen_as": {
+          "default": [],
+          "description": "Objects with the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker",
+          "items": {
+            "type": "string"
+          },
+          "title": "Also Seen As",
+          "type": "array"
+        }
+      },
+      "required": [
+        "object_id",
+        "classification",
+        "label_plain",
+        "summary_plain",
+        "thumbnail_url",
+        "field_ids",
+        "candidate_ids",
+        "n_detections",
+        "n_visits",
+        "first_time_utc",
+        "last_time_utc",
+        "arc_hours",
+        "rate_arcsec_per_hr",
+        "distance_class",
+        "distance_au_estimate",
+        "orbit_status",
+        "overall_score",
+        "quality_level",
+        "known_object_checked",
+        "known_object_matched",
+        "known_object_designation"
+      ],
+      "title": "ObjectSummary",
+      "type": "object"
+    },
+    "OrbitStatus": {
+      "enum": [
+        "none",
+        "preliminary",
+        "refined"
+      ],
+      "title": "OrbitStatus",
+      "type": "string"
+    },
+    "QualityLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    },
+    "ReportingCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "ready": {
+          "title": "Ready",
+          "type": "integer"
+        },
+        "incomplete": {
+          "title": "Incomplete",
+          "type": "integer"
+        },
+        "not_ready": {
+          "title": "Not Ready",
+          "type": "integer"
+        },
+        "not_evaluated": {
+          "title": "Not Evaluated",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ready",
+        "incomplete",
+        "not_ready",
+        "not_evaluated"
+      ],
+      "title": "ReportingCounts",
+      "type": "object"
+    },
+    "ReportingStatus": {
+      "enum": [
+        "ready",
+        "incomplete",
+        "not_ready"
+      ],
+      "title": "ReportingStatus",
+      "type": "string"
+    },
+    "ReportingSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "automatic": {
+          "const": false,
+          "default": false,
+          "title": "Automatic",
+          "type": "boolean"
+        },
+        "station_code_configured": {
+          "title": "Station Code Configured",
+          "type": "boolean"
+        },
+        "how_plain": {
+          "title": "How Plain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "station_code_configured",
+        "how_plain"
+      ],
+      "title": "ReportingSubmission",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "GET /api/reporting (served by the Worker): objects that are candidates for reporting.",
+  "properties": {
+    "schema_version": {
+      "default": "1.1",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "label_plain": {
+      "title": "Label Plain",
+      "type": "string"
+    },
+    "counts": {
+      "$ref": "#/$defs/ReportingCounts"
+    },
+    "objects": {
+      "description": "reporting_status == 'ready' only",
+      "items": {
+        "$ref": "#/$defs/ObjectSummary"
+      },
+      "title": "Objects",
+      "type": "array"
+    },
+    "ades_urls": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Ades Urls",
+      "type": "object"
+    },
+    "submission": {
+      "$ref": "#/$defs/ReportingSubmission"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "label_plain",
+    "counts",
+    "objects",
+    "ades_urls",
+    "submission"
+  ],
+  "title": "ReportingQueue",
+  "type": "object"
+}
