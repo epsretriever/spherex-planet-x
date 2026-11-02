@@ -17,6 +17,7 @@ from astropy.coordinates import BarycentricMeanEcliptic, SkyCoord
 
 from . import schemas as S
 from .orbits import clones_doc, distance_class_of, orbit_for, orbital_elements, prediction_doc
+from .ranking import rank_anomalies
 
 # Distance classes from a heliocentric-ish distance estimate (AU). Parallax distances are from
 # the observer, so only well-separated ranges are classified; everything else is "unknown".
@@ -115,6 +116,9 @@ def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
         known_object_checked=o.known_object.checked,
         known_object_matched=o.known_object.matched,
         known_object_designation=o.known_object.designation,
+        anomaly_score=o.anomaly.score if o.anomaly else None,
+        anomaly_rank=o.anomaly.rank if o.anomaly else None,
+        anomaly_reason=o.anomaly.reason_plain if o.anomaly else None,
     )
 
 
@@ -281,7 +285,6 @@ def write_objects_and_survey(
         orbit = orbits.get(c.candidate_id)
         o = object_from_candidate(c, run_id, orbit)
         objects.append(o)
-        write_json(obj_dir / f"{o.object_id}.json", o)
         if orbit:
             write_json(
                 obj_dir / o.object_id / "clones.json", clones_doc(orbit, o.object_id, version)
@@ -290,6 +293,10 @@ def write_objects_and_survey(
                 obj_dir / o.object_id / "prediction.json",
                 prediction_doc(orbit, o.object_id, version, stamp),
             )
+    anomalies = rank_anomalies(objects)
+    for o in objects:
+        o.anomaly = anomalies.get(o.object_id)
+        write_json(obj_dir / f"{o.object_id}.json", o)
     summaries = sorted(
         (summary_of_object(o) for o in objects), key=lambda s: (-s.overall_score, s.object_id)
     )

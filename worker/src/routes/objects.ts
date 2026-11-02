@@ -109,7 +109,12 @@ objects.get("/", async (c) => {
   const paging = pageParams((n) => c.req.query(n));
   const dedupe = c.req.query("dedupe") !== "false";
   const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
-  const page = paginate(dedupe ? mergeByDesignation(all) : all, paging);
+  const sort = c.req.query("sort") ?? "score";
+  if (sort !== "score" && sort !== "anomaly") throw badRequest("sort must be 'score' or 'anomaly'");
+  let rows = dedupe ? mergeByDesignation(all) : all;
+  // Most unusual first; objects without a ranking keep the published order after them.
+  if (sort === "anomaly") rows = [...rows].sort((a, b) => (a.anomaly_rank ?? Infinity) - (b.anomaly_rank ?? Infinity));
+  const page = paginate(rows, paging);
   c.header("Cache-Control", "public, max-age=60");
   return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, objects: page.items });
 });

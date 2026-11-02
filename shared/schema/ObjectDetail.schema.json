@@ -1,5 +1,107 @@
 {
   "$defs": {
+    "Anomaly": {
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "description": "1 = least like the other objects",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "rank": {
+          "description": "1 = most unusual",
+          "title": "Rank",
+          "type": "integer"
+        },
+        "n_ranked": {
+          "title": "N Ranked",
+          "type": "integer"
+        },
+        "reason_plain": {
+          "title": "Reason Plain",
+          "type": "string"
+        },
+        "features": {
+          "items": {
+            "$ref": "#/$defs/AnomalyFeature"
+          },
+          "title": "Features",
+          "type": "array"
+        },
+        "method": {
+          "const": "isolation_forest_v1",
+          "default": "isolation_forest_v1",
+          "title": "Method",
+          "type": "string"
+        },
+        "definition": {
+          "default": "Isolation Forest over motion rate, motion across the ecliptic, ecliptic latitude, distance from the Sun and infrared colour of every published object with a motion fit over 3 or more detections (not two-detection pairs or likely artifacts). It ranks how unlike the others an object is; unusual does not mean new or unexplained.",
+          "title": "Definition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "score",
+        "rank",
+        "n_ranked",
+        "reason_plain",
+        "features"
+      ],
+      "title": "Anomaly",
+      "type": "object"
+    },
+    "AnomalyFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "median": {
+          "description": "Median over the ranked objects",
+          "title": "Median",
+          "type": "number"
+        },
+        "z": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "(value - median) / robust spread",
+          "title": "Z"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "value",
+        "median",
+        "z"
+      ],
+      "title": "AnomalyFeature",
+      "type": "object"
+    },
     "CandidateProvenance": {
       "additionalProperties": false,
       "properties": {
@@ -1428,6 +1530,18 @@
     },
     "scores": {
       "$ref": "#/$defs/Scores"
+    },
+    "anomaly": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Anomaly"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "null below 10 objects"
     },
     "explanation": {
       "anyOf": [
