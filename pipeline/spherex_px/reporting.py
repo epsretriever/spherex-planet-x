@@ -1,9 +1,10 @@
 """Whether a candidate is a candidate for reporting to the Minor Planet Center, test by test.
 
 The pipeline evaluates every test it can measure when the data is published (source
-"pipeline"). The JPL tests (source "jpl") need the catalog check, which the Worker applies when
-it serves a report, so the pipeline writes them unevaluated and the status is at best
-"incomplete" here. The Worker (worker/src/reporting.ts) fills them in and sets the final status.
+"pipeline"), and the JPL tests (source "jpl") from the catalog check written into the data by the
+JPL check Action, if any; without one they stay unevaluated and the status is at best
+"incomplete". The Worker re-evaluates the JPL tests from the check it serves
+(worker/src/reporting.ts, identical rules).
 
 A candidate for reporting is "not in any catalog we checked", never "new" or "discovered": it
 may be a known object JPL's search missed, or an error the tests did not catch, and nothing is
@@ -25,17 +26,8 @@ ARTIFACT_CHECKS = (
     "not_static",
     "flux_consistent_across_lambda",
 )
-# The Worker's JPL tests (kept identical to worker/src/reporting.ts).
+# JPL tests: kept identical to worker/src/reporting.ts (shared/fixtures/reporting_jpl_cases.json).
 NEARBY_KNOWN_ARCSEC = 60.0
-JPL_CRITERIA = (
-    ("jpl_every_visit", "JPL answered for every visit searched", "all"),
-    ("jpl_no_match", "No known asteroid or comet at its position", False),
-    (
-        "jpl_nothing_nearby",
-        f"No known asteroid or comet within {NEARBY_KNOWN_ARCSEC:.0f}″",
-        NEARBY_KNOWN_ARCSEC,
-    ),
-)
 
 LABELS = {
     S.ReportingStatus.ready: "Not in any catalog we checked — candidate for reporting",
@@ -124,10 +116,39 @@ def pipeline_criteria(
     return out
 
 
-def unevaluated_jpl_criteria() -> list[S.ReportingCriterion]:
+def jpl_criteria(k: S.KnownObject) -> list[S.ReportingCriterion]:
+    """The three JPL tests for a catalog check (unevaluated while none has run)."""
+    checked = k.checked and k.enrichment != "pending"
+    q, a = k.visits_queried, k.visits_answered
+    every = None if not checked or q is None or a is None else (q > 0 and a == q)
+    nearest = k.nearest.separation_arcsec if k.nearest else None
     return [
-        S.ReportingCriterion(id=i, label=label, passed=None, value=None, threshold=t, source="jpl")
-        for i, label, t in JPL_CRITERIA
+        S.ReportingCriterion(
+            id="jpl_every_visit",
+            label="JPL answered for every visit searched",
+            passed=every,
+            value=f"{a} of {q} visits" if checked and q is not None and a is not None else None,
+            threshold="all",
+            source="jpl",
+        ),
+        S.ReportingCriterion(
+            id="jpl_no_match",
+            label="No known asteroid or comet at its position",
+            passed=(not k.matched) if checked else None,
+            value=k.matched if checked else None,
+            threshold=False,
+            source="jpl",
+        ),
+        S.ReportingCriterion(
+            id="jpl_nothing_nearby",
+            label=f"No known asteroid or comet within {NEARBY_KNOWN_ARCSEC:.0f}″",
+            passed=None
+            if not checked
+            else (False if k.matched else nearest is None or nearest > NEARBY_KNOWN_ARCSEC),
+            value=nearest if checked else None,
+            threshold=NEARBY_KNOWN_ARCSEC,
+            source="jpl",
+        ),
     ]
 
 
@@ -161,7 +182,7 @@ def reporting_of(
     if c.classification == S.Classification.injected:
         return None
     pipe = pipeline_criteria(c, orbit_status, orbit_rms_arcsec)
-    criteria = pipe + unevaluated_jpl_criteria()
+    criteria = pipe + jpl_criteria(c.known_object)
     status = status_of(criteria)
     return S.Reporting(
         status=status,

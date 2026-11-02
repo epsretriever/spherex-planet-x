@@ -94,3 +94,30 @@ def test_publish_writes_reporting(tmp_path):
         assert detail["reporting"]["status"] in ("incomplete", "not_ready")
         assert listed["reporting_status"] == detail["reporting"]["status"]
         assert objs[0]["reporting_status"] == detail["reporting"]["status"]
+
+
+def test_jpl_rules_match_the_worker():
+    """Same cases as worker/test/reporting.test.ts."""
+    from spherex_px.reporting import jpl_criteria, status_of
+
+    doc = json.loads((FIXTURE_DIR / "reporting_jpl_cases.json").read_text())
+    for case in doc["cases"]:
+        k = S.KnownObject.model_validate(case["known_object"])
+        got = jpl_criteria(k)
+        assert [x.passed for x in got] == case["passed"], case["name"]
+        ok = S.ReportingCriterion(
+            id="m", label="m", passed=True, value=None, threshold=None, source="pipeline"
+        )
+        assert status_of([ok, *got]).value == case["status"], case["name"]
+
+
+def test_a_publish_time_check_can_make_it_ready():
+    c = _cand()
+    c.known_object = S.KnownObject.model_validate(
+        json.loads((FIXTURE_DIR / "reporting_jpl_cases.json").read_text())["cases"][0][
+            "known_object"
+        ]
+    )
+    r = reporting_of(c, S.OrbitStatus.preliminary, 0.9)
+    assert r.status is S.ReportingStatus.ready
+    assert r.label_plain == "Not in any catalog we checked — candidate for reporting"

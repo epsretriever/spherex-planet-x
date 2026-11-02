@@ -173,7 +173,30 @@ export interface KnownObject {
   nearest: { designation: string; separation_arcsec: number } | null;
   observer: string | null;
   query_utc: string | null;
+  /** SPHEREx visits sent to JPL SBIdent, and how many it answered (null in older checks). */
+  visits_queried?: number | null;
+  visits_answered?: number | null;
   enrichment: "static" | "live" | "cached" | "pending";
+}
+
+export type ReportingStatus = "ready" | "incomplete" | "not_ready";
+
+export interface ReportingCriterion {
+  id: string;
+  label: string;
+  passed: boolean | null;
+  value: number | boolean | string | null;
+  threshold: number | boolean | string | null;
+  source: "pipeline" | "jpl";
+}
+
+export interface Reporting {
+  status: ReportingStatus;
+  label_plain: string;
+  summary_plain: string;
+  measurements_passed: boolean;
+  criteria: ReportingCriterion[];
+  definition: string;
 }
 
 export interface Scores {
@@ -222,6 +245,7 @@ export interface CandidateDetail extends Envelope {
   motion: Motion;
   known_object: KnownObject;
   scores: Scores;
+  reporting?: Reporting | null;
   vetting: VettingCheck[];
   error_sources: ErrorSource[];
   explanation: Explanation | null;
@@ -249,6 +273,8 @@ export interface CandidateSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  reporting_status?: ReportingStatus | null;
+  reporting_measurements_passed?: boolean | null;
 }
 
 export interface CandidateList extends Envelope, Page {
@@ -436,6 +462,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  reporting_status?: ReportingStatus | null;
+  reporting_measurements_passed?: boolean | null;
   /** Other objects matched to the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker. */
   also_seen_as?: string[];
 }
@@ -465,6 +493,7 @@ export interface ObjectDetail extends Envelope {
   orbit: OrbitalElements | null;
   known_object: KnownObject;
   scores: Scores;
+  reporting?: Reporting | null;
   explanation: Explanation | null;
   spectrum: unknown;
   history: { utc: string; run_id: string; change: string }[];
