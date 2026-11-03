@@ -390,8 +390,30 @@ def distinct_objects(summaries) -> int:
     )
 
 
+def live_identified(api: str) -> tuple[int, int] | None:
+    """(identified, unidentified) objects as the live site lists them: JPL results live in the
+    Worker's store, not in the published files. None when the API does not answer."""
+    import logging
+
+    from .data.http import request
+
+    try:
+        objs = request("GET", f"{api.rstrip('/')}/api/objects").json()["objects"]
+    except Exception as err:  # the chart point just goes without these two numbers
+        logging.getLogger(__name__).warning("growth: live object counts unavailable (%s)", err)
+        return None
+    real = [o for o in objs if o.get("classification") != "injected"]
+    known = sum(1 for o in real if o.get("classification") == "known_object")
+    return known, len(real) - known
+
+
 def record_growth(out_dir: Path, survey, n_objects: int, now: str) -> None:
-    """One point per UTC day (the day's last publish wins) for the home page growth chart."""
+    """One point per UTC day (the day's last publish wins) for the home page growth chart.
+
+    With SURVEY_LIVE_API set (the survey workflow), objects and the identified/unidentified
+    split come from the live Worker, which holds the JPL results (as of the previous run)."""
+    import os
+
     t = survey.totals
     area = t.area_deg2_searched or t.area_deg2_processed
     point = {
@@ -404,6 +426,18 @@ def record_growth(out_dir: Path, survey, n_objects: int, now: str) -> None:
     }
     path = out_dir / "growth.json"
     days = json.loads(path.read_text())["days"] if path.exists() else []
+    prev = next((d for d in days if d["date"] == point["date"]), None)
+    live = (
+        live_identified(os.environ["SURVEY_LIVE_API"])
+        if os.environ.get("SURVEY_LIVE_API")
+        else None
+    )
+    if live:
+        point["identified"], point["unidentified"] = live
+        point["objects"] = sum(live)
+    elif prev and "identified" in prev:  # keep today's earlier live numbers
+        point["identified"], point["unidentified"] = prev["identified"], prev["unidentified"]
+        point["objects"] = prev["objects"]
     days = [d for d in days if d["date"] != point["date"]] + [point]
     days.sort(key=lambda d: d["date"])
     path.write_text(json.dumps({"days": days}, indent=1) + "\n")

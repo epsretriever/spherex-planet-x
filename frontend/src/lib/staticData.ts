@@ -67,6 +67,9 @@ export interface GrowthDay {
   sky_percent: number;
   candidates: number;
   objects: number;
+  /** From the live Worker (JPL results); missing on days before it was recorded. */
+  identified?: number;
+  unidentified?: number;
 }
 
 export function staticGrowth(): GrowthDay[] {

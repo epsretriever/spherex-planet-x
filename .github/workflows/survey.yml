@@ -61,6 +61,8 @@ env:
   MAX_TILES: ${{ inputs.max_tiles || '1500' }}
   DEADLINE_MIN: ${{ inputs.deadline_min || '45' }}
   TRIAGE_LIMIT: ${{ inputs.triage_limit || '400' }}
+  # The home page growth chart reads identified/unidentified counts from the live Worker.
+  SURVEY_LIVE_API: https://spherex-planet-x.bodhishanbhag.workers.dev
 
 jobs:
   plan:
