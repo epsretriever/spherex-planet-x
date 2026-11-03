@@ -96,8 +96,10 @@ def test_records_footprint_and_ledger_then_publishes_them(out, tmp_path):
     publish(out)
     survey = S.Survey.model_validate_json((out / "survey.json").read_text())
     by_id = {t.tile_id: t for t in survey.tiles}
-    assert by_id["sv-x-l3468-s003"].status == S.TileStatus.empty
-    assert by_id["sv-x-l3468-s003"].field_id is None
+    # Empty tiles are published compactly (v1.2), not as full tile records.
+    assert "sv-x-l3468-s003" not in by_id
+    assert survey.empty_cells is not None and survey.empty_cells.n_tiles == 1
+    assert len(survey.empty_cells.positions) == 1
     assert by_id["sv-x-l3471-s003"].status == S.TileStatus.failed
     assert by_id["sv-x-l3471-s003"].detail == "OSError: S3 read timed out"
     assert by_id[fields[0]].status == S.TileStatus.processed
@@ -105,6 +107,9 @@ def test_records_footprint_and_ledger_then_publishes_them(out, tmp_path):
     assert (t.n_tiles, t.n_processed, t.n_empty, t.n_failed) == (len(fields) + 2, len(fields), 1, 1)
     assert t.n_searched == len(fields) + 1
     assert t.area_deg2_searched == pytest.approx(t.area_deg2_processed + 0.09)
+    assert t.sky_fraction_searched == pytest.approx(t.area_deg2_searched / 41252.96, rel=1e-3)
+    seg = json.loads((out / "survey" / "segments.json").read_text())
+    assert seg["qr2/2025W23_1C"]["searched"] == 2 and not seg["qr2/2025W23_1C"]["complete"]
     assert survey.last_run is not None and survey.last_run.run_id == "gh-1-1"
 
     # A second run: the empty tile is searched again and now fails; nothing is new.

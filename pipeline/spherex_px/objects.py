@@ -88,7 +88,17 @@ def object_from_candidate(
             )
         ],
         provenance=c.provenance,
+        record_level=c.record_level,
     )
+
+
+def review_priority(classification, matched: bool) -> int:
+    """List order: unexplained (and not yet checked) first, then weak detections, then known."""
+    if matched or classification == S.Classification.known_object:
+        return 2
+    if classification in (S.Classification.likely_artifact, S.Classification.unconfirmed_pair):
+        return 1
+    return 0
 
 
 def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
@@ -203,10 +213,34 @@ def build_survey(
             t.m50_ab = m50_by_field[t.tile_id]
             t.m50_study_id = study_id
     published = {t.tile_id for t in tiles}
+    empty = []
     if footprint is not None:
-        tiles += [tile_from_footprint(t) for t in footprint.tiles if t.tile_id not in published]
+        rest = [t for t in footprint.tiles if t.tile_id not in published]
+        empty = [t for t in rest if t.status == "empty"]
+        # Failed tiles stay full records (they carry the reason); a tile the footprint calls
+        # kept whose field is no longer published (rebuilt elsewhere) counts as searched.
+        tiles += [tile_from_footprint(t) for t in rest if t.status != "empty"]
     processed = [t for t in tiles if t.status == S.TileStatus.processed]
     searched = [t for t in tiles if t.status in (S.TileStatus.processed, S.TileStatus.empty)]
+
+    # Distinct sky: survey tiles of different weeks on the same 0.3 deg ecliptic grid point are
+    # one patch; showcase fields count on their own.
+    def cell(lon: float, lat: float) -> tuple[int, int]:
+        return round(lon / 0.3) % 1200, round(lat / 0.3)
+
+    sky = {
+        cell(t.ecliptic_lon_deg, t.ecliptic_lat_deg)
+        for t in searched
+        if t.tile_id.startswith("sv-")
+    }
+    showcase_area = sum(t.size_deg**2 for t in searched if not t.tile_id.startswith("sv-"))
+    empty_pos: dict[tuple[int, int], tuple[float, float]] = {}
+    for t in empty:
+        empty_pos.setdefault(
+            cell(t.elon_deg, t.elat_deg), (round(t.ra_deg, 2), round(t.dec_deg, 2))
+        )
+    sky |= set(empty_pos)
+    area = round(len(sky) * 0.3**2 + showcase_area, 4)
     releases = sorted({f.data_release for f in fields})
     runs = sorted(runs or [], key=lambda r: r.finished_utc, reverse=True)
     return S.Survey(
@@ -221,17 +255,25 @@ def build_survey(
         tile_size_deg=0.3,
         data_releases=releases,
         tiles=tiles,
+        empty_cells=S.SurveyEmptyCells(
+            size_deg=0.3,
+            n_tiles=len(empty),
+            positions=[list(p) for _, p in sorted(empty_pos.items())],
+        )
+        if footprint is not None
+        else None,
         totals=S.SurveyTotals(
-            n_tiles=len(tiles),
+            n_tiles=len(tiles) + len(empty),
             n_processed=len(processed),
             area_deg2_processed=round(sum(t.size_deg**2 for t in processed), 4),
-            n_epochs=sum(t.n_epochs for t in tiles),
+            n_epochs=sum(t.n_epochs for t in tiles) + sum(t.n_exposures for t in empty),
             n_candidates=sum(t.n_candidates for t in tiles),
             n_objects=n_objects,
-            n_searched=len(searched),
-            n_empty=sum(t.status == S.TileStatus.empty for t in tiles),
+            n_searched=len(searched) + len(empty),
+            n_empty=sum(t.status == S.TileStatus.empty for t in tiles) + len(empty),
             n_failed=sum(t.status == S.TileStatus.failed for t in tiles),
-            area_deg2_searched=round(sum(t.size_deg**2 for t in searched), 4),
+            area_deg2_searched=area,
+            sky_fraction_searched=round(area / 41252.96, 8),
         ),
         last_run=runs[0] if runs else None,
         runs=runs[:20],
@@ -291,7 +333,12 @@ def write_objects_and_survey(
                 prediction_doc(orbit, o.object_id, version, stamp),
             )
     summaries = sorted(
-        (summary_of_object(o) for o in objects), key=lambda s: (-s.overall_score, s.object_id)
+        (summary_of_object(o) for o in objects),
+        key=lambda s: (
+            review_priority(s.classification, s.known_object_matched),
+            -s.overall_score,
+            s.object_id,
+        ),
     )
     write_json(
         out_dir / "objects.json",

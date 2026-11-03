@@ -16,6 +16,9 @@ from pathlib import Path
 from ..settings import get_settings
 from .http import UpstreamError, request
 
+#: Byte spans of each object already in the disk range cache (this process only).
+_SPANS: dict[str, list[tuple[int, int, Path]]] = {}
+
 _NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
 LEVEL2_RE = re.compile(
     r"^(?P<release>qr\d+)/level2/(?P<segment>\d{4}W\d{2}_\d[A-Z])/(?P<version>[^/]+)/"
@@ -116,12 +119,22 @@ class S3Archive:
     # -- byte ranges ---------------------------------------------------------
 
     def read_range(self, key: str, start: int, stop: int) -> bytes:
-        """Bytes [start, stop) of an object."""
+        """Bytes [start, stop) of an object.
+
+        Served from the disk cache when an earlier read of this object (in this process)
+        already covered the range: a survey block reads wide row bands once, and the tiles
+        built inside it afterwards slice them instead of downloading again.
+        """
         if stop <= start:
             return b""
         cache = self._cache_path("range", key, f"{start}-{stop}")
         if cache.exists():
             return cache.read_bytes()
+        for a, b, path in _SPANS.get(key, ()):
+            if a <= start and stop <= b and path.exists():
+                with path.open("rb") as fh:
+                    fh.seek(start - a)
+                    return fh.read(stop - start)
         resp = request("GET", self.url(key), headers={"Range": f"bytes={start}-{stop - 1}"})
         if resp.status_code not in (200, 206):
             raise UpstreamError(f"S3 range {key} [{start},{stop}): HTTP {resp.status_code}")
@@ -137,6 +150,8 @@ class S3Archive:
                     f"S3 range {key}: expected {stop - start} bytes, got {len(data)}"
                 )
         self._write(cache, data)
+        if len(data) == stop - start:
+            _SPANS.setdefault(key, []).append((start, stop, cache))
         return data
 
     # -- cache ---------------------------------------------------------------
@@ -151,3 +166,8 @@ class S3Archive:
         tmp = path.with_suffix(".tmp")
         tmp.write_bytes(data)
         tmp.replace(path)
+
+
+def forget_cached_ranges() -> None:
+    """Call after deleting the range cache directory."""
+    _SPANS.clear()

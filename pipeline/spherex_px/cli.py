@@ -112,7 +112,8 @@ def _survey_build(args: argparse.Namespace) -> int:
     from .survey import build_share
 
     out = Path(args.out) if args.out else DEFAULT_OUT
-    results = build_share(Path(args.plan), args.shard, args.of, out)
+    deadline = args.deadline_min * 60 if args.deadline_min else None
+    results = build_share(Path(args.plan), args.shard, args.of, out, deadline_s=deadline)
     report = out / f"survey-shard-{args.shard}.json"
     report.write_text(json.dumps([asdict(r) for r in results], indent=1) + "\n")
     kept = sum(r.status == "kept" for r in results)
@@ -129,6 +130,11 @@ def _survey_ledger(args: argparse.Namespace) -> int:
 
     out = Path(args.out) if args.out else DEFAULT_OUT
     now = utc_now()
+    import json
+
+    meta: dict = {}
+    for m in args.plan_meta or []:
+        meta.update(json.loads(Path(m).read_text()))
     run = record_run(
         out,
         [Path(p) for p in args.reports],
@@ -136,12 +142,29 @@ def _survey_ledger(args: argparse.Namespace) -> int:
         started_utc=args.started or now,
         finished_utc=now,
         workflow_url=workflow_url_from_env(),
+        plan_meta=meta,
     )
     print(
         f"{run.run_id}: {run.n_tiles_processed} tiles searched, {run.n_tiles_with_movers} with "
         f"moving objects, {run.n_tiles_empty} empty, {run.n_tiles_failed} failed; "
         f"{run.n_new_objects} new objects"
     )
+    return 0
+
+
+def _triage(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .triage import summary_line, triage
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    rep = triage(out, limit=args.limit, workers=args.workers, recheck_unmatched=args.recheck)
+    line = summary_line(rep)
+    print(line)
+    if args.summary:
+        with open(args.summary, "a") as fh:
+            fh.write(line + "\n")
     return 0
 
 
@@ -263,7 +286,11 @@ def main(argv: list[str] | None = None) -> int:
     ix.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
     ix.set_defaults(func=_index)
     sp = sub.add_parser("survey-plan", help="pick ecliptic tiles SPHEREx imaged often enough")
-    sp.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
+    sp.add_argument(
+        "segments",
+        nargs="+",
+        help='"qr2/2025W23_1C", "auto:N" (N spread segments) or "next:N" (N not yet finished)',
+    )
     sp.add_argument("--out", default="var/survey-plan.json")
     sp.add_argument("--max-tiles", type=int, default=None)
     sp.set_defaults(func=_survey_plan)
@@ -272,7 +299,23 @@ def main(argv: list[str] | None = None) -> int:
     sb.add_argument("--shard", type=int, default=0)
     sb.add_argument("--of", type=int, default=1)
     sb.add_argument("--out")
+    sb.add_argument(
+        "--deadline-min",
+        type=float,
+        help="start no new block after this many minutes (unreached tiles stay unsearched)",
+    )
     sb.set_defaults(func=_survey_build)
+    tr = sub.add_parser(
+        "triage",
+        help="check unchecked candidates against JPL SBIdent/Horizons; known objects get a "
+        "minimal record, unexplained ones keep everything",
+    )
+    tr.add_argument("--out")
+    tr.add_argument("--limit", type=int, help="check at most this many candidates")
+    tr.add_argument("--workers", type=int, default=6)
+    tr.add_argument("--recheck", action="store_true", help="also re-check unmatched candidates")
+    tr.add_argument("--summary", help="append a one-line summary to this file")
+    tr.set_defaults(func=_triage)
     sl = sub.add_parser(
         "survey-ledger", help="record a survey run: footprint of searched tiles and run ledger"
     )
@@ -280,6 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--run-id", help="default: this build's run id (gh-<run>-<attempt> in Actions)")
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
+    sl.add_argument("--plan-meta", nargs="*", help="survey-plan-meta.json files (segment ledger)")
     sl.set_defaults(func=_survey_ledger)
     ov = sub.add_parser(
         "orbit-validation", help="test orbit fitting on simulated asteroids (SPHEREx geometry)"
