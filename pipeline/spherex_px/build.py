@@ -758,7 +758,10 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
             candidates=summaries,
         ),
     )
+    from .injection import write_index
     from .objects import write_objects_and_survey
+
+    write_index(out_dir)  # every published injection study, so survey.json gets the newest m50
 
     write_objects_and_survey(out_dir, fields, cands, version, run_id, now)
     return len(fields), len(cands)

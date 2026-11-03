@@ -156,19 +156,23 @@ def test_m50_from_the_newest_injection_study(out):
     inj = out / "injection"
     inj.mkdir()
     fid = sorted(p.stem for p in (out / "fields").glob("*.json"))[0]
-    (inj / "index.json").write_text(
-        json.dumps(
-            {
-                "studies": [
-                    {"study_id": "old", "generated_utc": "2026-01-01"},
-                    {"study_id": "new", "generated_utc": "2026-10-30"},
-                ]
-            }
+    # publish rebuilds index.json from the study files and takes m50 from the newest one.
+    for sid, utc, m in (
+        ("old", "2026-01-01T00:00:00Z", 16.0),
+        ("new", "2026-10-30T00:00:00Z", 17.4),
+    ):
+        (inj / f"{sid}.json").write_text(
+            json.dumps(
+                {
+                    "study_id": sid,
+                    "generated_utc": utc,
+                    "pipeline_version": "t",
+                    "field_ids": [fid],
+                    "n_injected": 1,
+                    "per_field": [{"field_id": fid, "m50_ab": m}],
+                }
+            )
         )
-    )
-    (inj / "new.json").write_text(
-        json.dumps({"study_id": "new", "per_field": [{"field_id": fid, "m50_ab": 17.4}]})
-    )
     publish(out)
     survey = S.Survey.model_validate_json((out / "survey.json").read_text())
     t = {t.tile_id: t for t in survey.tiles}[fid]
