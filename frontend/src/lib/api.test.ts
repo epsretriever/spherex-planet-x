@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CandidateList, CandidateSummary } from "./contract";
-import { DataError, assetUrl, filterCandidates, getField, getFields } from "./api";
+import { DataError, assetUrl, filterCandidates, findInjectionStudyId, getField, getFields } from "./api";
 
 const summary = (id: string, classification: CandidateSummary["classification"], overall: number, field = "f1"): CandidateSummary => ({
   candidate_id: id,
@@ -86,5 +86,23 @@ describe("fetchers", () => {
   it("treats a field with another ID as not found", async () => {
     respond(200, { field_id: "other", epochs: [], pipeline_version: "t" });
     await expect(getField("x")).rejects.toMatchObject({ reason: "not_found" });
+  });
+
+  it("finds the newest injection study from the index", async () => {
+    respond(200, {
+      pipeline_version: "t",
+      studies: [
+        { study_id: "old", generated_utc: "2026-01-01T00:00:00Z", field_ids: [], n_injected: 1 },
+        { study_id: "new", generated_utc: "2026-11-01T00:00:00Z", field_ids: [], n_injected: 1 },
+      ],
+    });
+    await expect(findInjectionStudyId()).resolves.toBe("new");
+    expect(fetchMock.mock.calls[0]![0]).toBe("/api/injection");
+  });
+
+  it("reports no study when neither the index nor injected candidates exist", async () => {
+    respond(404, { detail: "missing" });
+    respond(200, { pipeline_version: "t", generated_utc: "", total: 0, candidates: [] });
+    await expect(findInjectionStudyId()).rejects.toMatchObject({ reason: "not_found" });
   });
 });

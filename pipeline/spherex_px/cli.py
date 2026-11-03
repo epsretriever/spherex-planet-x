@@ -148,24 +148,35 @@ def _survey_ledger(args: argparse.Namespace) -> int:
 def _injection_study(args: argparse.Namespace) -> int:
     from pathlib import Path
 
-    from .build import DEFAULT_OUT, publish
-    from .injection import build_examples, run_study
+    from .build import DEFAULT_OUT, publish, write_json
+    from .injection import build_examples, merge_shards, run_shard, run_study
 
     out = Path(args.out) if args.out else DEFAULT_OUT
-    study = run_study(
-        args.study_id,
-        field_ids=args.fields or None,
-        trials_per_cell=args.trials,
-        workers=args.workers,
-        out_dir=out,
-    )
+    where = dict(field_ids=args.fields or None, survey=args.survey, max_fields=args.max_fields)
+    if args.shard is not None:
+        ckpt = run_shard(
+            args.study_id,
+            args.shard,
+            args.of,
+            Path(args.shard_out),
+            trials_per_cell=args.trials,
+            workers=args.workers,
+            out_dir=out,
+            **where,
+        )
+        print(f"shard {args.shard}/{args.of}: runs in {ckpt}")
+        return 0
+    if args.merge:
+        study = merge_shards(args.study_id, [Path(f) for f in args.merge], out_dir=out, **where)
+    else:
+        study = run_study(
+            args.study_id, trials_per_cell=args.trials, workers=args.workers, out_dir=out, **where
+        )
     if args.examples_field:
         ids = build_examples(args.study_id, args.examples_field, out)
         study.example_candidate_ids = ids
-        from .build import write_json
-
         write_json(out / "injection" / f"{args.study_id}.json", study)
-        publish(out)
+    publish(out)
     print(
         f"{study.study_id}: {study.n_recovered}/{study.n_injected} recovered; "
         f"m50 by rate {[(m.rate_arcsec_per_hr, m.m50_ab) for m in study.m50_by_rate]}; "
@@ -235,6 +246,12 @@ def main(argv: list[str] | None = None) -> int:
     inj = sub.add_parser("injection-study", help="injection-recovery study on built fields")
     inj.add_argument("study_id")
     inj.add_argument("--fields", nargs="*", help="field ids (default: every showcase field)")
+    inj.add_argument("--survey", action="store_true", help="inject into the published survey tiles")
+    inj.add_argument("--max-fields", type=int, help="with --survey: at most this many tiles")
+    inj.add_argument("--shard", type=int, help="run only this shard (0-based) of the fields")
+    inj.add_argument("--of", type=int, default=1, help="number of shards")
+    inj.add_argument("--shard-out", default="var/injection-shard", help="where a shard writes")
+    inj.add_argument("--merge", nargs="+", help="shard files to merge into the study")
     inj.add_argument("--trials", type=int, default=200, help="injections per grid cell")
     inj.add_argument("--workers", type=int, default=4)
     inj.add_argument(

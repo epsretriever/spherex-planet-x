@@ -95,3 +95,58 @@ def test_checkpoint_round_trip_skips_truncated_lines(tmp_path):
     p.write_text(json.dumps(asdict(r)) + "\n" + '{"trials": [')
     back = load_checkpoint(p)
     assert len(back) == 1 and back[0].trials[0].run == 3 and back[0].false_positive_tracks == 1
+
+
+def _published_field(out, fid, origin="run"):
+    import json
+
+    url = (
+        "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W17_4B/"
+        "l2b-v20-2025-240/2/level2_2025W17_4B_0023_1D2_spx_l2b-v20-2025-240.fits"
+    )
+    (out / "fields").mkdir(parents=True, exist_ok=True)
+    (out / "fields" / f"{fid}.json").write_text(
+        json.dumps(
+            {
+                "name": f"tile {fid}",
+                "blurb": "b",
+                "center": {"ra_deg": 10.0, "dec_deg": -2.0},
+                "size_deg": {"width": 0.3, "height": 0.3},
+                "origin": origin,
+                "epochs": [{"source": {"archive_url": url}}],
+            }
+        )
+    )
+    return {"field_id": fid, "origin": origin}
+
+
+def test_survey_fields_come_from_the_published_tiles(tmp_path):
+    import json
+
+    from spherex_px.injection import published_keys, resolve_fields
+
+    rows = [_published_field(tmp_path, f"sv-{i}") for i in range(6)]
+    rows.append(_published_field(tmp_path, "aquarius-a", origin="showcase"))
+    (tmp_path / "fields.json").write_text(json.dumps({"fields": rows}))
+    specs = resolve_fields(tmp_path, survey=True)
+    assert [s.field_id for s in specs] == [f"sv-{i}" for i in range(6)]
+    assert specs[0].ra_deg == 10.0 and specs[0].size_deg == 0.3 and specs[0].origin == "run"
+    assert [s.field_id for s in resolve_fields(tmp_path, survey=True, max_fields=3)] == [
+        "sv-0",
+        "sv-2",
+        "sv-4",
+    ]
+    (k,) = published_keys(tmp_path, "sv-1")
+    assert k.release == "qr2" and k.segment == "2025W17_4B" and k.detector == 2
+    assert k.obs_id == "2025W17_4B_0023_1"
+
+
+def test_shards_split_the_jobs_by_field():
+    from spherex_px.build import FieldSpec
+    from spherex_px.injection import plan_jobs
+
+    specs = [FieldSpec(f"f{i}", "", "", 0.0, 0.0) for i in range(5)]
+    jobs = plan_jobs(specs, 2, 1)
+    assert jobs == plan_jobs(specs, 2, 1)  # fixed by the seed
+    shards = [{j[1] for j in jobs if j[0] in {s.field_id for s in specs[k::2]}} for k in range(2)]
+    assert shards[0].isdisjoint(shards[1]) and len(shards[0] | shards[1]) == len(jobs)

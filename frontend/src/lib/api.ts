@@ -11,6 +11,7 @@ import {
   type FieldDetail,
   type FieldList,
   type InjectionStudy,
+  type InjectionStudyIndex,
   type ObjectDetail,
   type ObjectList,
   type Survey,
@@ -186,14 +187,32 @@ export async function getInjectionStudy(studyId: string, signal?: AbortSignal): 
   return checkVersion(body, "injection");
 }
 
+/** The published injection studies (data/injection/index.json). */
+export async function getInjectionIndex(signal?: AbortSignal): Promise<InjectionStudyIndex> {
+  const body = await getJson<InjectionStudyIndex>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/injection/index.json` : "/api/injection",
+    signal,
+  );
+  expectArray(body, "studies", "Injection study index");
+  return checkVersion(body, "injection index");
+}
+
 /**
- * Finds the injection study to show: the one named in the URL, or the study
- * that the first injected candidate belongs to.
+ * Finds the injection study to show when the URL names none: the newest study
+ * in the published index, or else the study that the first injected candidate
+ * belongs to.
  */
 export async function findInjectionStudyId(signal?: AbortSignal): Promise<string> {
+  try {
+    const index = await getInjectionIndex(signal);
+    const newest = [...index.studies].sort((a, b) => b.generated_utc.localeCompare(a.generated_utc))[0];
+    if (newest) return newest.study_id;
+  } catch (err) {
+    if (!(err instanceof DataError) || err.reason !== "not_found") throw err;
+  }
   const list = await getCandidates({ classification: ["injected"] }, signal);
   const first = list.candidates[0];
-  if (!first) throw new DataError("not_found", "No injected candidates were published.");
+  if (!first) throw new DataError("not_found", "No injection study was published.");
   const detail = await getCandidate(first.candidate_id, signal);
   if (!detail.injection?.study_id) throw new DataError("not_found", "Injected candidate has no study.");
   return detail.injection.study_id;

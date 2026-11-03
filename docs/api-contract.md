@@ -176,6 +176,7 @@ Synthetic moving objects are injected into the **real** cutouts of the published
 - `example_candidate_ids`: candidates classified `injected` (label "SIMULATED"), with full evidence reports and an `injection` block giving the truth. They're never sent to JPL and never relabelled. List them with `/api/candidates?classification=injected`.
 - Intervals are Wilson 95% for fractions and Poisson 95% for counts.
 - `InjectionStudyIndex {studies[] {study_id, generated_utc, field_ids, n_injected}}`.
+- Built by the `Injection study` Action (`.github/workflows/injection.yml`): `spherex-px injection-study <id> --survey` injects into every published survey tile, reading the exact Level 2 exposures listed in each tile's field JSON, in 20 parallel shards (`--shard k --of 20`), then `--merge` combines them, and `spherex-px publish` folds the per-tile m50 into `survey.json`. The Limits page shows the newest study in the index.
 
 ## Objects (`ObjectSummary`, `ObjectDetail`, `ObjectPrediction`)
 

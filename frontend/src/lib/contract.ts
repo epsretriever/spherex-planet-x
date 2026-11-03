@@ -426,6 +426,11 @@ export interface InjectionStudy extends Versioned {
   example_candidate_ids: string[];
 }
 
+/** GET /api/injection: the published injection studies. */
+export interface InjectionStudyIndex extends Versioned {
+  studies: { study_id: string; generated_utc: string; field_ids: string[]; n_injected: number }[];
+}
+
 /* ---- v1.1: objects, survey, AI (docs/api-contract.md, shared/schema/) ---- */
 
 export type DistanceClass = "neo" | "main_belt" | "jupiter_trojan" | "centaur" | "tno" | "unknown";
