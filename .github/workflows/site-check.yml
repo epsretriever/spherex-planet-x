@@ -27,17 +27,17 @@ jobs:
         run: |
           set -euo pipefail
           for base in "$WORKER" "$SITE"; do
-            idx=$(curl -fsS "$base/api/injection")
+            idx=$(curl -fsSL "$base/api/injection")
             echo "$base/api/injection: $idx" | head -c 600; echo
             id=$(echo "$idx" | jq -r '.studies | sort_by(.generated_utc) | last | .study_id')
             test -n "$id" && test "$id" != null
-            curl -fsS "$base/api/injection/$id" | jq -e '.simulated == true and (.grid | length) > 0' \
+            curl -fsSL "$base/api/injection/$id" | jq -e '.simulated == true and (.grid | length) > 0' \
               | tee -a "$GITHUB_STEP_SUMMARY"
-            curl -fsS "$base/api/injection/$id" \
+            curl -fsSL "$base/api/injection/$id" \
               | jq '{study_id, n_injected, n_recovered, n_fields: (.field_ids|length), m50_by_rate, false_positives}' \
               | tee -a "$GITHUB_STEP_SUMMARY"
           done
-          curl -fsS "$SITE/api/survey" | jq '[.tiles[] | select(.m50_ab != null)] | length' \
+          curl -fsSL "$SITE/api/survey" | jq '[.tiles[] | select(.m50_ab != null)] | length' \
             | sed 's/^/survey tiles with m50: /' | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Limits page renders the study
         run: |
