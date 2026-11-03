@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
+import { GrowthCharts } from "@/components/home/GrowthCharts";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
 import { SpectralStrip } from "@/components/SpectralStrip";
 import { formatUtcDate } from "@/lib/format";
-import { staticCandidates, staticSurvey } from "@/lib/staticData";
+import { staticCandidates, staticGrowth, staticSurvey } from "@/lib/staticData";
 import styles from "./page.module.css";
 
 /** The whole sky: 4π steradians, in square degrees. */
@@ -118,6 +119,8 @@ export default function LandingPage() {
       </section>
 
       <div className="container">
+        <GrowthCharts days={staticGrowth()} />
+
         <section className={styles.what} aria-labelledby="what-heading">
           <div className={styles.whatHead}>
             <p className="eyebrow">What it does</p>

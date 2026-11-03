@@ -58,3 +58,18 @@ export function staticNameSeed() {
 
 /** Next requires at least one param for a static export; this one renders the 404 page. */
 export const NO_PAGES = "__none__";
+
+/** One point per UTC day, written by the pipeline's publish step (growth.json). */
+export interface GrowthDay {
+  date: string;
+  tiles_searched: number;
+  area_deg2: number;
+  sky_percent: number;
+  candidates: number;
+  objects: number;
+}
+
+export function staticGrowth(): GrowthDay[] {
+  const g = read<{ days: GrowthDay[] }>("growth.json");
+  return Array.isArray(g?.days) ? g.days : [];
+}

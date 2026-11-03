@@ -368,4 +368,42 @@ def write_objects_and_survey(
         m50=injection_m50(out_dir),
     )
     write_json(out_dir / "survey.json", survey)
+    record_growth(out_dir, survey, distinct_objects(summaries), now)
     return len(objects), len(fields)
+
+
+SKY_DEG2 = 41252.96
+
+
+def distinct_objects(summaries) -> int:
+    """Objects with repeat sightings of one known JPL object counted once (as the site lists them)."""
+    return len(
+        {
+            (
+                s.known_object_designation
+                if s.known_object_matched and s.known_object_designation
+                else s.object_id
+            )
+            for s in summaries
+            if s.classification != S.Classification.injected
+        }
+    )
+
+
+def record_growth(out_dir: Path, survey, n_objects: int, now: str) -> None:
+    """One point per UTC day (the day's last publish wins) for the home page growth chart."""
+    t = survey.totals
+    area = t.area_deg2_searched or t.area_deg2_processed
+    point = {
+        "date": now[:10],
+        "tiles_searched": t.n_searched or t.n_processed,
+        "area_deg2": round(area, 2),
+        "sky_percent": round(100 * area / SKY_DEG2, 4),
+        "candidates": t.n_candidates,
+        "objects": n_objects,
+    }
+    path = out_dir / "growth.json"
+    days = json.loads(path.read_text())["days"] if path.exists() else []
+    days = [d for d in days if d["date"] != point["date"]] + [point]
+    days.sort(key=lambda d: d["date"])
+    path.write_text(json.dumps({"days": days}, indent=1) + "\n")
