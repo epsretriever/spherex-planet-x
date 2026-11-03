@@ -29,6 +29,7 @@ import {
  *   fields/{field_id}.json          or field_detail.json
  *   candidates.json
  *   candidates/{candidate_id}.json  or candidate_detail.json
+ *   injection/index.json            the published studies (newest is shown on /limits)
  *   injection/{study_id}.json       or injection_study.json
  */
 
