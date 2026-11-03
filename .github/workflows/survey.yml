@@ -139,7 +139,7 @@ jobs:
     needs: [plan, build]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -193,8 +193,8 @@ jobs:
             git reset -q --hard origin/main
             cp -r stage/fields/. "$out/fields/"
             cp -r stage/candidates/. "$out/candidates/"
-            # Older candidates JPL has not answered for yet (a few per run).
-            spherex-px triage --out "$out" --limit 50 || true
+            # Older candidates not checked yet: added by a local run, or JPL did not answer before.
+            spherex-px triage --out "$out" --limit $TRIAGE_LIMIT || true
             if [ -n "$reports" ]; then
               spherex-px survey-ledger $reports --plan-meta plan/survey-plan-meta.json \
                 --started "${{ needs.plan.outputs.started }}"
