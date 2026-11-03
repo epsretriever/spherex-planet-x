@@ -53,7 +53,41 @@ const BATCHED: { status: SurveyTile["status"]; r: number; className: keyof typeo
 const dotPath = (pts: Pt[], r: number) =>
   pts.map((p) => `M${(p.x - r).toFixed(1)} ${p.y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`).join("");
 
-export function tileLabel(t: SurveyTile, name?: string): string {
+/** The tile fields the sky page reads. The build-time HTML carries only these (see skyTiles). */
+export type SkyTile = Pick<
+  SurveyTile,
+  | "tile_id"
+  | "center"
+  | "ecliptic_lon_deg"
+  | "ecliptic_lat_deg"
+  | "status"
+  | "field_id"
+  | "first_time_utc"
+  | "last_time_utc"
+  | "n_epochs"
+  | "n_candidates"
+  | "m50_ab"
+  | "detail"
+>;
+
+export function skyTile(t: SkyTile): SkyTile {
+  return {
+    tile_id: t.tile_id,
+    center: t.center,
+    ecliptic_lon_deg: t.ecliptic_lon_deg,
+    ecliptic_lat_deg: t.ecliptic_lat_deg,
+    status: t.status,
+    field_id: t.field_id,
+    first_time_utc: t.first_time_utc,
+    last_time_utc: t.last_time_utc,
+    n_epochs: t.n_epochs,
+    n_candidates: t.n_candidates,
+    m50_ab: t.m50_ab,
+    detail: t.detail,
+  };
+}
+
+export function tileLabel(t: SkyTile, name?: string): string {
   const status = TILE_STATUS_TEXT[t.status] ?? t.status;
   const depth = t.m50_ab !== null ? `, half of simulated objects found down to magnitude ${t.m50_ab.toFixed(1)}` : "";
   return `${name ?? t.tile_id}: ${status}, ${t.n_epochs} images, ${t.n_candidates} moving ${t.n_candidates === 1 ? "object" : "objects"}${depth}`;
@@ -74,9 +108,9 @@ export function SkyMap({
   planetNine,
   tileName,
 }: {
-  tiles: SurveyTile[];
+  tiles: SkyTile[];
   planetNine?: PlanetNineRegion | null;
-  tileName?: (t: SurveyTile) => string | undefined;
+  tileName?: (t: SkyTile) => string | undefined;
 }) {
   const statics = useMemo(() => {
     const raLines = Array.from({ length: 12 }, (_, i) => i * 30).map((ra) => ({

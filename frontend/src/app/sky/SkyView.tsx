@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
-import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import { DEPTH_RANGE, SkyMap, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
 import { fmt, formatUtcDate, formatUtcDateTime } from "@/lib/format";
@@ -34,8 +34,11 @@ function percent(area: number): string {
 /** Rows shown before "Show all": the table is a reference, the map is the overview. */
 const TABLE_ROWS = 30;
 
+/** A survey whose tiles may carry only the fields this page reads (the build-time copy). */
+export type SkySurvey = Omit<Survey, "tiles"> & { tiles: SkyTile[] };
+
 /** The survey footprint: as published at build time, then as the API serves it now. */
-export function SkyView({ initial, fieldNames }: { initial: Survey | null; fieldNames: Record<string, string> }) {
+export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fieldNames: Record<string, string> }) {
   const [showAll, setShowAll] = useState(false);
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
@@ -51,7 +54,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
   }, [live]);
   const state = useData(live ? "survey" : null, (signal) => getSurvey(signal));
   const fields = useData(live ? "fields" : null, (signal) => getFields(signal));
-  const survey = state.status === "ok" ? state.data : initial;
+  const survey: SkySurvey | null = state.status === "ok" ? state.data : initial;
   const names: Record<string, string> =
     fields.status === "ok" ? { ...fieldNames, ...Object.fromEntries(fields.data.fields.map((f) => [f.field_id, f.name])) } : fieldNames;
 
@@ -68,7 +71,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
     return null;
   }
 
-  const name = (t: SurveyTile) => (t.field_id ? names[t.field_id] : undefined);
+  const name = (t: SkyTile) => (t.field_id ? names[t.field_id] : undefined);
   const tiles = [...survey.tiles].sort((a, b) => a.ecliptic_lon_deg - b.ecliptic_lon_deg);
   const p9 = hasSourcedRegion(survey.planet_nine) ? survey.planet_nine : null;
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
