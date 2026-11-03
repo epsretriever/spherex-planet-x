@@ -76,7 +76,10 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
   const p9 = hasSourcedRegion(survey.planet_nine) ? survey.planet_nine : null;
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
   const statuses = new Set(tiles.map((t) => t.status));
-  const count = (st: SurveyTile["status"]) => tiles.filter((t) => t.status === st).length.toLocaleString("en-US");
+  const empty = survey.empty_cells ?? null;
+  if (empty && empty.n_tiles > 0) statuses.add("empty");
+  const count = (st: SurveyTile["status"]) =>
+    (tiles.filter((t) => t.status === st).length + (st === "empty" ? (empty?.n_tiles ?? 0) : 0)).toLocaleString("en-US");
   const t = survey.totals;
   // Tiles with moving objects first, then the rest by longitude.
   const rows = [...tiles].sort((a, b) => Number(b.n_candidates > 0) - Number(a.n_candidates > 0));
@@ -87,17 +90,15 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
       <dl className={styles.stats}>
         <div>
           <dt>Tiles searched</dt>
-          <dd className="mono">
-            {t.n_processed}
-            {t.n_tiles > t.n_processed && <small> of {t.n_tiles}</small>}
-          </dd>
+          <dd className="mono">{(t.n_searched ?? t.n_processed).toLocaleString("en-US")}</dd>
+          <dd className={styles.statNote}>{t.n_processed.toLocaleString("en-US")} with moving objects</dd>
         </div>
         <div>
           <dt>Sky searched</dt>
           <dd className="mono">
-            {fmt(t.area_deg2_processed, t.area_deg2_processed < 10 ? 2 : 0)} deg²
+            {fmt(t.area_deg2_searched ?? t.area_deg2_processed, (t.area_deg2_searched ?? t.area_deg2_processed) < 10 ? 2 : 0)} deg²
           </dd>
-          <dd className={styles.statNote}>{percent(t.area_deg2_processed)} of the whole sky</dd>
+          <dd className={styles.statNote}>{percent(t.area_deg2_searched ?? t.area_deg2_processed)} of the whole sky</dd>
         </div>
         <div>
           <dt>Images</dt>
@@ -112,7 +113,7 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
       {/* The map and table lay out after the header paints, as the evidence report does. */}
       <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
-        <SkyMap tiles={tiles} planetNine={p9} tileName={name} />
+        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} />
         <figcaption className={styles.legend}>
           <ul>
             <li>

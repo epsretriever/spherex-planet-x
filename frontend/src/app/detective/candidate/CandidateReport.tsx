@@ -238,7 +238,7 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
         <WhenVisible minHeight={700}>
           <MotionPanel motion={c.motion} detections={c.detections} />
         </WhenVisible>
-        <KnownObjectPanel known={c.known_object} detections={c.detections} />
+        <KnownObjectPanel known={c.known_object} detections={c.detections} minimal={c.record_level === "minimal"} />
         {c.neo_likelihood && <NeoPanel neo={c.neo_likelihood} />}
         <ErrorSourcesPanel errorSources={c.error_sources} vetting={c.vetting} />
         <ScoresPanel scores={c.scores} />

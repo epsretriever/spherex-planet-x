@@ -21,7 +21,7 @@ export type ErrorSourceStatus = "ruled_out" | "not_ruled_out" | "unknown";
 export type MotionModel = "linear" | "parallax" | "none";
 
 export interface Envelope {
-  schema_version: "1.0" | "1.1";
+  schema_version: "1.0" | "1.1" | "1.2";
   pipeline_version: string;
 }
 
@@ -134,7 +134,8 @@ export interface Detection {
   flag_names: string[];
   flagged_pixels_in_aperture: number;
   psf_fit_reduced_chi2: number | null;
-  stamp: ImageRef;
+  /** Null when the record is minimal (JPL identified the object; see CandidateDetail.record_level). */
+  stamp: ImageRef | null;
   spacecraft_geocentric_km: [number, number, number];
   source: Source;
 }
@@ -173,8 +174,22 @@ export interface KnownObject {
   nearest: { designation: string; separation_arcsec: number } | null;
   observer: string | null;
   query_utc: string | null;
-  enrichment: "static" | "live" | "cached" | "pending";
+  /**
+   * static: not checked yet; pipeline: checked against JPL by the survey pipeline's triage step
+   * (final when matched); pending: the Worker started a lookup; live/cached: from the Worker.
+   */
+  enrichment: "static" | "pipeline" | "live" | "cached" | "pending";
+  /** JPL pages for the matched object's orbit (SBDB) and ephemerides (Horizons); null unless matched. */
+  jpl_links?: JplLinks | null;
 }
+
+export interface JplLinks {
+  sbdb_url: string;
+  horizons_url: string;
+}
+
+/** full: stamps and our orbit products kept. minimal: a known object; JPL has its orbit. */
+export type RecordLevel = "full" | "minimal";
 
 export interface Scores {
   motion_consistency: number;
@@ -228,11 +243,14 @@ export interface CandidateDetail extends Envelope {
   spectrum: unknown;
   injection: unknown;
   provenance: { run_id: string; generated_utc: string; parameters: Record<string, unknown> };
+  record_level?: RecordLevel;
   disclaimer: string;
 }
 
 export interface CandidateSummary {
   candidate_id: string;
+  /** Pipeline commit that built this candidate; stored JPL results are keyed by it. */
+  pipeline_version?: string | null;
   field_id: string;
   classification: Classification;
   label_plain: string;
@@ -436,6 +454,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Pipeline commit that built this object's candidate; stored JPL results are keyed by it. */
+  pipeline_version?: string | null;
   /** Other objects matched to the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker. */
   also_seen_as?: string[];
 }
@@ -469,6 +489,7 @@ export interface ObjectDetail extends Envelope {
   spectrum: unknown;
   history: { utc: string; run_id: string; change: string }[];
   provenance: { run_id: string; generated_utc: string; parameters: Record<string, unknown> };
+  record_level?: RecordLevel;
   disclaimer: string;
 }
 
@@ -553,7 +574,10 @@ export interface Survey extends Envelope {
   description: string;
   tile_size_deg: number;
   data_releases: string[];
+  /** Showcase fields, tiles with a field page and failed tiles (empty survey tiles are in empty_cells since v1.2). */
   tiles: SurveyTile[];
+  /** Searched patches where nothing passed vetting, compactly: [ra_deg, dec_deg] per distinct patch. */
+  empty_cells?: { size_deg: number; n_tiles: number; positions: [number, number][] } | null;
   totals: {
     n_tiles: number;
     n_processed: number;
@@ -566,7 +590,10 @@ export interface Survey extends Envelope {
     n_searched?: number;
     n_empty?: number;
     n_failed?: number;
+    /** Distinct sky searched (a patch searched in several weeks counts once). */
     area_deg2_searched?: number;
+    /** area_deg2_searched / 41,253 deg² (the whole sky). */
+    sky_fraction_searched?: number | null;
   };
   last_run: SurveyRun | null;
   /** Most recent runs first (up to 20). */

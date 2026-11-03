@@ -1,54 +1,82 @@
-# Survey: search many SPHEREx tiles along the ecliptic for moving objects and publish every
-# tile where the pipeline found one. Runs on GitHub's machines, which read SPHEREx images
-# straight from the public nasa-irsa-spherex S3 bucket.
+# Survey: search SPHEREx week segments along the ecliptic for moving objects, a chunk at a time.
+# Runs on GitHub's machines, which read SPHEREx images straight from the public
+# nasa-irsa-spherex S3 bucket. Every run is incremental: it only searches tiles the ledger
+# (frontend/public/data/survey/footprint.json + segments.json) has not searched yet, and adds
+# its results to the published data instead of rebuilding everything.
 #
-#   plan   index the week segments' headers and pick tiles imaged in enough visits
-#   build  N parallel shards build their share of the tiles (shard 0 also rebuilds the
-#          showcase fields, so all published data comes from one pipeline commit)
-#   merge  combine the shards, publish the lists, commit the data to main; the Cloudflare
-#          Workers build then deploys it and the Worker's cron checks every new candidate
-#          against JPL.
+#   plan    pick the next week segments not finished yet ("next:N"), index their headers and
+#           plan their unsearched tiles (whole 4x4-tile search blocks, up to max_tiles)
+#   build   shards search their blocks with one light read per exposure (no rendering) and
+#           build full field pages only where a real mover turned up; each shard stops starting
+#           new blocks at its deadline, so a chunk always fits the runner time it was given
+#   merge   check every new (and any still unchecked) candidate against JPL SBIdent/Horizons
+#           (spherex-px triage: known objects keep a minimal record with JPL links, unexplained
+#           ones keep stamps and orbit products), record the footprint and run ledger, publish,
+#           and commit to main. Cloudflare Workers Builds and Vercel deploy that commit; the
+#           Worker's cron then only re-checks unexplained and unchecked candidates.
+#
+# Cost: about 10 runner-seconds per tile searched (was ~70 before block search), so the default
+# chunk (4 shards x 45 min) searches roughly 1,000 tiles. While the repository is private,
+# Actions minutes are limited by the account's plan: if jobs fail in seconds with "recent
+# account payments have failed or your spending limit needs to be increased", the limit is
+# reached (Settings > Billing); making the repository public makes standard runners free.
 name: Survey
 
 on:
   workflow_dispatch:
     inputs:
       segments:
-        description: 'Week segments to search: release/segment, or auto:N for N weeks spread over every release'
-        default: auto:14 qr2/2025W23_1C
+        description: 'Week segments: next:N (next N unfinished), auto:N, or release/segment'
+        default: next:3
       max_tiles:
-        description: Most tiles to build
-        default: "1200"
+        description: Most tiles to search in this run
+        default: "1500"
+      shards:
+        description: Parallel build jobs (1-8)
+        default: "4"
+      deadline_min:
+        description: Minutes each shard may start new blocks for
+        default: "45"
+      triage_limit:
+        description: Most candidates to check against JPL in this run
+        default: "400"
   schedule:
-    - cron: "41 7 * * 0" # weekly, Sunday 07:41 UTC
+    - cron: "23 1,7,13,19 * * *" # four chunks a day
   push:
     branches: [main]
     paths:
       - pipeline/spherex_px/**
       - .github/workflows/survey.yml
 
-# A newer run (new pipeline code) replaces one in progress.
+# Runs queue instead of cancelling each other: every run adds to the ledger.
 concurrency:
   group: survey
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 env:
-  SEGMENTS: ${{ inputs.segments || 'auto:14 qr2/2025W23_1C' }}
-  MAX_TILES: ${{ inputs.max_tiles || '1200' }}
-  SHARDS: 30
+  SEGMENTS: ${{ inputs.segments || 'next:3' }}
+  MAX_TILES: ${{ inputs.max_tiles || '1500' }}
+  DEADLINE_MIN: ${{ inputs.deadline_min || '45' }}
+  TRIAGE_LIMIT: ${{ inputs.triage_limit || '400' }}
 
 jobs:
   plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 40
     outputs:
       started: ${{ steps.start.outputs.started }}
+      shards: ${{ steps.shards.outputs.list }}
+      n_tiles: ${{ steps.count.outputs.n }}
     steps:
       - id: start
         run: echo "started=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - id: shards
+        run: |
+          n="${{ inputs.shards || '4' }}"
+          python3 -c "import json,sys; n=max(1,min(8,int(sys.argv[1]))); print('list='+json.dumps(list(range(n))))" "$n" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -56,25 +84,29 @@ jobs:
           cache: pip
           cache-dependency-path: pipeline/pyproject.toml
       - run: pip install -e pipeline
-      - name: Index headers and plan tiles
+      - name: Plan unsearched tiles
         working-directory: pipeline
         run: spherex-px survey-plan $SEGMENTS --out var/survey-plan.json --max-tiles $MAX_TILES
+      - id: count
+        run: echo "n=$(python3 -c 'import json; print(len(json.load(open("pipeline/var/survey-plan.json"))))')" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: plan
           path: |
             pipeline/var/survey-plan.json
+            pipeline/var/survey-plan-meta.json
             pipeline/var/index.sqlite
-          retention-days: 3
+          retention-days: 2
 
   build:
     needs: plan
+    if: ${{ needs.plan.outputs.n_tiles != '0' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -87,15 +119,12 @@ jobs:
         with:
           name: plan
           path: pipeline/var
-      - name: Rebuild the showcase fields
-        if: matrix.shard == 0
-        working-directory: pipeline
-        run: spherex-px build --out ../shard-out
-      - name: Build survey tiles
+      - name: Search tiles
         working-directory: pipeline
         run: |
           spherex-px survey-build --plan var/survey-plan.json \
-            --shard ${{ matrix.shard }} --of $SHARDS --out ../shard-out
+            --shard ${{ matrix.shard }} --of ${{ strategy.job-total }} \
+            --deadline-min $DEADLINE_MIN --out ../shard-out
       - uses: actions/upload-artifact@v4
         with:
           name: shard-${{ matrix.shard }}
@@ -104,15 +133,17 @@ jobs:
             shard-out/candidates/
             shard-out/survey-shard-*.json
           if-no-files-found: ignore
-          retention-days: 3
+          retention-days: 2
 
   merge:
     needs: [plan, build]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -123,21 +154,19 @@ jobs:
         with:
           pattern: shard-*
           path: shards
-      - name: Require the showcase rebuild
-        run: test -f shards/shard-0/fields/aquarius-a.json
-      - name: Replace the published data
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: plan
+      - name: Check new candidates against JPL
         run: |
-          out=frontend/public/data
-          rm -rf "$out/fields" "$out/candidates"
-          mkdir -p "$out/fields" "$out/candidates"
+          # Stage this run's tiles and triage them before they touch the published data.
+          mkdir -p stage/fields stage/candidates
           for d in shards/shard-*; do
-            [ -d "$d/fields" ] && cp -r "$d/fields/." "$out/fields/"
-            [ -d "$d/candidates" ] && cp -r "$d/candidates/." "$out/candidates/"
+            [ -d "$d/fields" ] && cp -r "$d/fields/." stage/fields/
+            [ -d "$d/candidates" ] && cp -r "$d/candidates/." stage/candidates/
           done
-          # Footprint of every tile searched (empty and failed ones too) and the run ledger,
-          # in data/survey/; publish folds them into survey.json.
-          spherex-px survey-ledger shards/*/survey-shard-*.json --started "${{ needs.plan.outputs.started }}"
-          spherex-px publish
+          spherex-px triage --out stage --limit $TRIAGE_LIMIT --summary triage.txt
           python - <<'EOF'
           import glob, json
           rows = [r for f in glob.glob("shards/*/survey-shard-*.json") for r in json.load(open(f))]
@@ -147,19 +176,35 @@ jobs:
               f"Searched {len(rows)} tiles: {len(kept)} with moving objects "
               f"({sum(r['candidates'] for r in kept)} candidates), {len(failed)} failed.",
               "",
-          ] + [f"- {r['field_id']}: {r['detail']}" for r in failed]
+              open("triage.txt").read().strip(),
+              "",
+          ] + [f"- {r['field_id']}: {r['detail']}" for r in failed[:50]]
           open("survey-summary.md", "w").write("\n".join(lines) + "\n")
           EOF
           cat survey-summary.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Commit to main
+      - name: Add to the published data and commit to main
         run: |
           git config user.name "spherex-survey[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A frontend/public/data
-          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
-          git commit -m "Survey: $(head -1 survey-summary.md)" -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
-            sleep 10
+          out=frontend/public/data
+          reports=$(ls shards/*/survey-shard-*.json 2>/dev/null || true)
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            cp -r stage/fields/. "$out/fields/"
+            cp -r stage/candidates/. "$out/candidates/"
+            # Older candidates JPL has not answered for yet (a few per run).
+            spherex-px triage --out "$out" --limit 50 || true
+            if [ -n "$reports" ]; then
+              spherex-px survey-ledger $reports --plan-meta plan/survey-plan-meta.json \
+                --started "${{ needs.plan.outputs.started }}"
+            fi
+            spherex-px publish
+            git add -A "$out"
+            if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+            git commit -q -m "Survey: $(head -1 survey-summary.md)" -m "$(sed -n 3p survey-summary.md)" \
+              -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            git push origin HEAD:main && exit 0
+            sleep $((attempt * 15))
           done
           exit 1

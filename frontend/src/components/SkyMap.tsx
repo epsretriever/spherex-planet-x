@@ -107,10 +107,13 @@ export function SkyMap({
   tiles,
   planetNine,
   tileName,
+  emptyCells,
 }: {
   tiles: SkyTile[];
   planetNine?: PlanetNineRegion | null;
   tileName?: (t: SkyTile) => string | undefined;
+  /** Searched patches with nothing found ([ra_deg, dec_deg]), as the survey publishes them since v1.2. */
+  emptyCells?: [number, number][];
 }) {
   const statics = useMemo(() => {
     const raLines = Array.from({ length: 12 }, (_, i) => i * 30).map((ra) => ({
@@ -201,6 +204,7 @@ export function SkyMap({
       <g>
         {BATCHED.map(({ status, r, className }) => {
           const pts = tiles.filter((t) => t.status === status).map((t) => at(t.center.ra_deg, t.center.dec_deg));
+          if (status === "empty" && emptyCells) for (const [ra, dec] of emptyCells) pts.push(at(ra, dec));
           return pts.length ? <path key={status} d={dotPath(pts, r)} className={styles[className]} aria-hidden="true" /> : null;
         })}
         {/* Tiles with moving objects: one link each, to their field. */}

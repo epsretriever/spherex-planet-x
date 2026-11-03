@@ -14,6 +14,7 @@ import { DISTANCE_CLASSES, ORBIT_STATUS } from "@/lib/objects";
 import { objectHref } from "@/lib/routes";
 import { useData } from "@/lib/useData";
 import { useObjectNames, type NameSeed } from "@/lib/useObjectNames";
+import { byReviewPriority } from "@/lib/review";
 import styles from "./ObjectList.module.css";
 
 /** The object list: as published at build time, then from the live API (with JPL results folded in). */
@@ -22,7 +23,12 @@ export function ObjectListView({ initial, seed }: { initial: ObjectList | null; 
   const { nameFor } = useObjectNames(seed);
   const list = state.status === "ok" ? state.data : initial;
   const sorted = useMemo(
-    () => (list ? [...list.objects].sort((a, b) => b.n_detections - a.n_detections || b.overall_score - a.overall_score) : []),
+    () =>
+      list
+        ? [...list.objects].sort(
+            (a, b) => byReviewPriority(a, b) || b.n_detections - a.n_detections || b.overall_score - a.overall_score,
+          )
+        : [],
     [list],
   );
 
@@ -48,7 +54,7 @@ export function ObjectListView({ initial, seed }: { initial: ObjectList | null; 
   return (
     <>
       <p className={styles.count}>
-        <span className="mono">{sorted.length}</span> {sorted.length === 1 ? "object" : "objects"}, most sightings first
+        <span className="mono">{sorted.length}</span> {sorted.length === 1 ? "object" : "objects"}, unexplained first, then most sightings
       </p>
       <ul className={styles.list}>
         {sorted.map((o) => (

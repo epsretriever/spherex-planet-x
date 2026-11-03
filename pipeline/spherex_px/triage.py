@@ -313,6 +313,9 @@ def _jpl_search_string(designation: str) -> str:
     n = designation.strip()
     if re.fullmatch(r"\([^()]*\)", n):
         n = n[1:-1].strip()
+    prov = re.match(r"^\d{4} [A-Z]{1,2}\d*\b", n)
+    if prov:
+        return prov.group(0)
     num = re.match(r"^(\d+)(\s|$)", n)
     if num:
         return num.group(1)

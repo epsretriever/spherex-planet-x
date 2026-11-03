@@ -21,9 +21,22 @@ export default function SkyPage() {
           rest of the sky we haven&apos;t searched yet, so it can&apos;t tell us anything either way.
         </p>
       </header>
-      {/* The Planet Nine region (hundreds of cells) is left out of the HTML and arrives with the live survey after first paint;
-          tiles carry only the fields the page reads, which keeps the inlined data (and its parse time) down. */}
-      <SkyView initial={survey ? { ...survey, tiles: survey.tiles.map(skyTile), planet_nine: null } : null} fieldNames={Object.fromEntries(fields.map((f) => [f.field_id, f.name]))} />
+      {/* The Planet Nine region (hundreds of cells) and the empty patches' positions are left out of the HTML and arrive with the
+          live survey after first paint; tiles carry only the fields the page reads, which keeps the inlined data (and its parse
+          time) down. */}
+      <SkyView
+        initial={
+          survey
+            ? {
+                ...survey,
+                tiles: survey.tiles.map(skyTile),
+                planet_nine: null,
+                // Thousands of empty patches: their count is inlined, their positions arrive with the live survey.
+                empty_cells: survey.empty_cells ? { ...survey.empty_cells, positions: [] } : null,
+              }
+            : null
+        }
+        fieldNames={Object.fromEntries(fields.map((f) => [f.field_id, f.name]))} />
     </div>
   );
 }

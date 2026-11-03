@@ -189,7 +189,7 @@ function ObjectPage({ o, seed }: { o: ObjectDetail; seed?: NameSeed }) {
           <WhenVisible minHeight={700}>
             <MotionPanel motion={o.motion} detections={o.detections} />
           </WhenVisible>
-          <KnownObjectPanel known={o.known_object} detections={o.detections} />
+          <KnownObjectPanel known={o.known_object} detections={o.detections} minimal={o.record_level === "minimal"} />
           <ScoresPanel scores={o.scores} />
           {o.anomaly && <UnusualPanel anomaly={o.anomaly} />}
           {o.spectrum && o.spectrum.points.length > 0 && (
