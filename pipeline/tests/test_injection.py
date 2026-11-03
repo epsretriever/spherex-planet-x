@@ -150,3 +150,29 @@ def test_shards_split_the_jobs_by_field():
     assert jobs == plan_jobs(specs, 2, 1)  # fixed by the seed
     shards = [{j[1] for j in jobs if j[0] in {s.field_id for s in specs[k::2]}} for k in range(2)]
     assert shards[0].isdisjoint(shards[1]) and len(shards[0] | shards[1]) == len(jobs)
+
+
+def test_index_lists_every_published_study_newest_first(tmp_path):
+    import json
+
+    from spherex_px.injection import write_index
+
+    assert write_index(tmp_path) is None
+    inj = tmp_path / "injection"
+    inj.mkdir()
+    for sid, t in (("old", "2026-01-01T00:00:00Z"), ("new", "2026-11-01T00:00:00Z")):
+        (inj / f"{sid}.json").write_text(
+            json.dumps(
+                {
+                    "study_id": sid,
+                    "generated_utc": t,
+                    "field_ids": ["f"],
+                    "n_injected": 5,
+                    "pipeline_version": f"v-{sid}",
+                }
+            )
+        )
+    index = write_index(tmp_path)
+    assert [s.study_id for s in index.studies] == ["new", "old"]
+    back = json.loads((inj / "index.json").read_text())
+    assert [s["study_id"] for s in back["studies"]] == ["new", "old"]

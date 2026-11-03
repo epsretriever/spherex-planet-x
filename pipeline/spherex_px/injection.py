@@ -779,22 +779,36 @@ def summarize(
         example_candidate_ids=[],
     )
     write_json(out_dir / "injection" / f"{study_id}.json", study)
-    write_json(
-        out_dir / "injection" / "index.json",
-        S.InjectionStudyIndex(
-            pipeline_version=study.pipeline_version,
-            build_run_id=build_run_id(),
-            studies=[
-                S.InjectionStudyRef(
-                    study_id=study_id,
-                    generated_utc=study.generated_utc,
-                    field_ids=study.field_ids,
-                    n_injected=study.n_injected,
-                )
-            ],
-        ),
-    )
+    write_index(out_dir)
     return study
+
+
+def write_index(out_dir: Path) -> S.InjectionStudyIndex | None:
+    """Rebuild injection/index.json from every published study file, newest first."""
+    folder = out_dir / "injection"
+    studies = (
+        [json.loads(p.read_text()) for p in sorted(folder.glob("*.json")) if p.name != "index.json"]
+        if folder.is_dir()
+        else []
+    )
+    if not studies:
+        return None
+    studies.sort(key=lambda d: d["generated_utc"], reverse=True)
+    index = S.InjectionStudyIndex(
+        pipeline_version=studies[0]["pipeline_version"],
+        build_run_id=build_run_id(),
+        studies=[
+            S.InjectionStudyRef(
+                study_id=d["study_id"],
+                generated_utc=d["generated_utc"],
+                field_ids=d["field_ids"],
+                n_injected=d["n_injected"],
+            )
+            for d in studies
+        ],
+    )
+    write_json(folder / "index.json", index)
+    return index
 
 
 EXAMPLES = [

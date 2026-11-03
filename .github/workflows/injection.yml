@@ -90,18 +90,19 @@ jobs:
           spherex-px injection-study "$STUDY_ID" --survey $max \
             --merge shards/*/runs-*.jsonl shards/*/photometry.json | tee injection-summary.md
           cat injection-summary.md >> "$GITHUB_STEP_SUMMARY"
-          cp -r frontend/public/data/injection "$RUNNER_TEMP/injection"
+          cp "frontend/public/data/injection/$STUDY_ID.json" "$RUNNER_TEMP/study.json"
       - name: Commit to main
         run: |
           git config user.name "spherex-survey[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Publish on top of the newest main (a survey run may have committed meanwhile):
-          # take its data, add the study, and rebuild the lists so survey.json carries the m50.
+          # take its data, add the study next to the ones already published, and rebuild the
+          # lists (publish rebuilds injection/index.json, and survey.json takes the newest m50).
           for i in 1 2 3 4; do
             git fetch origin main
             git reset --hard origin/main
-            rm -rf frontend/public/data/injection
-            cp -r "$RUNNER_TEMP/injection" frontend/public/data/injection
+            mkdir -p frontend/public/data/injection
+            cp "$RUNNER_TEMP/study.json" "frontend/public/data/injection/$STUDY_ID.json"
             spherex-px publish
             git add -A frontend/public/data
             if git diff --cached --quiet; then echo "no changes"; exit 0; fi
