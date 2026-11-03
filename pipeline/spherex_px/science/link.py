@@ -21,6 +21,7 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
+from astropy.wcs import NoConvergence
 from scipy import stats
 
 from .detect import Detections, Prepared, measure
@@ -148,9 +149,19 @@ def build_sightings(epochs: list[EpochData], params: LinkParams) -> list[Sightin
 
 
 def _covered(prep: Prepared, ra: float, dec: float, margin: float = 3) -> tuple[bool, float, float]:
-    x, y = prep.cutout.wcs.all_world2pix([ra], [dec], 0)
-    x, y = float(x[0]), float(y[0])
     ny, nx = prep.sci.shape
+    w = prep.cutout.wcs
+    # The distortion (SIP) inverse can diverge far outside the cutout, which a survey block's
+    # positions often are for an exposure that only overlaps part of it: reject those with the
+    # linear solution first, and treat a non-converging inverse as not covered.
+    lx, ly = w.wcs_world2pix([ra], [dec], 0)
+    if not (-50 <= float(lx[0]) < nx + 50 and -50 <= float(ly[0]) < ny + 50):
+        return False, float(lx[0]), float(ly[0])
+    try:
+        x, y = w.all_world2pix([ra], [dec], 0)
+    except NoConvergence:
+        return False, float(lx[0]), float(ly[0])
+    x, y = float(x[0]), float(y[0])
     if not (margin <= x < nx - margin and margin <= y < ny - margin):
         return False, x, y
     if prep.bad[int(round(y)), int(round(x))]:
