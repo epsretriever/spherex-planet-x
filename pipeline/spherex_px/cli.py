@@ -312,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     tr.add_argument("--out")
     tr.add_argument("--limit", type=int, help="check at most this many candidates")
-    tr.add_argument("--workers", type=int, default=6)
+    tr.add_argument("--workers", type=int, default=2)
     tr.add_argument("--recheck", action="store_true", help="also re-check unmatched candidates")
     tr.add_argument("--summary", help="append a one-line summary to this file")
     tr.set_defaults(func=_triage)

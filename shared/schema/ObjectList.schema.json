@@ -56,6 +56,19 @@
           "title": "Object Id",
           "type": "string"
         },
+        "pipeline_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pipeline commit that built this object's candidate; the Worker keys stored JPL results by it",
+          "title": "Pipeline Version"
+        },
         "classification": {
           "$ref": "#/$defs/Classification"
         },

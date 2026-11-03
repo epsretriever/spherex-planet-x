@@ -929,6 +929,11 @@ class ObjectHistoryEntry(Model):
 
 class ObjectSummary(Model):
     object_id: str
+    pipeline_version: str | None = Field(
+        default=None,
+        description="Pipeline commit that built this object's candidate; the Worker keys stored "
+        "JPL results by it",
+    )
     classification: Classification
     label_plain: str
     summary_plain: str

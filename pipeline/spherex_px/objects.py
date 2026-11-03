@@ -105,6 +105,7 @@ def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
     t = sorted(d.mjd for d in o.detections)
     return S.ObjectSummary(
         object_id=o.object_id,
+        pipeline_version=o.pipeline_version,
         classification=o.classification,
         label_plain=o.label_plain,
         summary_plain=o.summary_plain,

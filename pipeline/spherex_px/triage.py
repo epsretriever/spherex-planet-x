@@ -26,6 +26,8 @@ from __future__ import annotations
 import logging
 import math
 import statistics
+import threading
+import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -284,8 +286,28 @@ def sep_arcsec(ra1: float, dec1: float, ra2: float, dec2: float) -> float:
     return math.degrees(2 * math.asin(math.sqrt(min(1.0, max(0.0, s))))) * 3600
 
 
+#: Seconds between JPL requests: JPL answers HTTP 429 to bursts (seen from GitHub runners).
+JPL_MIN_INTERVAL_S = 1.0
+_pace_lock = threading.Lock()
+_last_request = [0.0]
+#: Set once JPL rate-limits this run; remaining candidates wait for the next run.
+_throttled = threading.Event()
+
+
 def _get_json(url: str):
-    resp = request("GET", url)
+    if _throttled.is_set():
+        raise UpstreamError("HTTP 429 (rate limited earlier in this run)")
+    with _pace_lock:
+        wait = _last_request[0] + JPL_MIN_INTERVAL_S - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last_request[0] = time.monotonic()
+    try:
+        resp = request("GET", url)
+    except UpstreamError as err:
+        if "429" in str(err):
+            _throttled.set()
+        raise
     if resp.status_code != 200:
         raise UpstreamError(f"HTTP {resp.status_code}")
     try:
@@ -532,11 +554,12 @@ class TriageReport:
     unexplained: int = 0
     not_checked: int = 0
     skipped: int = 0
+    deferred: int = 0
     files_removed: int = 0
 
 
 def triage(
-    out_dir: Path, *, limit: int | None = None, workers: int = 6, recheck_unmatched: bool = False
+    out_dir: Path, *, limit: int | None = None, workers: int = 2, recheck_unmatched: bool = False
 ) -> TriageReport:
     """Check unchecked candidates against JPL and apply the known/unexplained policy."""
     from .build import write_json
@@ -562,7 +585,11 @@ def triage(
         1 for c in cands if c.known_object.matched and orbit_path(out_dir, c.candidate_id).exists()
     )
 
+    _throttled.clear()
+
     def run(c: S.CandidateDetail):
+        if _throttled.is_set():
+            return c, None  # JPL rate-limited this run: leave it for the next one
         try:
             return c, check_candidate(c, now)
         except Exception as err:  # one bad candidate must not stop triage
@@ -571,6 +598,14 @@ def triage(
 
     with ThreadPoolExecutor(workers) as ex:
         results = list(ex.map(run, todo))
+    if _throttled.is_set():
+        # Answers cut short by the rate limit are not real "not checked" results either.
+        results = [
+            (c, None if k is not None and not k.checked and "429" in (k.not_checked_reason or "") else k)
+            for c, k in results
+        ]
+    rep.deferred = sum(1 for _, k in results if k is None)
+    results = [(c, k) for c, k in results if k is not None]
     for c, k in results:
         c.known_object = k
         if not k.checked:
@@ -618,6 +653,7 @@ def _refresh_fields(out_dir: Path, changed: dict[str, S.CandidateDetail]) -> Non
 def summary_line(rep: TriageReport) -> str:
     return (
         f"JPL triage: {rep.checked} checked ({rep.matched} known, {rep.unexplained} unexplained), "
-        f"{rep.not_checked} not checked (JPL did not answer), {rep.skipped} already done; "
+        f"{rep.not_checked} not checked (JPL did not answer), {rep.skipped} already done, "
+        f"{rep.deferred} left for the next run (JPL rate limit); "
         f"{rep.files_removed} files of known objects dropped."
     )
