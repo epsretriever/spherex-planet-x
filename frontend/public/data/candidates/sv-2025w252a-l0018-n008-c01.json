@@ -1,6 +1,6 @@
 {
   "schema_version": "1.2",
-  "pipeline_version": "0.1.0+git.bbd6ff0",
+  "pipeline_version": "0.1.0+git.5dffaee",
   "candidate_id": "sv-2025w252a-l0018-n008-c01",
   "field_id": "sv-2025w252a-l0018-n008",
   "classification": "unmatched",
@@ -916,7 +916,7 @@
   },
   "known_object": {
     "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
+    "not_checked_reason": "JPL Horizons did not answer for 4028 Pancratz (1982 DV2), the closest known object (about 20″ away in JPL's quick search).",
     "matched": false,
     "catalogs_checked": [],
     "search_radius_arcsec": 15.0,
@@ -925,8 +925,8 @@
     "per_epoch": [],
     "nearest": null,
     "observer": null,
-    "query_utc": null,
-    "enrichment": "static",
+    "query_utc": "2026-11-03T07:03:58Z",
+    "enrichment": "pipeline",
     "jpl_links": null
   },
   "scores": {
@@ -1180,8 +1180,8 @@
   },
   "injection": null,
   "provenance": {
-    "run_id": "gh-41581561354-1",
-    "generated_utc": "2026-11-03T05:15:38Z",
+    "run_id": "gh-41584139970-1",
+    "generated_utc": "2026-11-03T06:18:00Z",
     "parameters": {
       "detect_threshold_snr": 4.5,
       "aperture_radius_px": 1.5,
