@@ -1,0 +1,62 @@
+# Checks the deployed site: the injection API on the Worker and through Vercel, and that the
+# Limits page renders the published study (heatmaps, m50, plain-language summary).
+name: Site check
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: Site to check
+        default: https://spherex-planet-x.vercel.app
+      worker:
+        description: Worker to check
+        default: https://spherex-planet-x.bodhishanbhag.workers.dev
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+      WORKER: ${{ inputs.worker || 'https://spherex-planet-x.bodhishanbhag.workers.dev' }}
+    steps:
+      - name: Injection API
+        run: |
+          set -euo pipefail
+          for base in "$WORKER" "$SITE"; do
+            idx=$(curl -fsS "$base/api/injection")
+            echo "$base/api/injection: $idx" | head -c 600; echo
+            id=$(echo "$idx" | jq -r '.studies | sort_by(.generated_utc) | last | .study_id')
+            test -n "$id" && test "$id" != null
+            curl -fsS "$base/api/injection/$id" | jq -e '.simulated == true and (.grid | length) > 0' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -fsS "$base/api/injection/$id" \
+              | jq '{study_id, n_injected, n_recovered, n_fields: (.field_ids|length), m50_by_rate, false_positives}' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          curl -fsS "$SITE/api/survey" | jq '[.tiles[] | select(.m50_ab != null)] | length' \
+            | sed 's/^/survey tiles with m50: /' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Limits page renders the study
+        run: |
+          set -euo pipefail
+          for i in 1 2 3; do
+            google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 \
+              --dump-dom "$SITE/limits/" > limits.html || true
+            if ! grep -q "No injection test published yet" limits.html && grep -qi "planted" limits.html; then
+              break
+            fi
+            sleep 10
+          done
+          python3 - <<'EOF'
+          import html, re
+          page = open("limits.html").read()
+          text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", page)))
+          assert "No injection test published yet" not in text, "Limits page still shows the empty state"
+          for word in ("Planted", "Found", "Faintest found half the time"):
+              assert word in text, f"missing {word!r}"
+          i = text.find("Planted")
+          print(text[i : i + 1500])
+          EOF
