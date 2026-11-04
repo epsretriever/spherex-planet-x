@@ -1,19 +1,22 @@
+import { PageGuide } from "@/components/PageGuide";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { Suspense } from "react";
 import { StudySkeleton } from "@/components/Skeletons";
 import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { LimitsView } from "./LimitsView";
 
-export const metadata: Metadata = {
-  title: "Detection limits",
-  description: "How faint and how slow an object our pipeline can find in real SPHEREx images, measured by planting simulated objects.",
-};
+export const metadata: Metadata = pageMeta(
+  "Detection limits",
+  "How faint and how slow an object our pipeline can find in real SPHEREx images, measured by planting simulated objects.",
+  "/limits/",
+);
 
 export default function LimitsPage() {
   return (
     <div className="container">
       <header className="page-header">
-        <p className="eyebrow">Detection limits</p>
+        <PageGuide>How faint and how slow an object our search can find, so you know what we could still be missing.</PageGuide>
         <h1>Where could Planet X still be hiding?</h1>
         <p className="lede">
           An object we didn&apos;t find isn&apos;t proof there&apos;s nothing there; it might just be too faint or too slow for us to

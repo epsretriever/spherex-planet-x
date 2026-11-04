@@ -105,7 +105,10 @@ describe("GET /api/candidates", () => {
     expect(body.candidates[0].known_object_checked).toBe(false);
     await client.settle();
     const again = await json(await client.get("/api/candidates"));
-    expect(again.candidates[0]).toMatchObject({ classification: "known_object", known_object_checked: true });
+    const first = again.candidates.find((x: { candidate_id: string }) => x.candidate_id === body.candidates[0].candidate_id);
+    expect(first).toMatchObject({ classification: "known_object", known_object_checked: true });
+    // Known objects are listed after unexplained ones.
+    expect(again.candidates.at(-1).classification).toBe("known_object");
   });
 });
 
@@ -225,5 +228,58 @@ describe("GET /api/candidates/:id enrichment", () => {
   it("404s unknown candidates", async () => {
     const { get } = makeClient({ files });
     expect((await get("/api/candidates/test-missing")).status).toBe(404);
+  });
+});
+
+describe("JPL results from the survey pipeline (spherex-px triage)", () => {
+  const knownByPipeline = {
+    ...base.known_object,
+    checked: true,
+    matched: true,
+    designation: "433 Eros (A898 PA)",
+    catalogs_checked: ["JPL SBIdent" as const, "JPL Horizons" as const],
+    query_utc: "2026-11-03T00:00:00Z",
+    enrichment: "pipeline" as const,
+    jpl_links: {
+      sbdb_url: "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=433",
+      horizons_url: "https://ssd.jpl.nasa.gov/horizons/app.html#/?sstr=433",
+    },
+  };
+  const known = candidate({
+    candidate_id: "test-cand-known",
+    classification: "known_object",
+    known_object: knownByPipeline,
+    record_level: "minimal",
+  });
+  const unexplained = candidate({ candidate_id: "test-cand-new" });
+  const pfiles = {
+    "/data/candidates.json": list([known, unexplained]),
+    [`/data/candidates/${known.candidate_id}.json`]: known,
+    [`/data/candidates/${unexplained.candidate_id}.json`]: unexplained,
+  };
+
+  it("serves a pipeline match as final, without asking JPL", async () => {
+    const client = makeClient({ files: pfiles, upstream: jpl(2) });
+    const res = await client.get(`/api/candidates/${known.candidate_id}`);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=3600");
+    const c = await json(res);
+    expect(c.classification).toBe("known_object");
+    expect(c.known_object).toMatchObject({ matched: true, enrichment: "pipeline" });
+    expect(c.known_object.jpl_links.sbdb_url).toContain("sbdb_lookup");
+    await client.settle();
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it("lists unexplained first and never refreshes pipeline matches in the cron", async () => {
+    const client = makeClient({ files: pfiles, upstream: jpl(2), kv: new MemoryKv() });
+    const l = await json(await client.get("/api/candidates"));
+    expect(l.candidates.map((x: { candidate_id: string }) => x.candidate_id)).toEqual([
+      unexplained.candidate_id,
+      known.candidate_id,
+    ]);
+    await client.settle();
+    const report = await refreshStale(client.env, { ...client.deps, budget: { remaining: 40 } });
+    expect(report.refreshed).not.toContain(known.candidate_id);
+    expect(report.considered).toBe(1);
   });
 });

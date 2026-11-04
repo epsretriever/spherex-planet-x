@@ -184,28 +184,63 @@ def plan_segment(
     return tiles
 
 
-def resolve_segments(specs: list[str], archive=None) -> list[str]:
-    """Expand "auto:N" into N week segments spread evenly over every public release.
+def _spread_order(n: int) -> list[int]:
+    """0..n-1 in an order that spreads early picks over the whole range (bit-reversal), so the
+    first runs cover the year (and so the whole ecliptic) before filling in neighbouring weeks."""
+    bits = max(1, (n - 1).bit_length())
+    order = sorted(range(1 << bits), key=lambda i: int(f"{i:0{bits}b}"[::-1], 2))
+    return [i for i in order if i < n]
+
+
+def all_segments(archive=None) -> list[str]:
+    """Every week segment of the releases the survey reads, oldest first."""
+    if archive is None:
+        from .data.s3 import S3Archive
+
+        archive = S3Archive()
+    _, releases = archive.list("")
+    return [
+        f"{rel}/{seg}"
+        for rel in sorted(p.rstrip("/") for p in releases if p.rstrip("/") in AUTO_RELEASES)
+        for seg in sorted(archive.level2_segments(rel))
+    ]
+
+
+def resolve_segments(
+    specs: list[str], archive=None, state: dict[str, dict] | None = None
+) -> list[str]:
+    """Expand "auto:N" and "next:N" into week segments.
+
+    - ``auto:N``: N segments spread evenly over every public release (always the same ones).
+    - ``next:N``: the N segments the survey should search next, from the segment ledger
+      (``state``, survey/segments.json): segments never planned first, in an order spread
+      over the year, then segments planned but not finished (fewest tiles searched first).
+      Finished segments are skipped, so repeated runs keep moving to new sky.
 
     Other entries ("qr2/2025W23_1C") pass through. Segments are listed from the public
     nasa-irsa-spherex bucket, so new weeks are picked up as IRSA releases them.
     """
     out: list[str] = []
     for spec in specs:
+        if spec.startswith("next:"):
+            n = int(spec.split(":", 1)[1])
+            everything = all_segments(archive)
+            state = state or {}
+            fresh = [everything[i] for i in _spread_order(len(everything))]
+            fresh = [s for s in fresh if s not in state]
+            partial = sorted(
+                (s for s in everything if s in state and not state[s].get("complete")),
+                key=lambda s: (state[s].get("searched", 0), s),
+            )
+            picked = (partial[:1] + fresh + partial[1:])[:n]
+            log.info("next:%d -> %s (%d fresh, %d partial)", n, picked, len(fresh), len(partial))
+            out.extend(picked)
+            continue
         if not spec.startswith("auto:"):
             out.append(spec)
             continue
         n = int(spec.split(":", 1)[1])
-        if archive is None:
-            from .data.s3 import S3Archive
-
-            archive = S3Archive()
-        _, releases = archive.list("")
-        everything = [
-            f"{rel}/{seg}"
-            for rel in sorted(p.rstrip("/") for p in releases if p.rstrip("/") in AUTO_RELEASES)
-            for seg in sorted(archive.level2_segments(rel))
-        ]
+        everything = all_segments(archive)
         if len(everything) <= n:
             picked = everything
         else:
@@ -236,6 +271,25 @@ def select_tiles(tiles: list[PlannedTile], max_tiles: int | None) -> list[Planne
     return out
 
 
+def select_blocks(tiles: list[PlannedTile], max_tiles: int | None) -> list[PlannedTile]:
+    """Whole search blocks (see BLOCK), best-covered first, round-robin across segments, until
+    max_tiles: a block is searched in one read, so it is never split between runs."""
+    by_seg: dict[str, list[list[PlannedTile]]] = {}
+    for b in group_blocks(tiles):
+        by_seg.setdefault(b[0].segment, []).append(b)
+    for blocks in by_seg.values():
+        blocks.sort(key=lambda b: (-len(b), min(abs(t.elat_deg) for t in b), b[0].field_id))
+    queues = [by_seg[k] for k in sorted(by_seg)]
+    out: list[PlannedTile] = []
+    i = 0
+    while any(queues) and (max_tiles is None or len(out) < max_tiles):
+        q = queues[i % len(queues)]
+        if q:
+            out.extend(q.pop(0))
+        i += 1
+    return out
+
+
 def plan(
     segments: list[str],
     out: Path,
@@ -243,17 +297,33 @@ def plan(
     max_tiles: int | None = None,
     beta_max_deg: float = 4.0,
     step_deg: float = 0.3,
+    data_dir: Path | None = None,
 ) -> list[PlannedTile]:
+    """Plan tiles not searched before (incremental): tiles in the footprint ledger with a result
+    (kept or empty) are skipped; failed ones are retried. Writes the plan and, next to it,
+    ``<plan>-meta.json`` with every segment's planned tile count for the segment ledger."""
     from .data.index import CoverageIndex
+    from .ledger import load_footprint, load_segments
 
+    data_dir = data_dir or DEFAULT_OUT
+    done = {t.tile_id for t in load_footprint(data_dir).tiles if t.status != "failed"}
     index = CoverageIndex()
     tiles: list[PlannedTile] = []
-    for seg in resolve_segments(segments):
-        tiles.extend(plan_segment(index, seg, beta_max_deg=beta_max_deg, step_deg=step_deg))
-    tiles = select_tiles(tiles, max_tiles)
+    meta: dict[str, dict] = {}
+    for seg in resolve_segments(segments, state=load_segments(data_dir)):
+        seg_tiles = plan_segment(index, seg, beta_max_deg=beta_max_deg, step_deg=step_deg)
+        todo = [t for t in seg_tiles if t.field_id not in done]
+        meta[seg] = {"planned": len(seg_tiles), "already_searched": len(seg_tiles) - len(todo)}
+        tiles.extend(todo)
+    tiles = select_blocks(tiles, max_tiles)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps([asdict(t) for t in tiles], indent=1) + "\n")
+    plan_meta_path(out).write_text(json.dumps(meta, indent=1) + "\n")
     return tiles
+
+
+def plan_meta_path(plan_file: Path) -> Path:
+    return plan_file.with_name(plan_file.stem + "-meta.json")
 
 
 def _spec(t: PlannedTile) -> FieldSpec:
@@ -301,41 +371,201 @@ def _where(err: BaseException) -> str:
     return f"{Path(f.filename).name}:{f.lineno} {f.name}" if f else "?"
 
 
-def build_share(plan_file: Path, shard: int, of: int, out: Path = DEFAULT_OUT) -> list[TileResult]:
-    """Build tiles shard, shard+of, shard+2*of, ... of the plan; keep tiles with real movers."""
-    tiles = [PlannedTile(**t) for t in json.loads(plan_file.read_text())]
-    mine = tiles[shard::of]
-    results: list[TileResult] = []
+#: Survey tiles are searched in blocks of up to BLOCK x BLOCK neighbouring tiles of one week segment.
+#: SPHEREx files store full-width detector rows, so one wide row band per exposure costs a
+#: fraction of the bytes of separate tile reads; only tiles where the block search finds a
+#: real mover are then built in full (rendered images, stamps, orbits).
+BLOCK = 4
+TILE_STEP_DEG = 0.3
+
+
+def group_blocks(tiles: list[PlannedTile], block: int = BLOCK) -> list[list[PlannedTile]]:
+    groups: dict[tuple, list[PlannedTile]] = {}
+    for t in tiles:
+        i = round(t.elon_deg / TILE_STEP_DEG)
+        j = round(t.elat_deg / TILE_STEP_DEG)
+        groups.setdefault((t.segment, i // block, j // block), []).append(t)
+    return [sorted(groups[k], key=lambda t: t.field_id) for k in sorted(groups)]
+
+
+def _block_spec(tiles: list[PlannedTile]) -> FieldSpec:
+    if len(tiles) == 1:
+        return _spec(tiles[0])
+    ra = np.radians([t.ra_deg for t in tiles])
+    dec = np.radians([t.dec_deg for t in tiles])
+    v = np.array([np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)]).sum(axis=1)
+    rc = float(np.degrees(np.arctan2(v[1], v[0])) % 360)
+    dc = float(np.degrees(np.arctan2(v[2], np.hypot(v[0], v[1]))))
+    cosd = max(np.cos(np.radians(dc)), 1e-6)
+    off = [max(abs(((t.ra_deg - rc + 180) % 360 - 180) * cosd), abs(t.dec_deg - dc)) for t in tiles]
+    # Half a (possibly rotated) tile around the outermost tile center.
+    size = 2 * (max(off) + TILE_STEP_DEG / 2 * 1.42)
+    return FieldSpec(
+        field_id=f"block-{tiles[0].field_id}",
+        name="survey block",
+        blurb="",
+        ra_deg=round(rc, 5),
+        dec_deg=round(dc, 5),
+        size_deg=round(size, 4),
+        segments=[tiles[0].segment],
+        origin="run",
+    )
+
+
+def _clear_range_cache() -> None:
+    from .data.s3 import forget_cached_ranges
     from .settings import get_settings
 
-    range_cache = get_settings().cache_dir / "s3" / "range"
-    for t in mine:
-        # Image bytes read for one tile are rarely reused by the next; dropping them keeps a
-        # shard inside a CI runner's disk (the 1,200-tile run filled 19 runners' disks).
-        shutil.rmtree(range_cache, ignore_errors=True)
-        try:
-            _detail, cands = build_field(_spec(t), out)
-        except NoReadableImages as err:
-            _remove_outputs(out, t.field_id)
-            results.append(TileResult(t.field_id, "empty", 0, str(err), t))
-            continue
-        except Exception as err:  # one bad tile must not sink the shard
-            log.exception("%s failed", t.field_id)
-            _remove_outputs(out, t.field_id)
-            detail = f"{type(err).__name__}: {err} (at {_where(err)})"
-            if os.environ.get("GITHUB_ACTIONS") == "true":
-                # Annotations are readable from the public API without downloading logs.
-                print(f"::warning title=tile {t.field_id} failed::{detail[:900]}", flush=True)
-            results.append(TileResult(t.field_id, "failed", 0, detail, t))
-            continue
-        # A tile is kept for linked tracks only: two lone sightings (unconfirmed pairs) are too
-        # weak to justify a field page on their own.
-        weak = (S.Classification.likely_artifact, S.Classification.unconfirmed_pair)
-        real = [c for c in cands if c.classification not in weak]
-        if not real:
-            _remove_outputs(out, t.field_id)
+    shutil.rmtree(get_settings().cache_dir / "s3" / "range", ignore_errors=True)
+    forget_cached_ranges()
+
+
+WEAK = (S.Classification.likely_artifact, S.Classification.unconfirmed_pair)
+
+
+def _build_tile(
+    t: PlannedTile, out: Path, center: tuple[float, float] | None = None, track_filter=None
+) -> TileResult:
+    """Full build of one tile (images, stamps, orbits); kept only with a real mover."""
+    spec = _spec(t)
+    if center is not None:
+        spec.ra_deg, spec.dec_deg = round(center[0], 5), round(center[1], 5)
+    try:
+        _detail, cands = build_field(spec, out, track_filter=track_filter)
+    except NoReadableImages as err:
+        _remove_outputs(out, t.field_id)
+        return TileResult(t.field_id, "empty", 0, str(err), t)
+    except Exception as err:  # one bad tile must not sink the shard
+        log.exception("%s failed", t.field_id)
+        _remove_outputs(out, t.field_id)
+        detail = f"{type(err).__name__}: {err} (at {_where(err)})"
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            # Annotations are readable from the public API without downloading logs.
+            print(f"::warning title=tile {t.field_id} failed::{detail[:900]}", flush=True)
+        return TileResult(t.field_id, "failed", 0, detail, t)
+    # A tile is kept for linked tracks only: two lone sightings (unconfirmed pairs) are too
+    # weak to justify a field page on their own.
+    real = [c for c in cands if c.classification not in WEAK]
+    if not real:
+        _remove_outputs(out, t.field_id)
+        return TileResult(t.field_id, "empty", 0, tile=t)
+    log.info("%s: kept, %d candidates", t.field_id, len(real))
+    return TileResult(t.field_id, "kept", len(real), tile=t)
+
+
+def _published_positions(out: Path, field_id: str) -> list[tuple[float, float]]:
+    pos = []
+    for p in (out / "candidates").glob(f"{field_id}-c*.json"):
+        d = json.loads(p.read_text())["detections"]
+        pos.append(
+            (
+                float(np.median([x["ra_deg"] for x in d])),
+                float(np.median([x["dec_deg"] for x in d])),
+            )
+        )
+    return pos
+
+
+def search_block(tiles: list[PlannedTile], out: Path) -> list[TileResult]:
+    """Search a block of tiles in one light pass; build only the tiles holding a real mover."""
+    from .build import FieldBuilder
+    from .science.grid import angular_sep_arcsec
+
+    spec = _block_spec(tiles)
+    try:
+        fb = FieldBuilder(
+            spec, out, light=True, cover_points=[(t.ra_deg, t.dec_deg) for t in tiles]
+        )
+        epochs, tracks = fb.search()
+        hits: dict[str, list[tuple[float, float]]] = {}
+        for tr in tracks:
+            if fb.classify(tr, epochs) in WEAK:
+                continue
+            ra = float(np.median([s.ra for s in tr.sightings]))
+            dec = float(np.median([s.dec for s in tr.sightings]))
+            sep = angular_sep_arcsec(ra, dec, [t.ra_deg for t in tiles], [t.dec_deg for t in tiles])
+            hits.setdefault(tiles[int(np.argmin(sep))].field_id, []).append((ra, dec))
+    except NoReadableImages as err:
+        return [TileResult(t.field_id, "empty", 0, str(err), t) for t in tiles]
+    except Exception as err:
+        log.exception("%s failed", spec.field_id)
+        detail = f"{type(err).__name__}: {err} (at {_where(err)})"
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print(f"::warning title=block {spec.field_id} failed::{detail[:900]}", flush=True)
+        return [TileResult(t.field_id, "failed", 0, detail, t) for t in tiles]
+    finally:
+        epochs = tracks = None  # free the block's pixels before the full builds
+    ras = [t.ra_deg for t in tiles]
+    decs = [t.dec_deg for t in tiles]
+
+    def owner(ra: float, dec: float) -> str:
+        return tiles[int(np.argmin(angular_sep_arcsec(ra, dec, ras, decs)))].field_id
+
+    def belongs_to(fid: str):
+        # A track goes to the tile nearest it; a tile also keeps tracks whose nearest tile
+        # is not being built (the block search missed them there).
+        def keep(ra: float, dec: float) -> bool:
+            if (
+                claimed
+                and np.min(
+                    angular_sep_arcsec(ra, dec, [c[0] for c in claimed], [c[1] for c in claimed])
+                )
+                < 30
+            ):
+                return False  # already published from another tile of this block
+            o = owner(ra, dec)
+            return o == fid or o not in hits
+
+        return keep
+
+    claimed: list[tuple[float, float]] = []
+    results = []
+    for t in tiles:
+        pts = hits.get(t.field_id)
+        if not pts:
             results.append(TileResult(t.field_id, "empty", 0, tile=t))
             continue
-        results.append(TileResult(t.field_id, "kept", len(real), tile=t))
-        log.info("%s: kept, %d candidates", t.field_id, len(real))
+        # Center the field on its movers (by vector mean), so a track near a tile edge stays inside.
+        ra = np.radians([p[0] for p in pts])
+        dec = np.radians([p[1] for p in pts])
+        v = np.array([np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)]).sum(axis=1)
+        center = (
+            float(np.degrees(np.arctan2(v[1], v[0])) % 360),
+            float(np.degrees(np.arctan2(v[2], np.hypot(v[0], v[1])))),
+        )
+        r = _build_tile(t, out, center, belongs_to(t.field_id))
+        claimed.extend(_published_positions(out, t.field_id))
+        results.append(r)
+    return results
+
+
+def build_share(
+    plan_file: Path,
+    shard: int,
+    of: int,
+    out: Path = DEFAULT_OUT,
+    *,
+    block: int = BLOCK,
+    deadline_s: float | None = None,
+) -> list[TileResult]:
+    """Search blocks shard, shard+of, ... of the plan; keep tiles with real movers.
+
+    With ``deadline_s`` no new block starts after that many seconds: tiles not reached are left
+    out of the report, so they stay unsearched in the ledger and the next run picks them up.
+    """
+    import time
+
+    t0 = time.monotonic()
+    tiles = [PlannedTile(**t) for t in json.loads(plan_file.read_text())]
+    blocks = group_blocks(tiles, block)[shard::of]
+    results: list[TileResult] = []
+    for i, b in enumerate(blocks):
+        if deadline_s is not None and time.monotonic() - t0 > deadline_s:
+            log.warning("deadline reached: %d of %d blocks searched", i, len(blocks))
+            break
+        # Image bytes read for one block are not reused by the next; dropping them keeps a
+        # shard inside a CI runner's disk.
+        _clear_range_cache()
+        results.extend(search_block(b, out))
+    _clear_range_cache()
     return results

@@ -112,7 +112,8 @@ def _survey_build(args: argparse.Namespace) -> int:
     from .survey import build_share
 
     out = Path(args.out) if args.out else DEFAULT_OUT
-    results = build_share(Path(args.plan), args.shard, args.of, out)
+    deadline = args.deadline_min * 60 if args.deadline_min else None
+    results = build_share(Path(args.plan), args.shard, args.of, out, deadline_s=deadline)
     report = out / f"survey-shard-{args.shard}.json"
     report.write_text(json.dumps([asdict(r) for r in results], indent=1) + "\n")
     kept = sum(r.status == "kept" for r in results)
@@ -129,6 +130,11 @@ def _survey_ledger(args: argparse.Namespace) -> int:
 
     out = Path(args.out) if args.out else DEFAULT_OUT
     now = utc_now()
+    import json
+
+    meta: dict = {}
+    for m in args.plan_meta or []:
+        meta.update(json.loads(Path(m).read_text()))
     run = record_run(
         out,
         [Path(p) for p in args.reports],
@@ -136,6 +142,7 @@ def _survey_ledger(args: argparse.Namespace) -> int:
         started_utc=args.started or now,
         finished_utc=now,
         workflow_url=workflow_url_from_env(),
+        plan_meta=meta,
     )
     print(
         f"{run.run_id}: {run.n_tiles_processed} tiles searched, {run.n_tiles_with_movers} with "
@@ -145,27 +152,54 @@ def _survey_ledger(args: argparse.Namespace) -> int:
     return 0
 
 
+def _triage(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .triage import summary_line, triage
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    rep = triage(out, limit=args.limit, workers=args.workers, recheck_unmatched=args.recheck)
+    line = summary_line(rep)
+    print(line)
+    if args.summary:
+        with open(args.summary, "a") as fh:
+            fh.write(line + "\n")
+    return 0
+
+
 def _injection_study(args: argparse.Namespace) -> int:
     from pathlib import Path
 
-    from .build import DEFAULT_OUT, publish
-    from .injection import build_examples, run_study
+    from .build import DEFAULT_OUT, publish, write_json
+    from .injection import build_examples, merge_shards, run_shard, run_study
 
     out = Path(args.out) if args.out else DEFAULT_OUT
-    study = run_study(
-        args.study_id,
-        field_ids=args.fields or None,
-        trials_per_cell=args.trials,
-        workers=args.workers,
-        out_dir=out,
-    )
+    where = dict(field_ids=args.fields or None, survey=args.survey, max_fields=args.max_fields)
+    if args.shard is not None:
+        ckpt = run_shard(
+            args.study_id,
+            args.shard,
+            args.of,
+            Path(args.shard_out),
+            trials_per_cell=args.trials,
+            workers=args.workers,
+            out_dir=out,
+            **where,
+        )
+        print(f"shard {args.shard}/{args.of}: runs in {ckpt}")
+        return 0
+    if args.merge:
+        study = merge_shards(args.study_id, [Path(f) for f in args.merge], out_dir=out, **where)
+    else:
+        study = run_study(
+            args.study_id, trials_per_cell=args.trials, workers=args.workers, out_dir=out, **where
+        )
     if args.examples_field:
         ids = build_examples(args.study_id, args.examples_field, out)
         study.example_candidate_ids = ids
-        from .build import write_json
-
         write_json(out / "injection" / f"{args.study_id}.json", study)
-        publish(out)
+    publish(out)
     print(
         f"{study.study_id}: {study.n_recovered}/{study.n_injected} recovered; "
         f"m50 by rate {[(m.rate_arcsec_per_hr, m.m50_ab) for m in study.m50_by_rate]}; "
@@ -249,6 +283,12 @@ def main(argv: list[str] | None = None) -> int:
     inj = sub.add_parser("injection-study", help="injection-recovery study on built fields")
     inj.add_argument("study_id")
     inj.add_argument("--fields", nargs="*", help="field ids (default: every showcase field)")
+    inj.add_argument("--survey", action="store_true", help="inject into the published survey tiles")
+    inj.add_argument("--max-fields", type=int, help="with --survey: at most this many tiles")
+    inj.add_argument("--shard", type=int, help="run only this shard (0-based) of the fields")
+    inj.add_argument("--of", type=int, default=1, help="number of shards")
+    inj.add_argument("--shard-out", default="var/injection-shard", help="where a shard writes")
+    inj.add_argument("--merge", nargs="+", help="shard files to merge into the study")
     inj.add_argument("--trials", type=int, default=200, help="injections per grid cell")
     inj.add_argument("--workers", type=int, default=4)
     inj.add_argument(
@@ -260,7 +300,11 @@ def main(argv: list[str] | None = None) -> int:
     ix.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
     ix.set_defaults(func=_index)
     sp = sub.add_parser("survey-plan", help="pick ecliptic tiles SPHEREx imaged often enough")
-    sp.add_argument("segments", nargs="+", help='e.g. "qr2/2025W23_1C"')
+    sp.add_argument(
+        "segments",
+        nargs="+",
+        help='"qr2/2025W23_1C", "auto:N" (N spread segments) or "next:N" (N not yet finished)',
+    )
     sp.add_argument("--out", default="var/survey-plan.json")
     sp.add_argument("--max-tiles", type=int, default=None)
     sp.set_defaults(func=_survey_plan)
@@ -269,7 +313,23 @@ def main(argv: list[str] | None = None) -> int:
     sb.add_argument("--shard", type=int, default=0)
     sb.add_argument("--of", type=int, default=1)
     sb.add_argument("--out")
+    sb.add_argument(
+        "--deadline-min",
+        type=float,
+        help="start no new block after this many minutes (unreached tiles stay unsearched)",
+    )
     sb.set_defaults(func=_survey_build)
+    tr = sub.add_parser(
+        "triage",
+        help="check unchecked candidates against JPL SBIdent/Horizons; known objects get a "
+        "minimal record, unexplained ones keep everything",
+    )
+    tr.add_argument("--out")
+    tr.add_argument("--limit", type=int, help="check at most this many candidates")
+    tr.add_argument("--workers", type=int, default=2)
+    tr.add_argument("--recheck", action="store_true", help="also re-check unmatched candidates")
+    tr.add_argument("--summary", help="append a one-line summary to this file")
+    tr.set_defaults(func=_triage)
     sl = sub.add_parser(
         "survey-ledger", help="record a survey run: footprint of searched tiles and run ledger"
     )
@@ -277,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     sl.add_argument("--run-id", help="default: this build's run id (gh-<run>-<attempt> in Actions)")
     sl.add_argument("--started", help="UTC time the run started (ISO 8601)")
     sl.add_argument("--out")
+    sl.add_argument("--plan-meta", nargs="*", help="survey-plan-meta.json files (segment ledger)")
     sl.set_defaults(func=_survey_ledger)
     rq = sub.add_parser("request-build", help="build a field for a visitor's sky request")
     rq.add_argument("request_id")

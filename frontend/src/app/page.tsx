@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
+import { GrowthCharts } from "@/components/home/GrowthCharts";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
+import { HowToUse } from "@/components/home/HowToUse";
+import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
 import { formatUtcDate } from "@/lib/format";
-import { staticCandidates, staticSurvey } from "@/lib/staticData";
+import { staticCandidates, staticGrowth, staticSurvey } from "@/lib/staticData";
 import styles from "./page.module.css";
 
 /** The whole sky: 4π steradians, in square degrees. */
@@ -46,7 +49,7 @@ const PIPELINE = [
   },
   {
     title: "Check against JPL",
-    body: "The Worker asks JPL's small-body services which known asteroids and comets were at each position at each time, and folds the answer into the report.",
+    body: "The pipeline asks JPL's small-body services (SBIdent, then Horizons) which known asteroids and comets were at each position at each time, as seen from SPHEREx. Matches are labelled known; tracks JPL can't explain stay Unexplained and are re-checked on a schedule.",
   },
   {
     title: "Score and publish",
@@ -68,6 +71,8 @@ export default function LandingPage() {
   const survey = staticSurvey();
   const candidates = staticCandidates();
   const t = survey?.totals;
+  // Objects JPL couldn't identify, as last recorded from the live site by the pipeline.
+  const unidentified = staticGrowth().findLast((d) => d.unidentified != null)?.unidentified ?? null;
   const stats = [
     t && { value: fmtInt(t.n_epochs), label: "SPHEREx images analyzed" },
     t && { value: fmtInt(t.n_searched ?? t.n_processed), label: "patches of sky searched" },
@@ -93,12 +98,13 @@ export default function LandingPage() {
             JPL&apos;s catalog of known objects, and published with the evidence for and against it.
           </p>
           <div className={styles.actions}>
-            <Link href="/explore/" className="button button-primary">
-              Explore the sky →
+            <Link href="/objects/" className="button button-primary">
+              Browse the objects →
             </Link>
-            <Link href="/detective/" className="button">
-              See the evidence
+            <Link href="/objects/?view=leads" className="button">
+              {unidentified != null ? `${unidentified} unexplained leads` : "Unexplained leads"}
             </Link>
+            <TourButton />
             <Link href="#how" className={styles.textLink}>
               How it works ↓
             </Link>
@@ -118,6 +124,12 @@ export default function LandingPage() {
       </section>
 
       <div className="container">
+        <HowToUse />
+      </div>
+
+      <div className="container">
+        <GrowthCharts days={staticGrowth()} />
+
         <section className={styles.what} aria-labelledby="what-heading">
           <div className={styles.whatHead}>
             <p className="eyebrow">What it does</p>
@@ -145,8 +157,9 @@ export default function LandingPage() {
               <p className="eyebrow">How it works</p>
               <h2 id="how-heading">From raw images to an evidence report</h2>
               <p className={styles.sectionLede}>
-                Pixel processing runs ahead of time in a Python pipeline. Anything that depends on today&apos;s catalogs, like whether a
-                moving dot is a known asteroid, is checked live when you open its report.
+                A Python pipeline in GitHub Actions searches new patches of sky several times a day and checks every new track against
+                JPL&apos;s catalogs before it is published. Tracks JPL couldn&apos;t explain are re-checked on a schedule, so labels can
+                change as catalogs grow.
               </p>
               <div className={`card ${styles.instrument}`}>
                 <p className={`mono ${styles.instrumentLabel}`}>What SPHEREx sees</p>
@@ -181,22 +194,28 @@ export default function LandingPage() {
             </div>
           </div>
           <div className={styles.modes}>
-            <Link href="/explore/" className={`card ${styles.mode}`}>
-              <span className="eyebrow">Explorer</span>
+            <Link href="/objects/?view=leads" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Unexplained leads</span>
+              <h3>What JPL can&apos;t explain</h3>
+              <p>
+                The objects no known asteroid or comet explains, ranked by the strength of the evidence, each with a blink, the case for
+                and against, and where to point a telescope to confirm it.
+              </p>
+              <span className={styles.modeCta}>See the leads →</span>
+            </Link>
+            <Link href="/objects/?view=patches" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Patches of sky</span>
               <h3>Blink the sky</h3>
               <p>Pick a patch of sky and flip between real SPHEREx images taken hours or days apart. Stars hold still; movers jump.</p>
               <span className={styles.modeCta}>Start exploring →</span>
             </Link>
-            <Link href="/detective/" className={`card ${styles.mode}`}>
-              <span className="eyebrow">Detective</span>
-              <h3>Weigh the evidence</h3>
-              <p>Every tracked object with its positions, speed, signal quality, JPL check, and the explanations we can and can&apos;t rule out.</p>
-              <span className={styles.modeCta}>Open the case files →</span>
-            </Link>
             <Link href="/objects/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Objects</span>
-              <h3>Follow one across visits</h3>
-              <p>Each moving body with every sighting linked to it, how far away it is and, once one can be fitted, its orbit in 3D.</p>
+              <h3>Weigh the evidence</h3>
+              <p>
+                Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the JPL
+                check, the explanations we can and can&apos;t rule out, and, once fitted, its orbit and distance.
+              </p>
               <span className={styles.modeCta}>Browse objects →</span>
             </Link>
             <Link href="/sky/" className={`card ${styles.mode}`}>
@@ -220,7 +239,7 @@ export default function LandingPage() {
               <p className="eyebrow">Start here</p>
               <h2 id="featured-heading">Patches of sky to explore</h2>
             </div>
-            <Link href="/explore/" className={styles.more}>
+            <Link href="/objects/?view=patches" className={styles.more}>
               See all →
             </Link>
           </div>

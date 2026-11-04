@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { PrefetchData } from "@/components/PrefetchData";
-import { buildNames, toNameInput } from "@/lib/names";
-import { NO_PAGES, staticCandidate, staticCandidates, staticNameSeed } from "@/lib/staticData";
-import { CandidateReport } from "../candidate/CandidateReport";
+import { Moved } from "@/components/Moved";
+import { candidateHref } from "@/lib/routes";
+import { NO_PAGES, staticCandidates } from "@/lib/staticData";
 
-// One page per published object, rendered at build time from public/data/. The live report
-// (with JPL results) replaces it in the browser.
+// Old evidence-report URLs: each forwards to its object's report, the one canonical page.
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -18,21 +15,10 @@ type Params = { params: Promise<{ candidateId: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const id = (await params).candidateId;
-  const c = staticCandidate(id);
-  if (!c) return {};
-  const seed = staticNameSeed();
-  const name = buildNames(seed.candidates.map(toNameInput), seed.fields).get(id)?.title ?? id;
-  return { title: name, description: c.summary_plain };
+  return { title: "Object report", robots: { index: false }, alternates: { canonical: candidateHref(id) } };
 }
 
 export default async function CandidatePage({ params }: Params) {
   const { candidateId } = await params;
-  const candidate = staticCandidate(candidateId);
-  if (!candidate) notFound();
-  return (
-    <div className="container">
-      <PrefetchData urls={[`/api/candidates/${candidateId}`, "/api/candidates?include_injected=true", "/api/fields"]} />
-      <CandidateReport id={candidateId} initial={candidate} seed={staticNameSeed()} />
-    </div>
-  );
+  return <Moved to={candidateHref(candidateId)} label="this object's report" />;
 }

@@ -121,6 +121,9 @@ def orbit_for(out_dir: Path, c: S.CandidateDetail) -> OrbitRecord | None:
     if c.classification == S.Classification.injected or c.motion.model == S.MotionModel.none:
         return None
     p = orbit_path(out_dir, c.candidate_id)
+    if c.record_level == "minimal":
+        # A known object: JPL has its orbit; only the validation sample keeps ours.
+        return OrbitRecord.model_validate_json(p.read_text()) if p.exists() else None
     h = input_hash(c.detections)
     if p.exists():
         rec = OrbitRecord.model_validate_json(p.read_text())

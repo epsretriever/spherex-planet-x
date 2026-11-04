@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
+import { objectHref } from "@/lib/routes";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
 import { buildNames, toNameInput } from "@/lib/names";
-import { NO_PAGES, staticNameSeed, staticObject, staticObjects } from "@/lib/staticData";
+import { NO_PAGES, staticCandidate, staticNameSeed, staticObject, staticObjects } from "@/lib/staticData";
 import { ObjectView } from "../object/ObjectView";
 
 // One page per published object, rendered at build time; the live API replaces it in the browser.
@@ -21,7 +23,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!o) return {};
   const seed = staticNameSeed();
   const name = buildNames(seed.candidates.map(toNameInput), seed.fields).get(o.candidate_ids[0] ?? "")?.title ?? id;
-  return { title: name, description: o.summary_plain };
+  return pageMeta(name, o.summary_plain, objectHref(id));
 }
 
 export default async function ObjectPage({ params }: Params) {
@@ -30,8 +32,15 @@ export default async function ObjectPage({ params }: Params) {
   if (!object) notFound();
   return (
     <div className="container">
-      <PrefetchData urls={[`/api/objects/${objectId}`, "/api/candidates?include_injected=true", "/api/fields"]} />
-      <ObjectView id={objectId} initial={object} seed={staticNameSeed()} />
+      <PrefetchData
+        urls={[`/api/objects/${objectId}`, `/api/candidates/${object.candidate_ids[0] ?? ""}`, "/api/candidates?include_injected=true", "/api/fields"]}
+      />
+      <ObjectView
+        id={objectId}
+        initial={object}
+        initialCandidate={object.candidate_ids[0] ? staticCandidate(object.candidate_ids[0]) : null}
+        seed={staticNameSeed()}
+      />
     </div>
   );
 }

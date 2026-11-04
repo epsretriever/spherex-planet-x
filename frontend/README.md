@@ -36,7 +36,9 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
 - **Data is fetched in the browser** from relative URLs: `/api/fields`, `/api/fields/{field_id}`, `/api/candidates`, `/api/candidates/{candidate_id}` and `/api/injection/{study_id}`. Image URLs in responses (`/static/...`) are on the same origin.
 - **Dynamic pages use query parameters,** so they build without any data present:
   - `/explore/field/?id={field_id}`: blink viewer
-  - `/detective/candidate/?id={candidate_id}`: evidence report
+  - `/objects/object/?id={object_id}`: an object's report (`?candidate=` for a simulated sighting with no object)
+  - `/objects/?view=leads|patches`, `?class=known_object`: the Objects page tabs; old `/detective/`, `/leads/`, `/explore/` and
+    `/detective/{candidate_id}/` URLs forward here (vercel.json redirects, plus `src/components/Moved.tsx` on other hosts)
   - `/simulated/?study={study_id}`: injection-recovery results (optional parameter)
 - **Fixture mode** (`NEXT_PUBLIC_USE_FIXTURES=true`) reads `/data/` instead of `/api/`. Lookup order: `fields.json`; `fields/{field_id}.json`, then `field_detail.json`; `candidates.json` (filtered in the browser); `candidates/{candidate_id}.json`, then `candidate_detail.json`; `injection/{study_id}.json`, then `injection_study.json`. Root-relative image URLs resolve under `/data/` too (for example `/static/x.webp` → `/data/static/x.webp`).
 - **The contract** is `docs/api-contract.md`, with JSON Schema in `shared/schema/`. `src/lib/contract.ts` mirrors it by hand. Fix that file when the contract changes.
