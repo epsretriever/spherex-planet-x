@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { PrefetchData } from "@/components/PrefetchData";
 import { staticNameSeed, staticObjects } from "@/lib/staticData";
 import { ObjectListView } from "./ObjectListView";
 
-export const metadata: Metadata = {
-  title: "Objects",
-  description: "Every moving object our pipeline tracked in SPHEREx data, linked across visits, with its distance and orbit.",
-};
+export const metadata: Metadata = pageMeta(
+  "Objects",
+  "Every moving object our pipeline tracked in SPHEREx data, linked across visits, with its distance and orbit.",
+  "/objects/",
+);
 
 export default function ObjectsPage() {
   return (

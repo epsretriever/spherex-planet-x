@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
+import { candidateHref } from "@/lib/routes";
 import { buildNames, toNameInput } from "@/lib/names";
 import { NO_PAGES, staticCandidate, staticCandidates, staticNameSeed } from "@/lib/staticData";
 import { CandidateReport } from "../candidate/CandidateReport";
@@ -22,7 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!c) return {};
   const seed = staticNameSeed();
   const name = buildNames(seed.candidates.map(toNameInput), seed.fields).get(id)?.title ?? id;
-  return { title: name, description: c.summary_plain };
+  return pageMeta(name, c.summary_plain, candidateHref(id));
 }
 
 export default async function CandidatePage({ params }: Params) {

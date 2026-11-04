@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import Link from "next/link";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { GLOSSARY } from "@/components/Term";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER } from "@/lib/labels";
 import styles from "./page.module.css";
 
-export const metadata: Metadata = {
-  title: "How it works",
-};
+export const metadata: Metadata = pageMeta(
+  "About and methods",
+  "How the SPHEREx Planet X Explorer finds moving objects in NASA SPHEREx images: the pipeline, data sources, honest limitations and the team.",
+  "/about/",
+);
 
 const METHOD = [
   {

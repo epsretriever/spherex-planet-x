@@ -307,6 +307,11 @@ export async function searchCandidates(query: string, signal?: AbortSignal): Pro
 export function assetUrl(url: string | null | undefined): string {
   if (!url) return "";
   if (/^(https?:|data:|blob:)/i.test(url)) return url;
-  if (USE_FIXTURES) return `${FIXTURE_BASE}/${url.replace(/^\/+/, "")}`;
+  if (USE_FIXTURES) {
+    const path = url.replace(/^\/+/, "");
+    // Static data already points at /data/...; don't nest it twice.
+    if (`/${path}`.startsWith(`${FIXTURE_BASE}/`)) return `/${path}`;
+    return `${FIXTURE_BASE}/${path}`;
+  }
   return url.startsWith("/") ? url : `/${url}`;
 }

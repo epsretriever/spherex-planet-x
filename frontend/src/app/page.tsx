@@ -47,7 +47,7 @@ const PIPELINE = [
   },
   {
     title: "Check against JPL",
-    body: "The Worker asks JPL's small-body services which known asteroids and comets were at each position at each time, and folds the answer into the report.",
+    body: "The pipeline asks JPL's small-body services (SBIdent, then Horizons) which known asteroids and comets were at each position at each time, as seen from SPHEREx. Matches are labelled known; tracks JPL can't explain stay Unexplained and are re-checked on a schedule.",
   },
   {
     title: "Score and publish",
@@ -148,8 +148,9 @@ export default function LandingPage() {
               <p className="eyebrow">How it works</p>
               <h2 id="how-heading">From raw images to an evidence report</h2>
               <p className={styles.sectionLede}>
-                Pixel processing runs ahead of time in a Python pipeline. Anything that depends on today&apos;s catalogs, like whether a
-                moving dot is a known asteroid, is checked live when you open its report.
+                A Python pipeline in GitHub Actions searches new patches of sky several times a day and checks every new track against
+                JPL&apos;s catalogs before it is published. Tracks JPL couldn&apos;t explain are re-checked on a schedule, so labels can
+                change as catalogs grow.
               </p>
               <div className={`card ${styles.instrument}`}>
                 <p className={`mono ${styles.instrumentLabel}`}>What SPHEREx sees</p>

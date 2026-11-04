@@ -102,7 +102,7 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
         </div>
         <div>
           <dt>Images</dt>
-          <dd className="mono">{t.n_epochs}</dd>
+          <dd className="mono">{t.n_epochs.toLocaleString("en-US")}</dd>
         </div>
         <div>
           <dt>Moving objects</dt>

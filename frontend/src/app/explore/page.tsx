@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { FieldGrid } from "@/components/FieldGrid";
 
-export const metadata: Metadata = {
-  title: "Explore the sky",
-};
+export const metadata: Metadata = pageMeta(
+  "Explore the sky",
+  "Blink real NASA SPHEREx images taken hours or days apart. Stars hold still; asteroids and other moving objects jump.",
+  "/explore/",
+);
 
 export default function ExplorePage() {
   return (

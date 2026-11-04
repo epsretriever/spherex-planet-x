@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
+import { objectHref } from "@/lib/routes";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
 import { buildNames, toNameInput } from "@/lib/names";
@@ -21,7 +23,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!o) return {};
   const seed = staticNameSeed();
   const name = buildNames(seed.candidates.map(toNameInput), seed.fields).get(o.candidate_ids[0] ?? "")?.title ?? id;
-  return { title: name, description: o.summary_plain };
+  return pageMeta(name, o.summary_plain, objectHref(id));
 }
 
 export default async function ObjectPage({ params }: Params) {

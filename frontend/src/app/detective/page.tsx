@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { Suspense } from "react";
 import { CardListSkeleton } from "@/components/Skeletons";
 import { CandidateBrowser } from "./CandidateBrowser";
 
-export const metadata: Metadata = {
-  title: "Detective",
-};
+export const metadata: Metadata = pageMeta(
+  "Detective",
+  "Every moving object found in real SPHEREx images, with its evidence report: positions, motion, signal quality, the JPL check and what could make it wrong.",
+  "/detective/",
+);
 
 export default function DetectivePage() {
   return (
