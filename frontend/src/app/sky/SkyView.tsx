@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
-import { DEPTH_RANGE, SkyMap, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import type { GrowthDay } from "@/lib/staticData";
+import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
 import { fmt, formatUtcDate, formatUtcDateTime } from "@/lib/format";
@@ -34,9 +36,22 @@ function percent(area: number): string {
 /** Rows shown before "Show all": the table is a reference, the map is the overview. */
 const TABLE_ROWS = 30;
 
+/** A survey whose tiles may carry only the fields this page reads (the build-time copy). */
+export type SkySurvey = Omit<Survey, "tiles"> & { tiles: SkyTile[] };
+
 /** The survey footprint: as published at build time, then as the API serves it now. */
-export function SkyView({ initial, fieldNames }: { initial: Survey | null; fieldNames: Record<string, string> }) {
+export function SkyView({
+  initial,
+  fieldNames,
+  growth = [],
+}: {
+  initial: SkySurvey | null;
+  fieldNames: Record<string, string>;
+  growth?: GrowthDay[];
+}) {
   const [showAll, setShowAll] = useState(false);
+  const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
+  const [raUnits, setRaUnits] = useState<RaUnits>("deg");
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
   useEffect(() => {
@@ -51,7 +66,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
   }, [live]);
   const state = useData(live ? "survey" : null, (signal) => getSurvey(signal));
   const fields = useData(live ? "fields" : null, (signal) => getFields(signal));
-  const survey = state.status === "ok" ? state.data : initial;
+  const survey: SkySurvey | null = state.status === "ok" ? state.data : initial;
   const names: Record<string, string> =
     fields.status === "ok" ? { ...fieldNames, ...Object.fromEntries(fields.data.fields.map((f) => [f.field_id, f.name])) } : fieldNames;
 
@@ -68,12 +83,15 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
     return null;
   }
 
-  const name = (t: SurveyTile) => (t.field_id ? names[t.field_id] : undefined);
+  const name = (t: SkyTile) => (t.field_id ? names[t.field_id] : undefined);
   const tiles = [...survey.tiles].sort((a, b) => a.ecliptic_lon_deg - b.ecliptic_lon_deg);
   const p9 = hasSourcedRegion(survey.planet_nine) ? survey.planet_nine : null;
   const anyDepth = tiles.some((t) => t.m50_ab !== null);
   const statuses = new Set(tiles.map((t) => t.status));
-  const count = (st: SurveyTile["status"]) => tiles.filter((t) => t.status === st).length.toLocaleString("en-US");
+  const empty = survey.empty_cells ?? null;
+  if (empty && empty.n_tiles > 0) statuses.add("empty");
+  const count = (st: SurveyTile["status"]) =>
+    (tiles.filter((t) => t.status === st).length + (st === "empty" ? (empty?.n_tiles ?? 0) : 0)).toLocaleString("en-US");
   const t = survey.totals;
   // Tiles with moving objects first, then the rest by longitude.
   const rows = [...tiles].sort((a, b) => Number(b.n_candidates > 0) - Number(a.n_candidates > 0));
@@ -84,21 +102,19 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
       <dl className={styles.stats}>
         <div>
           <dt>Tiles searched</dt>
-          <dd className="mono">
-            {t.n_processed}
-            {t.n_tiles > t.n_processed && <small> of {t.n_tiles}</small>}
-          </dd>
+          <dd className="mono">{(t.n_searched ?? t.n_processed).toLocaleString("en-US")}</dd>
+          <dd className={styles.statNote}>{t.n_processed.toLocaleString("en-US")} with moving objects</dd>
         </div>
         <div>
           <dt>Sky searched</dt>
           <dd className="mono">
-            {fmt(t.area_deg2_processed, t.area_deg2_processed < 10 ? 2 : 0)} deg²
+            {fmt(t.area_deg2_searched ?? t.area_deg2_processed, (t.area_deg2_searched ?? t.area_deg2_processed) < 10 ? 2 : 0)} deg²
           </dd>
-          <dd className={styles.statNote}>{percent(t.area_deg2_processed)} of the whole sky</dd>
+          <dd className={styles.statNote}>{percent(t.area_deg2_searched ?? t.area_deg2_processed)} of the whole sky</dd>
         </div>
         <div>
           <dt>Images</dt>
-          <dd className="mono">{t.n_epochs}</dd>
+          <dd className="mono">{t.n_epochs.toLocaleString("en-US")}</dd>
         </div>
         <div>
           <dt>Moving objects</dt>
@@ -109,13 +125,59 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
       {/* The map and table lay out after the header paints, as the evidence report does. */}
       <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
-        <SkyMap tiles={tiles} planetNine={p9} tileName={name} />
+        <div className={styles.explainer}>
+          <h2 className={styles.explainerTitle}>How to read this map</h2>
+          <p>
+            This is a map of the <strong>whole sky</strong>, like a globe unrolled flat. <strong>Left–right</strong> goes around the sky
+            (right ascension, 0–360°); <strong>up–down</strong> is north–south (declination, +90° at the top, −90° at the bottom). Each dot
+            is a patch we searched; the rest of the oval is sky we haven&apos;t searched yet.
+          </p>
+        </div>
+        <div className={styles.controls}>
+        {anyDepth && (
+          <fieldset className={styles.colorBy}>
+            <legend>Colour tiles by</legend>
+            {(["objects", "depth"] as const).map((v) => (
+              <label key={v}>
+                <input type="radio" name="sky-color" value={v} checked={colorBy === v} onChange={() => setColorBy(v)} />
+                {v === "objects" ? "Moving objects" : "Depth (m₅₀)"}
+              </label>
+            ))}
+          </fieldset>
+        )}
+          <fieldset className={styles.colorBy}>
+            <legend>Right ascension in</legend>
+            {(["deg", "hours"] as const).map((v) => (
+              <label key={v}>
+                <input type="radio" name="sky-ra" value={v} checked={raUnits === v} onChange={() => setRaUnits(v)} />
+                {v === "deg" ? "Degrees (0–360°)" : "Hours (0–24h)"}
+              </label>
+            ))}
+          </fieldset>
+        </div>
+        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} colorBy={anyDepth ? colorBy : "objects"} raUnits={raUnits} />
+        <p className={styles.axes}>
+          <span>↑ North (declination +90°) · ↓ South (−90°)</span>
+          <span>
+            ← Right ascension increases to the left ({raUnits === "deg" ? "0° to 360°" : "0h to 24h"}), as the sky looks from Earth
+          </span>
+        </p>
         <figcaption className={styles.legend}>
           <ul>
             <li>
-              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}){anyDepth ? ", coloured by depth" : ""}: select
-              one to open it
+              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}): select one to open
+              its patch
             </li>
+            {(colorBy === "objects" || !anyDepth) && (
+              <li className={styles.countKey}>
+                  {OBJECT_STEPS.map((st) => (
+                    <span key={st.min}>
+                      <span className={styles.swCount} style={{ background: st.color, width: st.r * 1.6, height: st.r * 1.6 }} aria-hidden="true" />
+                      {st.label}
+                    </span>
+                  ))}
+              </li>
+            )}
             {statuses.has("empty") && (
               <li>
                 <span className={styles.swEmpty} aria-hidden="true" /> Searched, nothing found ({count("empty")})
@@ -132,13 +194,19 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
               </li>
             )}
             <li>
-              <span className={styles.swEcliptic} aria-hidden="true" /> Ecliptic: the plane of the planets, where most asteroids are
+              <span className={styles.swEcliptic} aria-hidden="true" /> Ecliptic: the plane where planets and asteroids travel, so most moving
+              objects are found near it
             </li>
             <li>
-              <span className={styles.swGalactic} aria-hidden="true" /> Milky Way: crowded with stars, hardest to search
+              <span className={styles.swGalactic} aria-hidden="true" /> Milky Way: the band of our galaxy, so crowded with stars it is the hardest
+              place to search
             </li>
             {p9 && (
               <>
+                <li>
+                  <span className={styles.swP9Pin} aria-hidden="true" /> Planet Nine search region: the labelled pin marks where it would most
+                  likely be, if it exists
+                </li>
                 <li>
                   <span className={styles.swP9Inner} aria-hidden="true" /> Where Planet Nine is most likely, if it exists (68%)
                 </li>
@@ -148,7 +216,7 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
               </>
             )}
           </ul>
-          {anyDepth && (
+          {anyDepth && colorBy === "depth" && (
             <p className={styles.ramp}>
               <span>
                 Shallower · m₅₀ {DEPTH_RANGE[0]}
@@ -158,8 +226,8 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
             </p>
           )}
           <p className={styles.note}>
-            Equatorial coordinates, right ascension increasing to the left as the sky looks from Earth. Tiles are drawn much larger than
-            their true size ({survey.tile_size_deg}° across) so they can be seen.
+            Hover or tab to a dot for its details. Tiles are drawn much larger than their true size ({survey.tile_size_deg}° across) so
+            they can be seen.
           </p>
           {p9 && (
             <p className={styles.note}>
@@ -178,6 +246,8 @@ export function SkyView({ initial, fieldNames }: { initial: Survey | null; field
           )}
         </figcaption>
       </figure>
+
+      <CoverageChart days={growth} />
 
       <section className={styles.section} aria-labelledby="tiles-title">
         <h2 id="tiles-title">Tiles searched</h2>

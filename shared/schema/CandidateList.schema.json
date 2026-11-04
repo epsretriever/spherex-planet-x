@@ -7,6 +7,19 @@
           "title": "Candidate Id",
           "type": "string"
         },
+        "pipeline_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pipeline commit that built this candidate (data from several survey runs can be published together); the Worker keys stored JPL results by it",
+          "title": "Pipeline Version"
+        },
         "field_id": {
           "title": "Field Id",
           "type": "string"
@@ -138,10 +151,11 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "default": "1.1",
+      "default": "1.2",
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ],
       "title": "Schema Version",
       "type": "string"

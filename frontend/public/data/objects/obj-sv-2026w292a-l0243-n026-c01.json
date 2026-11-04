@@ -1,7 +1,7 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "pipeline_version": "0.1.0+git.a0f12ad",
-  "build_run_id": "gh-41316531565-1",
+  "build_run_id": "gh-41743712323-1",
   "object_id": "obj-sv-2026w292a-l0243-n026-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -727,7 +727,7 @@
   },
   "known_object": {
     "checked": false,
-    "not_checked_reason": "The offline pipeline does not query JPL; the API checks JPL SBIdent and Horizons when this report is requested.",
+    "not_checked_reason": "JPL SBIdent did not answer for 3 of 3 visits (GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=5917.876%2C1950.880%2C3236.880&obs-time=2026-07-17_12%3A48%3A00&fov-ra-center=01-26-08.85&fov-dec-center=11-55-56.0&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false failed after 5 attempts: GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=5917.876%2C1950.880%2C3236.880&obs-time=2026-07-17_12%3A48%3A00&fov-ra-center=01-26-08.85&fov-dec-center=11-55-56.0&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false -> HTTP 429).",
     "matched": false,
     "catalogs_checked": [],
     "search_radius_arcsec": 15.0,
@@ -736,8 +736,9 @@
     "per_epoch": [],
     "nearest": null,
     "observer": null,
-    "query_utc": null,
-    "enrichment": "static"
+    "query_utc": "2026-11-03T03:27:56Z",
+    "enrichment": "pipeline",
+    "jpl_links": null
   },
   "scores": {
     "motion_consistency": 0.796,
@@ -834,5 +835,6 @@
       "field_size_deg": 0.3
     }
   },
+  "record_level": "full",
   "disclaimer": "An unmatched candidate may be an imaging artifact, a measurement error, or an object missing from the catalogs we checked. This is not a discovery claim."
 }

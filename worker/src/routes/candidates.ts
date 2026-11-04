@@ -6,7 +6,7 @@ import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, orbitOfCandidate, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
-import { readRecord, readRecords, refreshRecord } from "../store";
+import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
@@ -29,10 +29,14 @@ candidates.get("/", async (c) => {
 
   const list = await requireStaticJson<CandidateList>(c.env, "candidates.json", "candidate list");
   const deps = c.get("deps");
-  // Fold in stored JPL results (one store query; no upstream calls from the list view).
-  const real = list.candidates.filter((s) => s.classification !== "injected");
-  const recs = await readRecords(deps, list.pipeline_version, real.map((s) => s.candidate_id));
-  const missing = real.find((s) => !recs.has(s.candidate_id));
+  // Fold in stored JPL results (one store query per data version; no upstream calls from the
+  // list view). Candidates the survey pipeline matched to a known object are final and skipped.
+  const real = list.candidates.filter((s) => s.classification !== "injected" && !finalInList(s));
+  const recs = await readRecordsFor(
+    deps,
+    real.map((s) => ({ candidate_id: s.candidate_id, pipeline_version: s.pipeline_version ?? list.pipeline_version })),
+  );
+  const missing = real.find((s) => !recs.has(s.candidate_id) && !s.known_object_checked);
   if (missing) {
     // Start one background lookup so the list fills in even before the cron runs.
     deps.waitUntil(
@@ -45,6 +49,8 @@ candidates.get("/", async (c) => {
     const rec = s.classification === "injected" ? undefined : recs.get(s.candidate_id);
     return rec ? applyToSummary(s, rec.enrichment) : s;
   });
+  // Unexplained first, then weak detections, then known objects; best score first within each.
+  enriched.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
   const filtered = enriched.filter(
     (s) =>
       (fieldId === undefined || s.field_id === fieldId) &&
@@ -87,9 +93,18 @@ export async function loadCandidate(
   if (cand.classification === "injected") {
     return { detail: applyKnownObject(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
   }
-  const rec = await readRecord(deps, cand);
+  if (isFinalMatch(cand.known_object)) {
+    // Identified by the survey pipeline: final, cached for good.
+    return {
+      detail: applyKnownObject(cand, cand.known_object, true, now),
+      cacheControl: "public, max-age=3600",
+      pending: false,
+    };
+  }
+  const rec = newestRecord(await readRecord(deps, cand), pipelineRecord(cand.known_object));
   if (rec) {
-    const e: Enrichment = { ...rec.enrichment, known_object: { ...rec.enrichment.known_object, enrichment: "cached" } };
+    const k = rec.enrichment.known_object;
+    const e: Enrichment = { ...rec.enrichment, known_object: { ...k, enrichment: k.enrichment === "pipeline" ? "pipeline" : "cached" } };
     return {
       detail: applyKnownObject(cand, e.known_object, e.matched, now),
       cacheControl: rec.status === "checked" ? "public, max-age=300" : "no-store",
@@ -107,6 +122,16 @@ export async function loadCandidate(
     enrichment: "pending" as const,
   };
   return { detail: applyKnownObject(cand, pending, false, now), cacheControl: "no-store", pending: true };
+}
+
+/** A summary whose static file already carries a final (pipeline) JPL match. */
+export const finalInList = (s: CandidateSummary): boolean => s.known_object_checked && s.known_object_matched;
+
+/** List order: unexplained and unchecked first, then weak detections, then known objects. */
+export function reviewPriority(s: { classification: Classification; known_object_matched: boolean }): number {
+  if (s.known_object_matched || s.classification === "known_object") return 2;
+  if (s.classification === "likely_artifact" || s.classification === "unconfirmed_pair") return 1;
+  return s.classification === "injected" ? 3 : 0;
 }
 
 export function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSummary {

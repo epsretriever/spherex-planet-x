@@ -126,3 +126,26 @@
   font-size: var(--text-sm);
   color: var(--accent-strong);
 }
+
+/* Known-object links sit above the card's stretched link so they stay clickable. */
+.jpl {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.jplName {
+  color: var(--status-known);
+  font-weight: 600;
+}
+
+.jpl a {
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+}

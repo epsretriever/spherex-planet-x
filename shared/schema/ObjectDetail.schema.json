@@ -170,6 +170,25 @@
       "title": "ImageRef",
       "type": "object"
     },
+    "JplLinks": {
+      "additionalProperties": false,
+      "properties": {
+        "sbdb_url": {
+          "title": "Sbdb Url",
+          "type": "string"
+        },
+        "horizons_url": {
+          "title": "Horizons Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sbdb_url",
+        "horizons_url"
+      ],
+      "title": "JplLinks",
+      "type": "object"
+    },
     "JplOrbitComparison": {
       "additionalProperties": false,
       "properties": {
@@ -415,15 +434,28 @@
         },
         "enrichment": {
           "default": "static",
-          "description": "static: as written by the offline pipeline (not checked); pending: the Worker has started a JPL lookup in the background; live/cached: filled by the Worker from JPL (live = this request, cached = a stored result)",
+          "description": "static: as written by the offline pipeline (not checked); pipeline: checked against JPL by the survey pipeline's triage step (spherex-px triage); pending: the Worker has started a JPL lookup in the background; live/cached: filled by the Worker from JPL (live = this request, cached = a stored result)",
           "enum": [
             "static",
+            "pipeline",
             "live",
             "cached",
             "pending"
           ],
           "title": "Enrichment",
           "type": "string"
+        },
+        "jpl_links": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JplLinks"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "JPL pages for the matched object's orbit (Small-Body Database) and ephemerides (Horizons); null unless matched"
         }
       },
       "required": [
@@ -745,8 +777,15 @@
           "title": "Psf Fit Reduced Chi2"
         },
         "stamp": {
-          "$ref": "#/$defs/ImageRef",
-          "description": "64 x 64 px stamp centered on the detection"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImageRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "64 x 64 px stamp centered on the detection; null when the record is minimal (a known object: see CandidateDetail.record_level)"
         },
         "spacecraft_geocentric_km": {
           "description": "SPHEREx position relative to Earth's center at exposure midpoint, km, ICRF/J2000 equatorial axes (header X_SC, Y_SC, Z_SC)",
@@ -1330,10 +1369,11 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "default": "1.1",
+      "default": "1.2",
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ],
       "title": "Schema Version",
       "type": "string"
@@ -1458,6 +1498,16 @@
     },
     "provenance": {
       "$ref": "#/$defs/CandidateProvenance"
+    },
+    "record_level": {
+      "default": "full",
+      "description": "As CandidateDetail.record_level",
+      "enum": [
+        "full",
+        "minimal"
+      ],
+      "title": "Record Level",
+      "type": "string"
     },
     "disclaimer": {
       "default": "An unmatched candidate may be an imaging artifact, a measurement error, or an object missing from the catalogs we checked. This is not a discovery claim.",

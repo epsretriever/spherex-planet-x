@@ -1,5 +1,6 @@
 "use client";
 
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -67,7 +68,9 @@ export function FieldView({ id, initial, seed }: { id: string | null; initial?: 
       <Crumbs />
       <div className={styles.layout}>
         <header className={styles.header}>
-          <p className="eyebrow">Explorer · {f.epochs.length} images</p>
+          <PageGuide>
+            Blink {f.epochs.length} SPHEREx images of one patch of sky: stars hold still, anything that jumps is moving.
+          </PageGuide>
           <h1>{f.name}</h1>
           <p className="lede">{f.blurb}</p>
         </header>
@@ -113,7 +116,7 @@ export function FieldView({ id, initial, seed }: { id: string | null; initial?: 
               </div>
             </dl>
             {realMovers > 0 && (
-              <Link className="button" href={`/detective/?field=${encodeURIComponent(f.field_id)}`}>
+              <Link className="button" href={`/objects/?field=${encodeURIComponent(f.field_id)}`}>
                 See the evidence for each →
               </Link>
             )}
@@ -142,7 +145,7 @@ export function FieldView({ id, initial, seed }: { id: string | null; initial?: 
 function Crumbs() {
   return (
     <nav aria-label="Breadcrumb" className={styles.crumbs}>
-      <Link href="/explore/" prefetch={false}>← All patches of sky</Link>
+      <Link href="/objects/?view=patches" prefetch={false}>← All patches of sky</Link>
     </nav>
   );
 }

@@ -1,0 +1,53 @@
+# The real-data Playwright suite (every page at 360 and 1280 px: heading, no overflow, no console
+# errors, old URLs forwarding) run against the DEPLOYED site. Screenshots are uploaded.
+name: Live UI check
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: Site to check
+        default: https://spherex-planet-x.vercel.app
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Chromium for Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Host redirects keep the query
+        env:
+          SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+        run: |
+          set -euo pipefail
+          for p in "/detective/?class=unmatched&sort=newest" "/leads/" "/explore/" "/detective/aquarius-a-c01/" "/detective/candidate/?id=aquarius-a-c01"; do
+            loc=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$SITE$p")
+            echo "$p -> $loc" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Pages at 360 and 1280 px on the live site
+        working-directory: frontend
+        env:
+          CI: "1"
+          REAL_BASE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+        run: npx playwright test -c playwright.real.config.ts --project=phone-360 --project=desktop-1280
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-ui
+          path: |
+            frontend/test-results-real/
+            frontend/playwright-report-real/
+          retention-days: 14

@@ -72,5 +72,12 @@ describe("runs and injection", () => {
     const index = { schema_version: "1.1", pipeline_version: "test", studies: [{ study_id: "test-study", generated_utc: "x", field_ids: [], n_injected: 1 }] };
     const { get } = makeClient({ files: { "/data/injection/index.json": index } });
     expect(await json(await get("/api/injection"))).toEqual(index);
+    expect(await json(await get("/api/injection/"))).toEqual(index);
+  });
+
+  it("serves a study with or without a trailing slash", async () => {
+    const study = { schema_version: "1.1", pipeline_version: "test", study_id: "test-study", simulated: true };
+    const { get } = makeClient({ files: { "/data/injection/test-study.json": study } });
+    expect(await json(await get("/api/injection/test-study/"))).toEqual(study);
   });
 });

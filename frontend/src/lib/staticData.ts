@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CandidateDetail, CandidateList, FieldDetail, FieldList, ObjectDetail, ObjectList, Survey } from "./contract";
+import type { CandidateDetail, CandidateList, FieldDetail, FieldList, InjectionStudy, InjectionStudyIndex, ObjectDetail, ObjectList, ObjectPrediction, Survey } from "./contract";
 
 /**
  * Build-time access to the pipeline's published data in public/data/ (the same files the Worker
@@ -46,6 +46,11 @@ export function staticObject(id: string): ObjectDetail | null {
   return ID_RE.test(id) ? read<ObjectDetail>(`objects/${id}.json`) : null;
 }
 
+/** An object's orbit prediction (only once it has an orbit). */
+export function staticPrediction(id: string): (ObjectPrediction & { note_plain?: string | null }) | null {
+  return ID_RE.test(id) ? read<ObjectPrediction & { note_plain?: string | null }>(`objects/${id}/prediction.json`) : null;
+}
+
 export function staticSurvey(): Survey | null {
   const s = read<Survey>("survey.json");
   return s && Array.isArray(s.tiles) ? s : null;
@@ -56,5 +61,30 @@ export function staticNameSeed() {
   return { candidates: staticCandidates()?.candidates ?? [], fields: staticFields()?.fields ?? [] };
 }
 
+/** The newest published injection-recovery study. */
+export function staticInjectionStudy(): InjectionStudy | null {
+  const idx = read<InjectionStudyIndex>("injection/index.json");
+  const newest = [...(idx?.studies ?? [])].sort((a, b) => b.generated_utc.localeCompare(a.generated_utc))[0];
+  return newest && ID_RE.test(newest.study_id) ? read<InjectionStudy>(`injection/${newest.study_id}.json`) : null;
+}
+
 /** Next requires at least one param for a static export; this one renders the 404 page. */
 export const NO_PAGES = "__none__";
+
+/** One point per UTC day, written by the pipeline's publish step (growth.json). */
+export interface GrowthDay {
+  date: string;
+  tiles_searched: number;
+  area_deg2: number;
+  sky_percent: number;
+  candidates: number;
+  objects: number;
+  /** From the live Worker (JPL results); missing on days before it was recorded. */
+  identified?: number;
+  unidentified?: number;
+}
+
+export function staticGrowth(): GrowthDay[] {
+  const g = read<{ days: GrowthDay[] }>("growth.json");
+  return Array.isArray(g?.days) ? g.days : [];
+}

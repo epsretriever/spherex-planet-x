@@ -1,5 +1,6 @@
 import type { CandidateFilter, CandidateSummary, Classification, DistanceClass } from "./contract";
 import { CLASSIFICATIONS, isClassification } from "./labels";
+import { byReviewPriority } from "./review";
 
 /**
  * The Detective page's filter, in the contract's CandidateFilter shape so the
@@ -136,7 +137,9 @@ export function applyFilter(
     }
     return true;
   });
-  return out.sort(comparator(f.sort));
+  const cmp = comparator(f.sort);
+  // Unexplained first whatever the sort; the chosen sort orders within each group.
+  return out.sort((a, b) => byReviewPriority(a, b) || cmp(a, b));
 }
 
 const byScore = (a: CandidateSummary, b: CandidateSummary) => b.overall_score - a.overall_score || a.candidate_id.localeCompare(b.candidate_id);
