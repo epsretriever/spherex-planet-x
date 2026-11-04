@@ -60,3 +60,31 @@ jobs:
           i = text.find("Planted")
           print(text[i : i + 1500])
           EOF
+      - name: Leads, tour, about and share cards on the live site
+        run: |
+          set -euo pipefail
+          for p in / /leads/ /about/ /sky/ /objects/; do
+            code=$(curl -s -o page.html -w '%{http_code}' "$SITE$p")
+            og=$(grep -o '<meta property="og:image" content="[^"]*"' page.html | head -1 || true)
+            echo "$p $code ${og:-no og:image}" | tee -a "$GITHUB_STEP_SUMMARY"
+            test "$code" = 200
+          done
+          curl -fsSL "$SITE/og.png" -o og.png && file og.png | tee -a "$GITHUB_STEP_SUMMARY"
+          curl -fsSL "$SITE/leads/leads.json" | jq '{published_leads: (.leads | length)}' | tee -a "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 \
+              --dump-dom "$SITE/leads/" > leads.html || true
+            grep -q "unexplained object" leads.html && break
+            sleep 10
+          done
+          python3 - <<'PY'
+          import html, re
+          text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", open("leads.html").read())))
+          m = re.search(r"(\d+) unexplained objects?: (\d+) strong, (\d+) moderate and (\d+) weak", text)
+          assert m, "Leads page did not render its ranked list"
+          print(m.group(0))
+          for word in ("Why it might be real", "What would confirm it", "Download for telescope follow-up"):
+              assert word in text, f"missing {word!r}"
+          PY
+          google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=10000 --dump-dom "$SITE/" > home.html || true
+          grep -q "Take the 2-minute tour" home.html && echo "home: tour button present" | tee -a "$GITHUB_STEP_SUMMARY"
