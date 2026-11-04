@@ -4,14 +4,16 @@ NASA Space Apps Challenge 2026 · Challenge: Planet X and SPHEREx
 
 A public web tool that lets anyone explore how the infrared sky changes over time using real data from NASA's SPHEREx mission.
 
-**Try it live: https://spherex-planet-x.bodhishanbhag.workers.dev**
+**Try it live: https://spherex-planet-x.vercel.app**
+
+Old links (`/explore/`, `/detective/…`, `/leads/`) redirect to their new homes, query strings included.
 
 | Page | What you can do |
 |---|---|
-| [Explore](https://spherex-planet-x.bodhishanbhag.workers.dev/explore/) | Pick a patch of sky and blink, swipe or step between real SPHEREx images to see what moved |
-| [Detective](https://spherex-planet-x.bodhishanbhag.workers.dev/detective/) | Browse flagged moving objects and open an evidence report for each one |
-| [Simulated](https://spherex-planet-x.bodhishanbhag.workers.dev/simulated/) | See how well the pipeline recovers fake objects hidden in real images |
-| [About](https://spherex-planet-x.bodhishanbhag.workers.dev/about/) | How it works, data sources and a glossary |
+| [Objects](https://spherex-planet-x.vercel.app/objects/) | Every moving object in one list: search, filters and AI search; tabs for **Unexplained leads** (ranked, with follow-up files), **Known (JPL)** and **Patches of sky** to blink. Each object has one report page. |
+| [Sky map](https://spherex-planet-x.vercel.app/sky/) | Where we have searched, how to read the map, and the Planet Nine search region |
+| [Limits](https://spherex-planet-x.vercel.app/limits/) | How faint and how slow an object the pipeline can find, measured with simulated objects |
+| [About](https://spherex-planet-x.vercel.app/about/) | Pipeline diagram, data sources and citations, honest limitations, team |
 | [`/api/health`](https://spherex-planet-x.bodhishanbhag.workers.dev/api/health) | Live status of the NASA IRSA, JPL SBIdent, JPL Horizons and SPHEREx archive connections |
 
 ## How it works

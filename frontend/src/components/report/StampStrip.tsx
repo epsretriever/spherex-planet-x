@@ -33,7 +33,8 @@ export function StampStrip({ detections, onSource }: { detections: Detection[]; 
     )}
     <ol className={styles.stamps}>
       {detections.slice(0, count).map((d, i) => {
-        const ok = !!d.stamp?.url && hasSource(d.stamp.source);
+        const stamp = d.stamp;
+        const ok = !!stamp?.url && hasSource(stamp.source);
         return (
           <li key={`${d.epoch_id}-${i}`} className={styles.stamp}>
             <div className={styles.stampImg}>
@@ -41,7 +42,7 @@ export function StampStrip({ detections, onSource }: { detections: Detection[]; 
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element -- pre-stretched cutouts must not be resampled */}
                   <img
-                    src={assetUrl(d.stamp.url)}
+                    src={assetUrl(stamp!.url)}
                     alt={`Sighting ${detectionLabel(i)}: ${formatUtcShortDate(d.time_utc)} at ${formatWavelength(d.wavelength_um_center)}`}
                     loading="lazy"
                   />
@@ -52,7 +53,7 @@ export function StampStrip({ detections, onSource }: { detections: Detection[]; 
                   <span className={styles.stampRing} aria-hidden="true" />
                 </>
               ) : (
-                <span className={styles.placeholder}>Missing source</span>
+                <span className={styles.placeholder}>{d.stamp === null ? "Not kept (known object)" : "Missing source"}</span>
               )}
             </div>
             <span className={`mono ${styles.stampMeta}`}>

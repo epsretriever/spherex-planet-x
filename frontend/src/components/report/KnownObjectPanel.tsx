@@ -1,9 +1,20 @@
 import type { Detection, KnownObject } from "@/lib/contract";
 import { fmt, formatUtcDateTime, formatUtcShortDate } from "@/lib/format";
+import { jplLinks } from "@/lib/jpl";
 import { Panel } from "./Panel";
 import styles from "./report.module.css";
 
-export function KnownObjectPanel({ known, detections }: { known: KnownObject; detections: Detection[] }) {
+export function KnownObjectPanel({
+  known,
+  detections,
+  minimal = false,
+}: {
+  known: KnownObject;
+  detections: Detection[];
+  /** The record is minimal: JPL identified it, so stamps and our own orbit were not kept. */
+  minimal?: boolean;
+}) {
+  const links = jplLinks(known);
   const byEpoch = new Map(detections.map((d, i) => [d.epoch_id, { d, i }]));
   let headline: React.ReactNode;
   if (!known.checked && known.enrichment === "pending") {
@@ -29,11 +40,33 @@ export function KnownObjectPanel({ known, detections }: { known: KnownObject; de
   } else if (known.matched) {
     headline = (
       <div className={styles.callout}>
+        <div>
         <p>
           <strong>Yes: matches {known.designation ?? "a catalogued object"}.</strong> JPL&apos;s predicted position for this
           object agrees with ours at every sighting
           {known.search_radius_arcsec !== null ? `, within ${fmt(known.search_radius_arcsec, 0)} arcsec` : ""}.
         </p>
+        {links && (
+          <p className={styles.jplLinks}>
+            Orbit and ephemerides from JPL:{" "}
+            <a href={links.sbdb_url} target="_blank" rel="noopener noreferrer">
+              Small-Body Database
+            </a>{" "}
+            ·{" "}
+            <a href={links.horizons_url} target="_blank" rel="noopener noreferrer">
+              Horizons
+            </a>
+          </p>
+        )}
+        {minimal && (
+          <p>
+            <small>
+              Because JPL already knows this object, we keep a short record: our measurements, JPL&apos;s match and these links.
+              Close-up stamps and our own orbit fit are kept only for objects JPL can&apos;t explain.
+            </small>
+          </p>
+        )}
+        </div>
       </div>
     );
   } else {

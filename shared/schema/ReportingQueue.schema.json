@@ -56,6 +56,19 @@
           "title": "Object Id",
           "type": "string"
         },
+        "pipeline_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pipeline commit that built this object's candidate; the Worker keys stored JPL results by it",
+          "title": "Pipeline Version"
+        },
         "classification": {
           "$ref": "#/$defs/Classification"
         },
@@ -306,10 +319,11 @@
   "description": "GET /api/reporting (served by the Worker): objects that are candidates for reporting.",
   "properties": {
     "schema_version": {
-      "default": "1.1",
+      "default": "1.2",
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ],
       "title": "Schema Version",
       "type": "string"

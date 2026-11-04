@@ -12,7 +12,7 @@
  * copied into D1, until they expire. Without D1, results are kept in KV; without either (local
  * tools), in the per-datacenter Cache API.
  */
-import type { CandidateDetail, JplOrbitComparison, OrbitalElements } from "./contract";
+import type { CandidateDetail, JplOrbitComparison, KnownObject, OrbitalElements } from "./contract";
 import { ensureSchema } from "./db";
 import type { Deps } from "./env";
 import { type Enrichment, cachedEnrichment, enrichKnownObject, storeEnrichment } from "./enrich";
@@ -28,7 +28,7 @@ export interface EnrichmentRecord {
   orbit_comparison?: JplOrbitComparison | null;
 }
 
-type CandRef = { candidate_id: string; pipeline_version: string };
+export type CandRef = { candidate_id: string; pipeline_version: string };
 
 /** A failed lookup is retried after this long. */
 export const FAILED_RETRY_SECONDS = 30 * 60;
@@ -105,6 +105,45 @@ export async function readRecord(deps: Deps, c: CandRef): Promise<EnrichmentReco
   if (db || deps.kv) return null;
   const e = await cachedEnrichment(deps.cache, c).catch(() => null);
   return e ? { v: 1, status: "checked", enrichment: e, attempted_utc: e.known_object.query_utc ?? "" } : null;
+}
+
+/**
+ * The JPL result the survey pipeline wrote into the static file (spherex-px triage, enrichment
+ * "pipeline"), as a record; null when the pipeline has not checked the candidate.
+ */
+export function pipelineRecord(k: KnownObject | null | undefined): EnrichmentRecord | null {
+  if (!k || k.enrichment !== "pipeline") return null;
+  return {
+    v: 1,
+    status: k.checked ? "checked" : "failed",
+    enrichment: { known_object: k, matched: k.matched },
+    attempted_utc: k.query_utc ?? "",
+  };
+}
+
+/** A pipeline match is final: JPL identified the object, so the Worker never asks JPL again. */
+export const isFinalMatch = (k: KnownObject | null | undefined): boolean =>
+  !!k && k.enrichment === "pipeline" && k.checked && k.matched;
+
+/** The newer of a stored (Worker) result and the pipeline's, preferring a checked one. */
+export function newestRecord(a: EnrichmentRecord | null, b: EnrichmentRecord | null): EnrichmentRecord | null {
+  if (!a || !b) return a ?? b;
+  if (a.status !== b.status) return a.status === "checked" ? a : b;
+  return (Date.parse(a.attempted_utc) || 0) >= (Date.parse(b.attempted_utc) || 0) ? a : b;
+}
+
+/**
+ * Stored results for candidates built by possibly different pipeline commits (incremental
+ * survey runs): one D1 query per distinct version, usually one or two.
+ */
+export async function readRecordsFor(deps: Deps, refs: CandRef[]): Promise<Map<string, EnrichmentRecord>> {
+  const byVersion = new Map<string, string[]>();
+  for (const r of refs) byVersion.set(r.pipeline_version, [...(byVersion.get(r.pipeline_version) ?? []), r.candidate_id]);
+  const out = new Map<string, EnrichmentRecord>();
+  for (const [version, ids] of byVersion) {
+    for (const [id, rec] of await readRecords(deps, version, ids)) out.set(id, rec);
+  }
+  return out;
 }
 
 /**

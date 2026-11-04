@@ -128,7 +128,9 @@ describe("hundreds of candidates", () => {
       expect(p.total).toBe(N);
       offset = p.next_offset ?? null;
     }
-    expect(pages).toEqual(cands.map((x) => x.candidate_id));
+    // Unexplained first, then the known objects, each in list order (equal scores).
+    const ids = cands.map((x) => x.candidate_id);
+    expect(pages).toEqual([...ids.filter((_, i) => i % 3 !== 0), ...ids.filter((_, i) => i % 3 === 0)]);
     const kn = (await json(await c.get("/api/candidates?classification=known_object&limit=10"))) as CandidateList;
     expect([kn.total, kn.candidates.length, kn.next_offset]).toEqual([N / 3, 10, 10]);
     // With D1, list views never read KV, however many candidates there are.

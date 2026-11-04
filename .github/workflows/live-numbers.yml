@@ -1,0 +1,37 @@
+# Reads the deployed site's survey and object numbers (through Vercel and the Worker) into the
+# run summary: sky searched, tiles, objects, and how many are unexplained versus known.
+name: Live numbers
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: Site to read
+        default: https://spherex-planet-x.vercel.app
+
+permissions:
+  contents: read
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+      WORKER: https://spherex-planet-x.bodhishanbhag.workers.dev
+    steps:
+      - name: Survey and objects
+        run: |
+          set -euo pipefail
+          for base in "$SITE" "$WORKER"; do
+            echo "## $base" | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -fsSL "$base/api/health" | jq -c '{status, pipeline_version, schema_version}' | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -fsSL "$base/api/survey" | jq -c '{schema_version, pipeline_version, generated_utc, totals,
+              sky_percent: ((.totals.area_deg2_searched // .totals.area_deg2_processed) / 41252.96 * 100),
+              empty_cells: (.empty_cells.n_tiles // null), last_run: .last_run.run_id}' | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -fsSL "$base/api/objects" | jq -c '{total, by_class: (.objects | group_by(.classification)
+              | map({key: .[0].classification, value: length}) | from_entries),
+              first_five: [.objects[:5][] | {object_id, classification, known_object_designation}]}' | tee -a "$GITHUB_STEP_SUMMARY"
+            curl -fsSL "$base/api/candidates" | jq -c '{total, checked: ([.candidates[] | select(.known_object_checked)] | length),
+              matched: ([.candidates[] | select(.known_object_matched)] | length)}' | tee -a "$GITHUB_STEP_SUMMARY"
+          done

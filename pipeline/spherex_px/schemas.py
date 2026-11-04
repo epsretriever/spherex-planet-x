@@ -26,7 +26,7 @@ class Model(BaseModel):
 
 
 class Envelope(Model):
-    schema_version: Literal["1.0", "1.1"] = SCHEMA_VERSION
+    schema_version: Literal["1.0", "1.1", "1.2"] = SCHEMA_VERSION
     pipeline_version: str = Field(
         description="Pipeline package version plus the git commit of the code that built the data"
     )
@@ -310,7 +310,10 @@ class Detection(Model):
     flag_names: list[str]
     flagged_pixels_in_aperture: int
     psf_fit_reduced_chi2: float | None
-    stamp: ImageRef = Field(description="64 x 64 px stamp centered on the detection")
+    stamp: ImageRef | None = Field(
+        description="64 x 64 px stamp centered on the detection; null when the record is "
+        "minimal (a known object: see CandidateDetail.record_level)"
+    )
     spacecraft_geocentric_km: list[float] = Field(
         min_length=3,
         max_length=3,
@@ -353,6 +356,11 @@ class NearestKnown(Model):
     separation_arcsec: float
 
 
+class JplLinks(Model):
+    sbdb_url: str
+    horizons_url: str
+
+
 class KnownObject(Model):
     checked: bool
     not_checked_reason: str | None = None
@@ -377,11 +385,17 @@ class KnownObject(Model):
     visits_answered: int | None = Field(
         default=None, description="Of visits_queried, how many JPL SBIdent answered"
     )
-    enrichment: Literal["static", "live", "cached", "pending"] = Field(
+    enrichment: Literal["static", "pipeline", "live", "cached", "pending"] = Field(
         default="static",
-        description="static: as written by the offline pipeline (not checked); pending: the Worker "
-        "has started a JPL lookup in the background; live/cached: filled by the Worker from JPL "
-        "(live = this request, cached = a stored result)",
+        description="static: as written by the offline pipeline (not checked); pipeline: "
+        "checked against JPL by the survey pipeline's triage step (spherex-px triage); pending: "
+        "the Worker has started a JPL lookup in the background; live/cached: filled by the Worker "
+        "from JPL (live = this request, cached = a stored result)",
+    )
+    jpl_links: JplLinks | None = Field(
+        default=None,
+        description="JPL pages for the matched object's orbit (Small-Body Database) and "
+        "ephemerides (Horizons); null unless matched",
     )
 
 
@@ -509,6 +523,11 @@ class CandidateProvenance(Model):
 
 class CandidateSummary(Model):
     candidate_id: str
+    pipeline_version: str | None = Field(
+        default=None,
+        description="Pipeline commit that built this candidate (data from several survey runs "
+        "can be published together); the Worker keys stored JPL results by it",
+    )
     field_id: str
     classification: Classification
     label_plain: str
@@ -571,6 +590,12 @@ class CandidateDetail(Envelope):
         default=None, description="Present only when classification == 'injected'"
     )
     provenance: CandidateProvenance
+    record_level: Literal["full", "minimal"] = Field(
+        default="full",
+        description="full: stamps, orbit, prediction and clones kept. minimal: JPL identified "
+        "the object, so per-detection stamps and our own orbit products are not kept; "
+        "known_object.jpl_links point to JPL's orbit and ephemerides",
+    )
     disclaimer: str = (
         "An unmatched candidate may be an imaging artifact, a measurement error, or an object "
         "missing from the catalogs we checked. This is not a discovery claim."
@@ -960,6 +985,11 @@ class ObjectHistoryEntry(Model):
 
 class ObjectSummary(Model):
     object_id: str
+    pipeline_version: str | None = Field(
+        default=None,
+        description="Pipeline commit that built this object's candidate; the Worker keys stored "
+        "JPL results by it",
+    )
     classification: Classification
     label_plain: str
     summary_plain: str
@@ -1053,6 +1083,9 @@ class ObjectDetail(Envelope):
     spectrum: Spectrum | None
     history: list[ObjectHistoryEntry]
     provenance: CandidateProvenance
+    record_level: Literal["full", "minimal"] = Field(
+        default="full", description="As CandidateDetail.record_level"
+    )
     disclaimer: str = CandidateDetail.model_fields["disclaimer"].default
 
 
@@ -1127,7 +1160,13 @@ class SurveyTotals(Model):
     n_searched: int = Field(default=0, description="Tiles searched: processed + empty")
     n_empty: int = 0
     n_failed: int = 0
-    area_deg2_searched: float = 0.0
+    area_deg2_searched: float = Field(
+        default=0.0,
+        description="Distinct sky searched (a patch searched in several weeks counts once)",
+    )
+    sky_fraction_searched: float | None = Field(
+        default=None, description="area_deg2_searched / 41,253 deg2 (the whole sky)"
+    )
 
 
 class PlanetNineCell(Model):
@@ -1150,6 +1189,19 @@ class PlanetNineRegion(Model):
     cells: list[PlanetNineCell]
 
 
+class SurveyEmptyCells(Model):
+    """Searched sky where nothing passed vetting, in compact form (survey.json would otherwise
+    grow by a full tile record per searched tile)."""
+
+    size_deg: float = Field(description="Tile size")
+    n_tiles: int = Field(
+        description="Empty tile searches (a patch searched in two weeks counts twice)"
+    )
+    positions: list[list[float]] = Field(
+        description="[ra_deg, dec_deg] of each distinct empty patch, rounded to 0.01 deg"
+    )
+
+
 class Survey(Envelope):
     build_run_id: str | None = None
     generated_utc: str
@@ -1157,7 +1209,11 @@ class Survey(Envelope):
     description: str
     tile_size_deg: float
     data_releases: list[str]
-    tiles: list[SurveyTile]
+    tiles: list[SurveyTile] = Field(
+        description="Showcase fields, tiles with a field page and failed tiles. Survey tiles "
+        "searched with nothing found are in empty_cells (since v1.2)"
+    )
+    empty_cells: SurveyEmptyCells | None = None
     totals: SurveyTotals
     last_run: SurveyRun | None
     runs: list[SurveyRun] = Field(default=[], description="Most recent runs first (up to 20)")

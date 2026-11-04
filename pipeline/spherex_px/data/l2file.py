@@ -250,13 +250,24 @@ class L2File:
         return bool(edge_px <= x[0] < nx - edge_px and edge_px <= y[0] < ny - edge_px)
 
     def cutout(
-        self, ra_deg: float, dec_deg: float, size_deg: float, with_psf: bool = True
+        self,
+        ra_deg: float,
+        dec_deg: float,
+        size_deg: float,
+        with_psf: bool = True,
+        with_zodi: bool = True,
     ) -> Cutout | None:
+        """Pixels around a position. ``with_zodi=False`` skips the ZODI plane (a quarter of
+        the bytes) and leaves zodi at 0: the survey's search pass relies on the 24 px
+        Background2D, which absorbs the smooth zodiacal light anyway."""
         box = self.pixel_box(ra_deg, dec_deg, size_deg)
         if box is None:
             return None
         x0, x1, y0, y1 = box
-        arrays = {ext: self.read_rows(ext, y0, y1)[:, x0:x1] for ext in IMAGE_EXTS}
+        exts = IMAGE_EXTS if with_zodi else tuple(e for e in IMAGE_EXTS if e != "ZODI")
+        arrays = {ext: self.read_rows(ext, y0, y1)[:, x0:x1] for ext in exts}
+        if "ZODI" not in arrays:
+            arrays["ZODI"] = np.zeros(arrays["IMAGE"].shape, np.float32)
         wcs = self.wcs.slice((slice(y0, y1), slice(x0, x1)))  # shifts CRPIX and SIP together
         lam, bw = self.wave_table.grid(x0, x1, y0, y1)
         psf = None
