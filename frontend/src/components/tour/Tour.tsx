@@ -1,160 +1,39 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { findInjectionStudyId, getInjectionStudy, getObjects, getSurvey } from "@/lib/api";
-import { getLeadSeeds } from "@/lib/leadsClient";
-import { tourSteps, type TourData, type TourStep } from "@/lib/tour";
-import styles from "./Tour.module.css";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import { TOUR_KEY, TOUR_START, startTour } from "./events";
 
-const KEY = "spx-tour-step";
-export const TOUR_START = "spx-tour-start";
+// The panel and its data code load only once someone starts the tour (or resumes it after a page change).
+const TourPanel = dynamic(() => import("./TourPanel"), { ssr: false });
 
-function readStep(): number | null {
+function savedStep(): boolean {
   try {
-    const v = sessionStorage.getItem(KEY);
-    return v === null ? null : Number(v);
+    return sessionStorage.getItem(TOUR_KEY) !== null;
   } catch {
-    return null;
+    return false;
   }
 }
 
-function writeStep(step: number | null) {
-  try {
-    if (step === null) sessionStorage.removeItem(KEY);
-    else sessionStorage.setItem(KEY, String(step));
-  } catch {
-    /* the tour still works for this page */
-  }
-}
-
-async function loadTourData(): Promise<TourData> {
-  const settle = <T,>(p: Promise<T>) => p.catch(() => null);
-  const ctrl = new AbortController();
-  const [survey, objects, leads, study] = await Promise.all([
-    settle(getSurvey(ctrl.signal)),
-    settle(getObjects(ctrl.signal)),
-    settle(getLeadSeeds(ctrl.signal)),
-    settle(findInjectionStudyId(ctrl.signal).then((id) => getInjectionStudy(id, ctrl.signal))),
-  ]);
-  return { survey, objects, leads, study };
-}
-
-/** Starts the tour from anywhere (the "Take the tour" buttons). */
-export function startTour() {
-  window.dispatchEvent(new Event(TOUR_START));
-}
-
-/**
- * The 2-minute guided tour: a panel that walks through six pages, with captions written from the
- * live data. Its step is kept in sessionStorage so it survives the page changes.
- */
 export function Tour() {
-  const router = useRouter();
-  const pathname = usePathname() ?? "/";
-  const [step, setStep] = useState<number | null>(null);
-  const [steps, setSteps] = useState<TourStep[] | null>(null);
-  const panel = useRef<HTMLDivElement>(null);
-
-  const ensureData = useCallback(() => {
-    if (steps) return;
-    setSteps(tourSteps({ survey: null, objects: null, leads: null, study: null }));
-    loadTourData().then((d) => setSteps(tourSteps(d)));
-  }, [steps]);
-
-  // Resume after a navigation, or start on request.
+  const [on, setOn] = useState(false);
   useEffect(() => {
-    // After hydration (the static HTML never shows the tour).
-    const saved = readStep();
-    const resume =
-      saved !== null && Number.isFinite(saved)
-        ? setTimeout(() => {
-            setStep(saved);
-            ensureData();
-          }, 0)
-        : undefined;
+    const resume = savedStep() ? setTimeout(() => setOn(true), 0) : undefined;
     const onStart = () => {
-      writeStep(0);
-      setStep(0);
-      ensureData();
+      try {
+        sessionStorage.setItem(TOUR_KEY, "0");
+      } catch {
+        /* the panel still starts at step 1 */
+      }
+      setOn(true);
     };
     window.addEventListener(TOUR_START, onStart);
     return () => {
       clearTimeout(resume);
       window.removeEventListener(TOUR_START, onStart);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const current = step !== null && steps ? steps[Math.min(step, steps.length - 1)] : null;
-
-  // Go to the step's page when it isn't the one on screen.
-  useEffect(() => {
-    if (!current) return;
-    const want = current.href.split("?")[0]!;
-    if (pathname !== want) router.push(current.href);
-  }, [current, pathname, router]);
-
-  useEffect(() => {
-    if (current) panel.current?.focus();
-  }, [current]);
-
-  const go = (n: number | null) => {
-    writeStep(n);
-    setStep(n);
-    if (n !== null) window.scrollTo({ top: 0 });
-  };
-
-  useEffect(() => {
-    if (step === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") go(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [step]);
-
-  if (!current || step === null || !steps) return null;
-  const last = step >= steps.length - 1;
-  return (
-    <div ref={panel} className={styles.panel} role="dialog" aria-modal="false" aria-labelledby="tour-title" tabIndex={-1}>
-      <p className={`mono ${styles.count}`}>
-        Tour · step {step + 1} of {steps.length}
-      </p>
-      <h2 id="tour-title" className={styles.title}>
-        {current.title}
-      </h2>
-      <p className={styles.caption} aria-live="polite">
-        {current.caption}
-      </p>
-      <div className={styles.dots} aria-hidden="true">
-        {steps.map((s, i) => (
-          <span key={s.title} data-on={i === step ? "" : undefined} />
-        ))}
-      </div>
-      <div className={styles.actions}>
-        <button type="button" className="button" onClick={() => go(null)}>
-          Exit
-        </button>
-        <span className={styles.spacer} />
-        {step > 0 && (
-          <button type="button" className="button" onClick={() => go(step - 1)}>
-            Back
-          </button>
-        )}
-        {last ? (
-          <Link href="/leads/" className="button button-primary" onClick={() => go(null)}>
-            Finish
-          </Link>
-        ) : (
-          <button type="button" className="button button-primary" onClick={() => go(step + 1)}>
-            Next →
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  return on ? <TourPanel /> : null;
 }
 
 export function TourButton({ className }: { className?: string }) {

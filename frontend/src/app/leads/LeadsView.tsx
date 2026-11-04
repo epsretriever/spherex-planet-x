@@ -25,12 +25,17 @@ import {
 import { candidateHref, objectHref } from "@/lib/routes";
 import { useData } from "@/lib/useData";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { WhenVisible } from "@/components/WhenVisible";
 import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
 import styles from "./Leads.module.css";
 
 type Ranked = Lead & { confidence: Confidence };
 
+/** Cards rendered before "Show all" (each holds a blink, two charts and a download panel). */
+const FIRST = 10;
+
 export function LeadsView() {
+  const [showAll, setShowAll] = useState(false);
   const seedState = useData("lead-seeds", (signal) => getLeadSeeds(signal));
   const state = useData("objects", (signal) => getObjects(signal));
   const seeds = useMemo(() => (seedState.status === "ok" ? seedState.data : []), [seedState]);
@@ -88,12 +93,23 @@ export function LeadsView() {
         </details>
       </div>
       <ol className={styles.list}>
-        {leads.map((l, i) => (
+        {(showAll ? leads : leads.slice(0, FIRST)).map((l, i) => (
           <li key={l.object_id}>
-            <LeadCard lead={l} rank={i + 1} />
+            {i < 2 ? (
+              <LeadCard lead={l} rank={i + 1} />
+            ) : (
+              <WhenVisible minHeight={900}>
+                <LeadCard lead={l} rank={i + 1} />
+              </WhenVisible>
+            )}
           </li>
         ))}
       </ol>
+      {!showAll && leads.length > FIRST && (
+        <button type="button" className={`button ${styles.more}`} onClick={() => setShowAll(true)}>
+          Show all {leads.length} leads
+        </button>
+      )}
     </>
   );
 }

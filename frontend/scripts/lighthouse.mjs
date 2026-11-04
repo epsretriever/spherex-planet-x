@@ -57,6 +57,7 @@ const pages = [
   ["report", `/detective/${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}/`],
   ["sky", "/sky/"],
   ["objects", "/objects/"],
+  ["leads", "/leads/"],
 ];
 
 const chrome = await chromeLauncher.launch({

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { JplLinksRow } from "@/components/JplLinks";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import cardStyles from "@/components/CandidateCard.module.css";
@@ -19,7 +19,11 @@ import { byReviewPriority } from "@/lib/review";
 import styles from "./ObjectList.module.css";
 
 /** The object list: as published at build time, then from the live API (with JPL results folded in). */
+/** Cards rendered before "Show all" (unexplained come first, so they are always on screen). */
+const FIRST = 30;
+
 export function ObjectListView({ initial, seed }: { initial: ObjectList | null; seed?: NameSeed }) {
+  const [showAll, setShowAll] = useState(false);
   const state = useData("objects", (signal) => getObjects(signal));
   const { nameFor } = useObjectNames(seed);
   const list = state.status === "ok" ? state.data : initial;
@@ -58,10 +62,15 @@ export function ObjectListView({ initial, seed }: { initial: ObjectList | null; 
         <span className="mono">{sorted.length}</span> {sorted.length === 1 ? "object" : "objects"}, unexplained first, then most sightings
       </p>
       <ul className={styles.list}>
-        {sorted.map((o) => (
+        {(showAll ? sorted : sorted.slice(0, FIRST)).map((o) => (
           <ObjectCard key={o.object_id} o={o} title={nameFor({ candidate_id: o.candidate_ids[0] ?? o.object_id, classification: o.classification, designation: o.known_object_designation }).title} />
         ))}
       </ul>
+      {!showAll && sorted.length > FIRST && (
+        <button type="button" className="button" style={{ marginTop: "var(--space-6)", width: "100%" }} onClick={() => setShowAll(true)}>
+          Show all {sorted.length} objects
+        </button>
+      )}
     </>
   );
 }
