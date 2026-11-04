@@ -7,7 +7,8 @@ import { CandidateCard } from "@/components/CandidateCard";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { CardListSkeleton } from "@/components/Skeletons";
 import { getCandidates, getFields, getObjects } from "@/lib/api";
-import type { CandidateFilter, Classification, DistanceClass } from "@/lib/contract";
+import type { CandidateFilter, Classification, DistanceClass, ObjectSummary } from "@/lib/contract";
+import { objectIdFor } from "@/lib/routes";
 import {
   DISTANCE_LABELS,
   DISTANCE_ORDER,
@@ -29,6 +30,8 @@ import { AiSearchBar } from "./AiSearchBar";
 import styles from "./CandidateBrowser.module.css";
 
 const MIN_SCORES = [0, 0.3, 0.6];
+/** Cards rendered before "Show all". */
+const FIRST = 30;
 const REAL_CLASSES = CLASSIFICATION_ORDER.filter((c) => c !== "injected");
 
 /** Filters live in the URL so a filtered list can be shared. */
@@ -51,8 +54,19 @@ export function CandidateBrowser() {
 
   // Everything is filtered here, so one request serves every filter combination.
   const state = useData(`candidates:${filter.include_injected}`, (signal) => getCandidates({ include_injected: filter.include_injected }, signal));
-  // Distance classes are on objects, not candidates; fetch them only when that filter is on.
-  const objects = useData(needsDistance(filter) ? "objects" : null, (signal) => getObjects(signal));
+  // The object list adds each card's visits, distance and orbit, and folds JPL duplicates into one card.
+  const objects = useData("objects", (signal) => getObjects(signal));
+  const objectOf = useMemo(() => {
+    const m = new Map<string, ObjectSummary>();
+    if (objects.status === "ok") for (const o of objects.data.objects) for (const id of o.candidate_ids) m.set(id, o);
+    return m;
+  }, [objects]);
+  // Sightings of an object JPL identified in several tiles are listed once, under the object kept.
+  const aliases = useMemo(
+    () => new Set(objects.status === "ok" ? objects.data.objects.flatMap((o) => o.also_seen_as ?? []) : []),
+    [objects],
+  );
+  const [showAll, setShowAll] = useState(false);
   const fields = useData(filter.field_id.length ? "fields" : null, (signal) => getFields(signal));
   const distanceOf = useMemo(() => {
     if (objects.status !== "ok") return undefined;
@@ -64,8 +78,11 @@ export function CandidateBrowser() {
 
   const distancePending = needsDistance(filter) && objects.status === "loading";
   const sorted = useMemo(
-    () => (state.status === "ok" && !distancePending ? applyFilter(state.data.candidates, filter, distanceOf) : []),
-    [state, filter, distanceOf, distancePending],
+    () =>
+      state.status === "ok" && !distancePending
+        ? applyFilter(state.data.candidates, filter, distanceOf).filter((c) => !aliases.has(objectIdFor(c.candidate_id)))
+        : [],
+    [state, filter, distanceOf, distancePending, aliases],
   );
   const counts = useMemo(() => {
     const m = new Map<Classification, number>();
@@ -186,11 +203,11 @@ export function CandidateBrowser() {
             Distances couldn&apos;t be loaded, so the distance filter can&apos;t be applied right now.
           </p>
         )}
-        {loading && state.status !== "error" && <CardListSkeleton label="Loading candidates" />}
+        {loading && state.status !== "error" && <CardListSkeleton label="Loading objects" />}
         {state.status === "error" &&
           (state.error.reason === "not_found" ? (
             // The Worker answers 404 until the pipeline publishes a candidate list.
-            <EmptyState title="No candidates published yet">
+            <EmptyState title="No objects published yet">
               <p>Once our pipeline finishes analyzing a patch of sky, every moving object it flags will appear here.</p>
             </EmptyState>
           ) : (
@@ -199,13 +216,13 @@ export function CandidateBrowser() {
         {state.status === "ok" &&
           !distancePending &&
           (sorted.length === 0 ? (
-            <EmptyState title="No candidates match">
+            <EmptyState title="No objects match">
               <p>Try removing a filter.</p>
             </EmptyState>
           ) : (
             <>
               <p className={styles.count}>
-                <span className="mono">{sorted.length}</span> {sorted.length === 1 ? "candidate" : "candidates"}
+                <span className="mono">{sorted.length}</span> {sorted.length === 1 ? "object" : "objects"}
                 {REAL_CLASSES.filter((c) => counts.get(c)).map((c) => (
                   <span key={c} className={styles.countPart}>
                     {counts.get(c)} {CLASSIFICATIONS[c].label.toLowerCase()}
@@ -214,19 +231,25 @@ export function CandidateBrowser() {
                 {counts.get("injected") ? <span className={styles.countPart}>{counts.get("injected")} simulated</span> : null}
               </p>
               <ul className={`${styles.list} fade-in`}>
-                {sorted.map((c) => (
+                {(showAll ? sorted : sorted.slice(0, FIRST)).map((c) => (
                   <CandidateCard
                     key={c.candidate_id}
                     c={c}
+                    object={objectOf.get(c.candidate_id)}
                     reason={filter.sort === "unusual" ? c.anomaly_reason : null}
                     name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object_designation })}
                   />
                 ))}
               </ul>
+              {!showAll && sorted.length > FIRST && (
+                <button type="button" className="button" style={{ marginTop: "var(--space-6)", width: "100%" }} onClick={() => setShowAll(true)}>
+                  Show all {sorted.length} objects
+                </button>
+              )}
             </>
           ))}
         <p className={styles.back}>
-          <Link href="/explore/">Or go back to blinking the sky yourself →</Link>
+          <Link href="/objects/?view=patches">Or pick a patch of sky and blink it yourself →</Link>
         </p>
       </section>
     </div>

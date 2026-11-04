@@ -1,9 +1,15 @@
 "use client";
 
+import { PageGuide } from "@/components/PageGuide";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { candidateHref } from "@/components/CandidateCard";
+import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
+import { DistancePanel } from "@/components/object/DistancePanel";
+import objectStyles from "@/components/object/Object.module.css";
+import { VisitsPanel } from "@/components/object/VisitsPanel";
+import { OrbitPanel } from "@/components/orbit/OrbitPanel";
+import { candidateHref, objectHref } from "@/lib/routes";
 import { JplLinksRow } from "@/components/JplLinks";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { QualityMeter } from "@/components/QualityMeter";
@@ -28,14 +34,15 @@ import { StampStrip } from "@/components/report/StampStrip";
 import { UnusualPanel } from "@/components/report/UnusualPanel";
 import { SimulatedBanner } from "@/components/SimulatedBanner";
 import { SourceDrawer, type SourceSubject } from "@/components/SourceDrawer";
-import { USE_FIXTURES, getCandidate, getCandidates, getWriteup } from "@/lib/api";
-import type { CandidateDetail } from "@/lib/contract";
-import { formatAgo, formatHours, formatRate } from "@/lib/format";
+import { USE_FIXTURES, getCandidate, getCandidates, getFields, getObject, getWriteup } from "@/lib/api";
+import type { CandidateDetail, ObjectDetail } from "@/lib/contract";
+import { formatAgo, formatHours, formatRate, formatUtcDateTime } from "@/lib/format";
+import { DISTANCE_CLASSES, ORBIT_STATUS, groupVisits } from "@/lib/objects";
 import type { ObjectName } from "@/lib/names";
 import { SITE_NAME } from "@/lib/site";
 import { useData } from "@/lib/useData";
 import { useObjectNames, type NameSeed } from "@/lib/useObjectNames";
-import styles from "./CandidateReport.module.css";
+import styles from "./ObjectReport.module.css";
 
 const DISCLAIMER =
   "Unmatched candidates may be artifacts, measurement errors, or objects missing from catalogs. This is not a discovery claim.";
@@ -45,11 +52,29 @@ const PENDING_POLL_MS = 6000;
 const PENDING_POLL_MAX = 20;
 
 /**
- * One object's evidence report. `initial` is the report as published when the site was built;
- * it renders at once and is replaced by the live API answer (with JPL results) when that arrives.
+ * The one report page for an object (/objects/{object_id}/): the evidence for its sighting (images,
+ * measurements, checks, AI write-up) and, once the object record loads, its visits, orbit,
+ * distance and history. `initial` / `initialObject` are the records as published when the site
+ * was built; they render at once and are replaced by the live API answers (with JPL results).
+ * Simulated (injected) candidates have no object record and show the evidence alone.
  */
-export function CandidateReport({ id, initial, seed }: { id: string | null; initial?: CandidateDetail | null; seed?: NameSeed }) {
+export function ObjectReport({
+  id,
+  objectId,
+  initial,
+  initialObject,
+  seed,
+}: {
+  /** The candidate (sighting) whose evidence is shown. */
+  id: string | null;
+  objectId?: string | null;
+  initial?: CandidateDetail | null;
+  initialObject?: ObjectDetail | null;
+  seed?: NameSeed;
+}) {
   const state = useData(id ? `candidate:${id}` : null, (signal) => getCandidate(id!, signal));
+  const objState = useData(objectId ? `object:${objectId}` : null, (signal) => getObject(objectId!, signal));
+  const obj = objState.status === "ok" ? objState.data : (initialObject ?? null);
   const [fresh, setFresh] = useState<CandidateDetail | null>(null);
   const { nameFor } = useObjectNames(seed);
   const shown =
@@ -105,19 +130,29 @@ export function CandidateReport({ id, initial, seed }: { id: string | null; init
     );
   }
   const c = shown!;
-  return <Report c={c} name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object.designation })} nameFor={nameFor} />;
+  return (
+    <Report
+      c={c}
+      o={obj && obj.object_id === objectId ? obj : null}
+      name={nameFor({ candidate_id: c.candidate_id, classification: c.classification, designation: c.known_object.designation })}
+      nameFor={nameFor}
+    />
+  );
 }
 
 function Crumbs() {
   return (
     <nav aria-label="Breadcrumb" className={styles.crumbs}>
-      <Link href="/detective/" prefetch={false}>← All candidates</Link>
+      <Link href="/objects/" prefetch={false}>← All objects</Link>
     </nav>
   );
 }
 
 const SECTIONS = [
   ["evidence", "Images"],
+  ["visits", "Visits"],
+  ["orbit", "Orbit"],
+  ["distance", "Distance"],
   ["explanation", "In plain words"],
   ["ask", "Ask"],
   ["measurements", "Measurements"],
@@ -130,11 +165,12 @@ const SECTIONS = [
   ["spectrum", "Spectrum"],
   ["injection", "Simulated"],
   ["provenance", "Provenance"],
+  ["history", "History"],
 ] as const;
 
 type NameFor = ReturnType<typeof useObjectNames>["nameFor"];
 
-function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; nameFor: NameFor }) {
+function Report({ c, o, name, nameFor }: { c: CandidateDetail; o: ObjectDetail | null; name: ObjectName; nameFor: NameFor }) {
   const [source, setSource] = useState<SourceSubject | null>(null);
   // The AI write-up is fetched when the reader nears it, so it never competes with the first screen.
   const [wantWriteup, setWantWriteup] = useState(false);
@@ -164,6 +200,10 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
   if (c.anomaly) present.add("unusual");
   // Ask appears once the write-up answered, which shows the AI endpoints are live.
   if (aiReady) present.add("ask");
+  if (o) for (const s of ["visits", "orbit", "distance", "history"]) present.add(s);
+  const visits = o ? groupVisits(o.detections) : null;
+  const dist = o ? (DISTANCE_CLASSES[o.distance_class] ?? DISTANCE_CLASSES.unknown) : null;
+  const unidentified = c.classification !== "known_object" && c.classification !== "injected";
 
   return (
     <div className="fade-in">
@@ -177,6 +217,7 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
       )}
 
       <header className={styles.header}>
+        <PageGuide>One object&apos;s full report: the images, the measurements, the JPL check and what could make it wrong.</PageGuide>
         <div className={styles.headerTop}>
           <ClassificationBadge value={c.classification} size="lg" />
           <JplStatus known={c.known_object} />
@@ -184,8 +225,8 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
         <h1 className={styles.title}>{name.title}</h1>
         <JplLinksRow matched={c.known_object.matched} designation={c.known_object.designation} published={c.known_object.jpl_links} />
         <p className={`mono ${styles.id}`}>
-          <span className="visually-hidden">Pipeline ID </span>
-          {name.id}
+          <span className="visually-hidden">{o ? "Object ID " : "Pipeline ID "}</span>
+          {o ? o.object_id : name.id}
         </p>
         <p className={`lede ${styles.verdict}`}>{c.summary_plain}</p>
         <dl className={styles.headline}>
@@ -193,6 +234,12 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
             <dt>Sightings</dt>
             <dd className="mono">{c.detections.length}</dd>
           </div>
+          {visits && (
+            <div>
+              <dt>Visits</dt>
+              <dd className="mono">{visits.length}</dd>
+            </div>
+          )}
           <div>
             <dt>Tracked over</dt>
             <dd className="mono">{formatHours(c.motion.time_span_hours)}</dd>
@@ -201,6 +248,18 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
             <dt>Speed</dt>
             <dd className="mono">{formatRate(c.motion.rate_arcsec_per_hr)}</dd>
           </div>
+          {o && dist && (
+            <>
+              <div>
+                <dt>Where</dt>
+                <dd>{dist.label}</dd>
+              </div>
+              <div>
+                <dt>Orbit</dt>
+                <dd>{ORBIT_STATUS[o.orbit_status]}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Signal quality</dt>
             <dd>
@@ -213,6 +272,7 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
             {c.disclaimer || DISCLAIMER}
           </p>
         )}
+        {unidentified && o && <FollowUpDownloads objectId={o.object_id} candidateId={c.candidate_id} />}
       </header>
 
       <SectionNav sections={SECTIONS.filter(([sid]) => present.has(sid))} />
@@ -229,6 +289,8 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
           </WhenVisible>
           <Seen onSeen={() => setWantWriteup(true)} />
         </Panel>
+
+        {o && <ObjectPanels o={o} title={name.title} />}
 
         <ExplanationPanel candidate={c} writeup={aiReady ? writeup.data : null} />
         {aiReady && <AskPanel subjectKind="candidate" subjectId={c.candidate_id} doc={c} />}
@@ -252,6 +314,7 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
         )}
         {c.injection && <InjectionPanel injection={c.injection} />}
         <ProvenancePanel candidate={c} onSource={openSource} />
+        {o && <HistoryPanel o={o} />}
       </div>
 
       <WhenVisible minHeight={96}>
@@ -260,6 +323,65 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
       </Deferred>
       <SourceDrawer subject={source} onClose={() => setSource(null)} />
     </div>
+  );
+}
+
+/** The object record's own panels: every visit, the orbit and how far away it is. */
+function ObjectPanels({ o, title }: { o: ObjectDetail; title: string }) {
+  const fields = useData("fields", (signal) => getFields(signal));
+  const fieldName = (fid: string) => (fields.status === "ok" ? fields.data.fields.find((f) => f.field_id === fid)?.name : undefined) ?? fid;
+  return (
+    <>
+      <VisitsPanel object={o} fieldName={fieldName} />
+      <OrbitPanel object={o} label={title} />
+      <DistancePanel
+        distanceClass={o.distance_class}
+        estimate={o.orbit?.helio_distance_au ?? o.motion.distance_au_estimate}
+        from={o.orbit?.helio_distance_au ? "orbit" : "parallax"}
+      />
+    </>
+  );
+}
+
+function HistoryPanel({ o }: { o: ObjectDetail }) {
+  return (
+    <Panel id="history" title="History" kicker="Updates">
+      {o.history.length ? (
+        <ol className={objectStyles.history}>
+          {o.history.map((h, i) => (
+            <li key={i}>
+              <span className="mono">{formatUtcDateTime(h.utc)}</span>: {h.change} <span className="muted mono">({h.run_id})</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="muted">No updates recorded.</p>
+      )}
+      {o.also_seen_as && o.also_seen_as.length > 0 && (
+        <p className={objectStyles.also}>
+          Also seen as{" "}
+          {o.also_seen_as.map((a, i) => (
+            <span key={a}>
+              {i > 0 && ", "}
+              <Link href={objectHref(a)} prefetch={false} className="mono">
+                {a}
+              </Link>
+            </span>
+          ))}
+          : other tiles where JPL identified the same object.
+        </p>
+      )}
+      <p className={objectStyles.also}>
+        Pipeline {o.candidate_ids.length === 1 ? "sighting" : "sightings"}:{" "}
+        {o.candidate_ids.map((cid, i) => (
+          <span key={cid}>
+            {i > 0 && ", "}
+            <span className="mono">{cid}</span>
+          </span>
+        ))}
+        .
+      </p>
+    </Panel>
   );
 }
 
@@ -274,7 +396,7 @@ function Neighbors({ current, nameFor }: { current: CandidateDetail; nameFor: Na
   const prev = list[i - 1];
   const next = list[i + 1];
   return (
-    <nav className={styles.neighbors} aria-label="Other candidates">
+    <nav className={styles.neighbors} aria-label="Other objects">
       {prev ? (
         <Link href={candidateHref(prev.candidate_id)} className={`card ${styles.neighbor}`}>
           <span className={styles.kicker}>← Previous</span>
@@ -380,7 +502,13 @@ export function SectionNav({ sections }: { sections: readonly (readonly [string,
   );
 }
 
-/** The `?id=` route: for objects published after the site was built, and old links. */
-export function CandidateReportFromQuery() {
-  return <CandidateReport id={useSearchParams().get("id")} />;
+/**
+ * The `?id=` route (/objects/object/?id=obj-…): for objects published after the site was built.
+ * `?candidate=` opens a sighting that has no object record (a simulated one).
+ */
+export function ObjectReportFromQuery() {
+  const params = useSearchParams();
+  const objectId = params.get("id");
+  const candidate = params.get("candidate") ?? (objectId?.startsWith("obj-") ? objectId.slice(4) : null);
+  return <ObjectReport id={candidate} objectId={objectId} />;
 }

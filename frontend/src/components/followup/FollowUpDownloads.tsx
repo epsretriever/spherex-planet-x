@@ -20,7 +20,17 @@ function save(name: string, text: string, type: string) {
  * "Download for telescope follow-up": the SPHEREx astrometry as ADES PSV and MPC 80-column files,
  * and a 14-night approximate ephemeris, all built in the browser from the published report.
  */
-export function FollowUpDownloads({ objectId, candidateId }: { objectId: string; candidateId: string }) {
+export function FollowUpDownloads({
+  objectId,
+  candidateId,
+  headingLevel = 2,
+}: {
+  objectId: string;
+  candidateId: string;
+  /** Where the box sits in the page outline. */
+  headingLevel?: 2 | 3 | 4;
+}) {
+  const Heading = `h${headingLevel}` as "h2";
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -55,7 +65,7 @@ export function FollowUpDownloads({ objectId, candidateId }: { objectId: string;
 
   return (
     <div className={styles.box}>
-      <h4 className={styles.title}>Download for telescope follow-up</h4>
+      <Heading className={styles.title}>Download for telescope follow-up</Heading>
       <div className={styles.buttons}>
         <button type="button" className="button" onClick={() => run("ades")} disabled={!!busy}>
           {busy === "ades" ? "Preparing…" : "Astrometry (ADES PSV)"}

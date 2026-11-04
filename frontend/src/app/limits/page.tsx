@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
 import { Suspense } from "react";
@@ -15,7 +16,7 @@ export default function LimitsPage() {
   return (
     <div className="container">
       <header className="page-header">
-        <p className="eyebrow">Detection limits</p>
+        <PageGuide>How faint and how slow an object our search can find, so you know what we could still be missing.</PageGuide>
         <h1>Where could Planet X still be hiding?</h1>
         <p className="lede">
           An object we didn&apos;t find isn&apos;t proof there&apos;s nothing there; it might just be too faint or too slow for us to

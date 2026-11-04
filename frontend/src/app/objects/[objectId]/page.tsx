@@ -4,7 +4,7 @@ import { objectHref } from "@/lib/routes";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
 import { buildNames, toNameInput } from "@/lib/names";
-import { NO_PAGES, staticNameSeed, staticObject, staticObjects } from "@/lib/staticData";
+import { NO_PAGES, staticCandidate, staticNameSeed, staticObject, staticObjects } from "@/lib/staticData";
 import { ObjectView } from "../object/ObjectView";
 
 // One page per published object, rendered at build time; the live API replaces it in the browser.
@@ -32,8 +32,15 @@ export default async function ObjectPage({ params }: Params) {
   if (!object) notFound();
   return (
     <div className="container">
-      <PrefetchData urls={[`/api/objects/${objectId}`, "/api/candidates?include_injected=true", "/api/fields"]} />
-      <ObjectView id={objectId} initial={object} seed={staticNameSeed()} />
+      <PrefetchData
+        urls={[`/api/objects/${objectId}`, `/api/candidates/${object.candidate_ids[0] ?? ""}`, "/api/candidates?include_injected=true", "/api/fields"]}
+      />
+      <ObjectView
+        id={objectId}
+        initial={object}
+        initialCandidate={object.candidate_ids[0] ? staticCandidate(object.candidate_ids[0]) : null}
+        seed={staticNameSeed()}
+      />
     </div>
   );
 }

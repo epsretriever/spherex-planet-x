@@ -39,21 +39,21 @@ export function tourSteps({ survey, objects, leads, study }: TourData): TourStep
         : "The pipeline searches real SPHEREx images for things that move, several times a day. These numbers update as it goes.",
     },
     {
-      href: top ? fieldHref(top.field_id) : "/explore/",
+      href: top ? fieldHref(top.field_id) : "/objects/?view=patches",
       title: "Blink the sky",
       caption: top
         ? `This patch is where our top unexplained lead was caught. Press Blink: stars stay put while it moves about ${top.rate_arcsec_per_hr != null ? `${top.rate_arcsec_per_hr.toFixed(0)}″ per hour` : "steadily"} across ${top.n_visits} visits.`
         : "Pick a patch and press Blink: stars stay put; anything that jumps between images is a candidate moving object.",
     },
     {
-      href: top ? candidateHref(top.candidate_id) : "/detective/",
+      href: top ? candidateHref(top.candidate_id) : "/objects/",
       title: "Every object gets an evidence report",
       caption: top
         ? `${top.name}: ${top.n_detections} detections, the faintest at signal-to-noise ${top.min_snr?.toFixed(1) ?? "n/a"}, positions fitting one motion to ${top.fit_rms_arcsec?.toFixed(1) ?? "n/a"}″. Below: the JPL check, the artifact tests, and what could still make it wrong.`
         : "Each report shows the measured positions, the motion fit, signal quality, the JPL check, and the ways it could be wrong.",
     },
     {
-      href: "/leads/",
+      href: "/objects/?view=leads",
       title: "What JPL can't explain",
       caption: objects
         ? `JPL identifies ${int(known)} of the ${int(real.length)} objects as known asteroids or comets. ${int(unidentifiedIds.size)} remain unexplained${ranked.length ? `; ${strong} are strong leads, and the best scores ${top!.confidence.score}/100` : ""}. Unexplained is not new: each comes with a follow-up file for a telescope.`

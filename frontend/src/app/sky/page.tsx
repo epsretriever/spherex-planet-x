@@ -1,7 +1,8 @@
+import { PageGuide } from "@/components/PageGuide";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
 import { staticFields, staticGrowth, staticSurvey } from "@/lib/staticData";
-import { skyTile } from "@/components/SkyMap";
+import { skyTile } from "@/components/skyTile";
 import { SkyView } from "./SkyView";
 
 export const metadata: Metadata = pageMeta(
@@ -16,7 +17,7 @@ export default function SkyPage() {
   return (
     <div className="container">
       <header className="page-header">
-        <p className="eyebrow">Sky map</p>
+        <PageGuide>See which parts of the sky we have searched for moving objects, and which we haven&apos;t yet.</PageGuide>
         <h1>Where we&apos;ve searched</h1>
         <p className="lede">
           SPHEREx maps the whole sky. We search it patch by patch for things that move. Each marked tile is a patch we have searched; the

@@ -86,8 +86,9 @@ export default function TourPanel() {
   // Go to the step's page when it isn't the one on screen.
   useEffect(() => {
     if (!current) return;
-    const want = current.href.split("?")[0]!;
-    if (pathname !== want) router.push(current.href);
+    const [want, query = ""] = current.href.split("?");
+    const here = typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
+    if (pathname !== want || here !== query) router.push(current.href);
   }, [current, pathname, router]);
 
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function TourPanel() {
           </button>
         )}
         {last ? (
-          <Link href="/leads/" className="button button-primary" onClick={() => go(null)}>
+          <Link href="/objects/?view=leads" className="button button-primary" onClick={() => go(null)}>
             Finish
           </Link>
         ) : (

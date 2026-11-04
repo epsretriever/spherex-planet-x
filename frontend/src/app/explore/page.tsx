@@ -1,24 +1,9 @@
 import type { Metadata } from "next";
-import { pageMeta } from "@/lib/meta";
-import { FieldGrid } from "@/components/FieldGrid";
+import { Moved } from "@/components/Moved";
 
-export const metadata: Metadata = pageMeta(
-  "Explore the sky",
-  "Blink real NASA SPHEREx images taken hours or days apart. Stars hold still; asteroids and other moving objects jump.",
-  "/explore/",
-);
+export const metadata: Metadata = { title: "Patches of sky", robots: { index: false }, alternates: { canonical: "/objects/?view=patches" } };
 
+/** The list of patches is now a tab on the Objects page; each patch keeps its /explore/{id}/ page. */
 export default function ExplorePage() {
-  return (
-    <div className="container">
-      <header className="page-header">
-        <p className="eyebrow">Explorer</p>
-        <h1>Pick a patch of sky</h1>
-        <p className="lede">
-          SPHEREx photographed each of these patches on several dates. Open one and flip between the pictures to see what moved.
-        </p>
-      </header>
-      <FieldGrid />
-    </div>
-  );
+  return <Moved to="/objects/?view=patches" label="Objects › Patches of sky" />;
 }

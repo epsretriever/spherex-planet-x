@@ -22,7 +22,7 @@ import {
   type Confidence,
   type Lead,
 } from "@/lib/leads";
-import { candidateHref, objectHref } from "@/lib/routes";
+import { objectHref } from "@/lib/routes";
 import { useData } from "@/lib/useData";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { WhenVisible } from "@/components/WhenVisible";
@@ -213,12 +213,11 @@ function LeadCard({ lead, rank }: { lead: Ranked; rank: number }) {
           </div>
           {lead.prediction && <EllipsePlot p={lead.prediction} />}
         </div>
-        <FollowUpDownloads objectId={lead.object_id} candidateId={lead.candidate_id} />
+        <FollowUpDownloads objectId={lead.object_id} candidateId={lead.candidate_id} headingLevel={4} />
       </section>
 
       <footer className={styles.links}>
-        <Link href={candidateHref(lead.candidate_id)}>Full evidence report →</Link>
-        <Link href={objectHref(lead.object_id)}>Object, distance and orbit →</Link>
+        <Link href={objectHref(lead.object_id)}>Full report: evidence, orbit and distance →</Link>
       </footer>
     </article>
   );

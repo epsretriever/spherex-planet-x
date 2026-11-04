@@ -54,10 +54,10 @@ const cands = await (await fetch(`${base}/api/candidates`)).json();
 const pages = [
   ["home", "/"],
   ["explore-field", `/explore/${fields.fields[0].field_id}/`],
-  ["report", `/detective/${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}/`],
+  ["report", `/objects/obj-${[...cands.candidates].sort((a, b) => b.detection_count - a.detection_count)[0].candidate_id}/`],
   ["sky", "/sky/"],
   ["objects", "/objects/"],
-  ["leads", "/leads/"],
+  ["leads", "/objects/?view=leads"],
 ];
 
 const chrome = await chromeLauncher.launch({

@@ -1,3 +1,4 @@
+import { PageGuide } from "@/components/PageGuide";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
 import Link from "next/link";
@@ -133,7 +134,7 @@ function Limitations() {
 export default function AboutPage() {
   return (
     <div className={`container ${styles.page}`}>
-      <p className="eyebrow">About and methods</p>
+      <PageGuide>How the search works, where the data comes from, its honest limits, and who built it.</PageGuide>
       <h1>How it works</h1>
       <p className={styles.lede}>
         SPHEREx is a NASA space telescope that maps the entire sky in 102 infrared colors, from 0.75 to 5 microns. It revisits each part

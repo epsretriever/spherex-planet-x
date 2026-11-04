@@ -4,7 +4,7 @@ import { tourSteps } from "./tour";
 describe("tourSteps", () => {
   it("has six stops in order, with fallback captions when nothing loaded", () => {
     const s = tourSteps({ survey: null, objects: null, leads: null, study: null });
-    expect(s.map((x) => x.href)).toEqual(["/", "/explore/", "/detective/", "/leads/", "/limits/", "/sky/"]);
+    expect(s.map((x) => x.href)).toEqual(["/", "/objects/?view=patches", "/objects/", "/objects/?view=leads", "/limits/", "/sky/"]);
     for (const x of s) expect(x.caption.length).toBeGreaterThan(20);
   });
   it("never calls anything a discovery", () => {

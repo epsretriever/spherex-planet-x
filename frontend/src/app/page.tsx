@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
 import { GrowthCharts } from "@/components/home/GrowthCharts";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
+import { HowToUse } from "@/components/home/HowToUse";
 import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
 import { formatUtcDate } from "@/lib/format";
@@ -97,10 +98,10 @@ export default function LandingPage() {
             JPL&apos;s catalog of known objects, and published with the evidence for and against it.
           </p>
           <div className={styles.actions}>
-            <Link href="/explore/" className="button button-primary">
-              Explore the sky →
+            <Link href="/objects/" className="button button-primary">
+              Browse the objects →
             </Link>
-            <Link href="/leads/" className="button">
+            <Link href="/objects/?view=leads" className="button">
               {unidentified != null ? `${unidentified} unexplained leads` : "Unexplained leads"}
             </Link>
             <TourButton />
@@ -121,6 +122,10 @@ export default function LandingPage() {
           {survey && <p className={styles.asOf}>Survey data as of {formatUtcDate(survey.generated_utc)}.</p>}
         </div>
       </section>
+
+      <div className="container">
+        <HowToUse />
+      </div>
 
       <div className="container">
         <GrowthCharts days={staticGrowth()} />
@@ -189,7 +194,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className={styles.modes}>
-            <Link href="/leads/" className={`card ${styles.mode}`}>
+            <Link href="/objects/?view=leads" className={`card ${styles.mode}`}>
               <span className="eyebrow">Unexplained leads</span>
               <h3>What JPL can&apos;t explain</h3>
               <p>
@@ -198,22 +203,19 @@ export default function LandingPage() {
               </p>
               <span className={styles.modeCta}>See the leads →</span>
             </Link>
-            <Link href="/explore/" className={`card ${styles.mode}`}>
-              <span className="eyebrow">Explorer</span>
+            <Link href="/objects/?view=patches" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Patches of sky</span>
               <h3>Blink the sky</h3>
               <p>Pick a patch of sky and flip between real SPHEREx images taken hours or days apart. Stars hold still; movers jump.</p>
               <span className={styles.modeCta}>Start exploring →</span>
             </Link>
-            <Link href="/detective/" className={`card ${styles.mode}`}>
-              <span className="eyebrow">Detective</span>
-              <h3>Weigh the evidence</h3>
-              <p>Every tracked object with its positions, speed, signal quality, JPL check, and the explanations we can and can&apos;t rule out.</p>
-              <span className={styles.modeCta}>Open the case files →</span>
-            </Link>
             <Link href="/objects/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Objects</span>
-              <h3>Follow one across visits</h3>
-              <p>Each moving body with every sighting linked to it, how far away it is and, once one can be fitted, its orbit in 3D.</p>
+              <h3>Weigh the evidence</h3>
+              <p>
+                Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the JPL
+                check, the explanations we can and can&apos;t rule out, and, once fitted, its orbit and distance.
+              </p>
               <span className={styles.modeCta}>Browse objects →</span>
             </Link>
             <Link href="/sky/" className={`card ${styles.mode}`}>
@@ -237,7 +239,7 @@ export default function LandingPage() {
               <p className="eyebrow">Start here</p>
               <h2 id="featured-heading">Patches of sky to explore</h2>
             </div>
-            <Link href="/explore/" className={styles.more}>
+            <Link href="/objects/?view=patches" className={styles.more}>
               See all →
             </Link>
           </div>

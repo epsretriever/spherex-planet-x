@@ -10,14 +10,19 @@ export interface Section {
   blurb: string;
   /** Path prefix that marks the section as current. */
   match: string;
+  /** Other path prefixes that belong to it (a patch page belongs to Objects). */
+  also?: string[];
 }
 
 export const SECTIONS: Section[] = [
   { href: "/", label: "Home", blurb: "What this is and how it works", match: "/" },
-  { href: "/explore/", label: "Explore", blurb: "Blink real SPHEREx images and spot what moved", match: "/explore" },
-  { href: "/detective/", label: "Detective", blurb: "Every moving object, with the evidence for and against", match: "/detective" },
-  { href: "/leads/", label: "Leads", blurb: "What JPL can't explain, ranked, with what would confirm each one", match: "/leads" },
-  { href: "/objects/", label: "Objects", blurb: "Each moving object, tracked across visits, with its distance and orbit", match: "/objects" },
+  {
+    href: "/objects/",
+    label: "Objects",
+    blurb: "Every moving object: search, unexplained leads, known (JPL), and patches of sky to blink",
+    match: "/objects",
+    also: ["/explore"],
+  },
   { href: "/sky/", label: "Sky map", blurb: "Every patch of sky we've searched, and what's left", match: "/sky" },
   { href: "/limits/", label: "Limits", blurb: "Where Planet X could still be hiding: how faint and slow we can see", match: "/limits" },
   { href: "/about/", label: "About", blurb: "How it works, data credits and the team", match: "/about" },
@@ -25,5 +30,5 @@ export const SECTIONS: Section[] = [
 
 export function isCurrent(pathname: string, s: Section): boolean {
   if (s.match === "/") return pathname === "/";
-  return pathname === s.match || pathname.startsWith(`${s.match}/`);
+  return [s.match, ...(s.also ?? [])].some((m) => pathname === m || pathname.startsWith(`${m}/`));
 }

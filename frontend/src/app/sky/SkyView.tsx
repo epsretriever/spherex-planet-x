@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
-import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import type { GrowthDay } from "@/lib/staticData";
 import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
@@ -51,6 +51,7 @@ export function SkyView({
 }) {
   const [showAll, setShowAll] = useState(false);
   const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
+  const [raUnits, setRaUnits] = useState<RaUnits>("deg");
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
   useEffect(() => {
@@ -124,6 +125,15 @@ export function SkyView({
       {/* The map and table lay out after the header paints, as the evidence report does. */}
       <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
+        <div className={styles.explainer}>
+          <h2 className={styles.explainerTitle}>How to read this map</h2>
+          <p>
+            This is a map of the <strong>whole sky</strong>, like a globe unrolled flat. <strong>Left–right</strong> goes around the sky
+            (right ascension, 0–360°); <strong>up–down</strong> is north–south (declination, +90° at the top, −90° at the bottom). Each dot
+            is a patch we searched; the rest of the oval is sky we haven&apos;t searched yet.
+          </p>
+        </div>
+        <div className={styles.controls}>
         {anyDepth && (
           <fieldset className={styles.colorBy}>
             <legend>Colour tiles by</legend>
@@ -135,7 +145,23 @@ export function SkyView({
             ))}
           </fieldset>
         )}
-        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} colorBy={anyDepth ? colorBy : "objects"} />
+          <fieldset className={styles.colorBy}>
+            <legend>Right ascension in</legend>
+            {(["deg", "hours"] as const).map((v) => (
+              <label key={v}>
+                <input type="radio" name="sky-ra" value={v} checked={raUnits === v} onChange={() => setRaUnits(v)} />
+                {v === "deg" ? "Degrees (0–360°)" : "Hours (0–24h)"}
+              </label>
+            ))}
+          </fieldset>
+        </div>
+        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} colorBy={anyDepth ? colorBy : "objects"} raUnits={raUnits} />
+        <p className={styles.axes}>
+          <span>↑ North (declination +90°) · ↓ South (−90°)</span>
+          <span>
+            ← Right ascension increases to the left ({raUnits === "deg" ? "0° to 360°" : "0h to 24h"}), as the sky looks from Earth
+          </span>
+        </p>
         <figcaption className={styles.legend}>
           <ul>
             <li>
@@ -168,13 +194,19 @@ export function SkyView({
               </li>
             )}
             <li>
-              <span className={styles.swEcliptic} aria-hidden="true" /> Ecliptic: the plane of the planets, where most asteroids are
+              <span className={styles.swEcliptic} aria-hidden="true" /> Ecliptic: the plane where planets and asteroids travel, so most moving
+              objects are found near it
             </li>
             <li>
-              <span className={styles.swGalactic} aria-hidden="true" /> Milky Way: crowded with stars, hardest to search
+              <span className={styles.swGalactic} aria-hidden="true" /> Milky Way: the band of our galaxy, so crowded with stars it is the hardest
+              place to search
             </li>
             {p9 && (
               <>
+                <li>
+                  <span className={styles.swP9Pin} aria-hidden="true" /> Planet Nine search region: the labelled pin marks where it would most
+                  likely be, if it exists
+                </li>
                 <li>
                   <span className={styles.swP9Inner} aria-hidden="true" /> Where Planet Nine is most likely, if it exists (68%)
                 </li>
@@ -194,8 +226,8 @@ export function SkyView({
             </p>
           )}
           <p className={styles.note}>
-            Equatorial coordinates, right ascension increasing to the left as the sky looks from Earth. Tiles are drawn much larger than
-            their true size ({survey.tile_size_deg}° across) so they can be seen.
+            Hover or tab to a dot for its details. Tiles are drawn much larger than their true size ({survey.tile_size_deg}° across) so
+            they can be seen.
           </p>
           {p9 && (
             <p className={styles.note}>
