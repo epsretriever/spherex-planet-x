@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { GLOSSARY } from "@/components/Term";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER } from "@/lib/labels";
+import { blindSpeeds, summarizeLimits } from "@/lib/limits";
+import { staticInjectionStudy, staticSurvey } from "@/lib/staticData";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = pageMeta(
@@ -12,48 +14,182 @@ export const metadata: Metadata = pageMeta(
   "/about/",
 );
 
-const METHOD = [
+/** Where each stage runs, in order. */
+const PIPELINE: { where: string; note: string; steps: { title: string; body: string }[] }[] = [
   {
-    title: "Fetch real observations",
-    body: "For each patch of sky we find every SPHEREx exposure that covers it in NASA/IPAC's Infrared Science Archive (IRSA) and download small cutouts.",
+    where: "GitHub Actions",
+    note: "Python pipeline (pipeline/), several runs a day, in parallel shards",
+    steps: [
+      { title: "Fetch", body: "Find every SPHEREx Level 2 exposure covering a 0.3° patch in NASA/IPAC's archive (IRSA) and read just that region of each file." },
+      { title: "Clean and align", body: "Subtract the zodiacal-light model and background, mask the pixels SPHEREx flags as unreliable, and put every image on one grid." },
+      { title: "Detect", body: "Measure every source above signal-to-noise 4.5 in every exposure." },
+      { title: "Remove the fixed sky", body: "Drop sources that stay put across visits: stars and galaxies." },
+      { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits confirm a track; two make an unconfirmed pair." },
+      { title: "Vet and score", body: "Artifact checks (flagged pixels, shape, edges, static sources, brightness across wavelengths) and a rule-based score." },
+      { title: "JPL triage", body: "Ask JPL SBIdent which known bodies were near each visit, as seen from SPHEREx, then refine with Horizons. Within 15″ at every visit is a match." },
+      { title: "Orbit and publish", body: "Fit a preliminary orbit and prediction for what JPL can't explain, then commit the JSON to the repository." },
+    ],
   },
   {
-    title: "Line them up",
-    body: "The cutouts are placed on a common grid and given the same brightness scale, so a star sits on the same pixels in every image.",
+    where: "Cloudflare Worker",
+    note: "worker/, the /api the site reads",
+    steps: [
+      { title: "Serve and re-check", body: "Serves the published data and re-checks unexplained and unchecked objects against JPL on a schedule." },
+    ],
   },
   {
-    title: "Find dots that move",
-    body: "Our pipeline detects sources in each image and links detections that move in a straight line or follow the motion expected of a distant object.",
-  },
-  {
-    title: "Check against known objects",
-    body: "Each moving source is compared with JPL's predictions for known asteroids and comets at the time of each image.",
-  },
-  {
-    title: "Show the evidence",
-    body: "Every candidate gets a report with its measured positions, motion, signal quality, known-object match and the ways it could be wrong.",
+    where: "Vercel",
+    note: "frontend/, this Next.js site",
+    steps: [{ title: "Show the evidence", body: "Blinks, evidence reports, leads, limits and the sky map, built from the same data." }],
   },
 ];
+
+const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
+  {
+    name: "SPHEREx Level 2 images (NASA / JPL-Caltech / IPAC)",
+    use: "Every image and measurement on this site.",
+    href: "https://irsa.ipac.caltech.edu/Missions/spherex.html",
+    cite: "Mission: Doré et al. 2014, “Cosmology with the SPHEREx All-Sky Spectral Survey”, arXiv:1412.4872.",
+  },
+  {
+    name: "NASA/IPAC Infrared Science Archive (IRSA)",
+    use: "Finding the exposures that cover each patch, and the files themselves.",
+    href: "https://irsa.ipac.caltech.edu/",
+  },
+  {
+    name: "JPL Small-Body Identification (SBIdent) API",
+    use: "Which known asteroids and comets were near each detection, from SPHEREx's position.",
+    href: "https://ssd-api.jpl.nasa.gov/doc/sb_ident.html",
+  },
+  {
+    name: "JPL Horizons",
+    use: "Precise predicted positions for the closest known objects; ephemeris links for identified objects.",
+    href: "https://ssd.jpl.nasa.gov/horizons/",
+    cite: "Giorgini et al. 1996, “JPL's On-Line Solar System Data Service”, BAAS 28, 1158.",
+  },
+  {
+    name: "JPL Small-Body Database (SBDB)",
+    use: "Orbit pages for every identified object (we link to JPL rather than recompute its orbits).",
+    href: "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html",
+  },
+];
+
+const REPO = "https://github.com/epsretriever/spherex-planet-x";
+
+const rate = (r: number) => `${r}″/hr`;
+
+function Limitations() {
+  const study = staticInjectionStudy();
+  const survey = staticSurvey();
+  const area = survey ? (survey.totals.area_deg2_searched ?? survey.totals.area_deg2_processed) : null;
+  const sum = study ? summarizeLimits(study) : null;
+  const blind = study ? blindSpeeds(study) : null;
+  const fp = study?.false_positives;
+  return (
+    <ul className={styles.limits}>
+      {sum?.deepest && (
+        <li>
+          <strong>Depth: about AB {sum.deepest.m50_ab.toFixed(1)}.</strong> Half of the simulated objects we planted were found down to
+          AB magnitude {sum.shallowest ? `${sum.shallowest.m50_ab.toFixed(1)}–` : ""}
+          {sum.deepest.m50_ab.toFixed(1)} at {sum.reachedRates.map(rate).join(", ")}. Anything fainter is mostly missed.
+        </li>
+      )}
+      {blind && blind.slowNeverHalf.length > 0 && (
+        <li>
+          <strong>Planet X–like motion can&apos;t be detected yet.</strong> At {blind.slowNeverHalf.map(rate).join(" and ")}, the speeds
+          of a distant planet, the pipeline never found half of the planted objects at any brightness: over a day or two they move less than
+          one 6.2″ pixel, so they look like fixed stars. Finding them needs visits weeks or months apart.
+        </li>
+      )}
+      {blind && blind.fastNeverHalf.length > 0 && (
+        <li>
+          <strong>Very fast movers are missed too:</strong> at {blind.fastNeverHalf.map(rate).join(", ")} the pipeline also never found
+          half of them.
+        </li>
+      )}
+      {fp && (
+        <li>
+          <strong>False alarms are rare but not zero:</strong> {fp.n_candidates} in {fp.area_deg2} deg² of control fields with nothing
+          planted.
+        </li>
+      )}
+      {area != null && (
+        <li>
+          <strong>Coverage is small so far:</strong> {area.toFixed(0)} deg², {((100 * area) / 41252.96).toFixed(2)}% of the sky, mostly
+          near the ecliptic. Unsearched sky tells us nothing either way.
+        </li>
+      )}
+      <li>
+        <strong>Unexplained is not new.</strong> JPL&apos;s check looks within 15″ of predicted positions; an object with a poorly known
+        orbit, or a very recent discovery, can be missed. Our orbits usually come from about a day of data, so their predictions are very uncertain.
+      </li>
+      <li>
+        <strong>The scores are rankings, not probabilities.</strong> No object here has been confirmed by another telescope.
+      </li>
+    </ul>
+  );
+}
 
 export default function AboutPage() {
   return (
     <div className={`container ${styles.page}`}>
-      <p className="eyebrow">Method</p>
+      <p className="eyebrow">About and methods</p>
       <h1>How it works</h1>
       <p className={styles.lede}>
-        SPHEREx is a NASA space telescope that maps the entire sky in 102 infrared colors, from 0.75 to 5 microns. It
-        revisits each part of the sky, so objects that move between visits, like asteroids, comets and distant solar
-        system bodies, show up as dots that change position.
+        SPHEREx is a NASA space telescope that maps the entire sky in 102 infrared colors, from 0.75 to 5 microns. It revisits each part
+        of the sky, so objects that move between visits, like asteroids, comets and distant solar system bodies, show up as dots that
+        change position. We search its public images for them, check each against JPL&apos;s catalogs, and publish the evidence.
       </p>
 
-      <ol className={styles.method}>
-        {METHOD.map((m) => (
-          <li key={m.title}>
-            <h2>{m.title}</h2>
-            <p>{m.body}</p>
-          </li>
-        ))}
-      </ol>
+      <section aria-labelledby="pipeline">
+        <h2 id="pipeline">The pipeline</h2>
+        <div className={styles.flow}>
+          {PIPELINE.map((stage, si) => (
+            <div key={stage.where} className={styles.stage}>
+              <p className={styles.where}>
+                <span className="mono">{stage.where}</span> · {stage.note}
+              </p>
+              <ol className={styles.steps} start={PIPELINE.slice(0, si).reduce((n, s) => n + s.steps.length, 1)}>
+                {stage.steps.map((m, i) => (
+                  <li key={m.title}>
+                    <h3>
+                      <span className={`mono ${styles.stepNo}`} aria-hidden="true">
+                        {String(PIPELINE.slice(0, si).reduce((n, s) => n + s.steps.length, 1) + i).padStart(2, "0")}
+                      </span>
+                      {m.title}
+                    </h3>
+                    <p>{m.body}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="limitations">
+        <h2 id="limitations">Honest limitations</h2>
+        <p>Measured by planting simulated objects in real SPHEREx images and running the same pipeline on them.</p>
+        <Limitations />
+        <p>
+          <Link href="/limits/">The full detection-limits study →</Link>
+        </p>
+      </section>
+
+      <section aria-labelledby="sources">
+        <h2 id="sources">Data sources and citations</h2>
+        <ul className={styles.sources}>
+          {SOURCES.map((src) => (
+            <li key={src.name}>
+              <a href={src.href} target="_blank" rel="noopener noreferrer">
+                {src.name}
+              </a>
+              <span>{src.use}</span>
+              {src.cite && <span className={styles.cite}>{src.cite}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section aria-labelledby="wavelength">
         <h2 id="wavelength">Why brightness can change between dates</h2>
@@ -111,33 +247,19 @@ export default function AboutPage() {
         </dl>
       </section>
 
-      <section aria-labelledby="credits">
-        <h2 id="credits">Data and credits</h2>
-        <ul>
-          <li>
-            SPHEREx data: NASA / JPL-Caltech / IPAC, via the{" "}
-            <a href="https://irsa.ipac.caltech.edu/" target="_blank" rel="noopener noreferrer">
-              NASA/IPAC Infrared Science Archive
-            </a>
-            .
-          </li>
-          <li>
-            Known-object predictions:{" "}
-            <a href="https://ssd.jpl.nasa.gov/" target="_blank" rel="noopener noreferrer">
-              JPL Solar System Dynamics
-            </a>{" "}
-            (Small-Body Identification and Horizons).
-          </li>
-          <li>Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;.</li>
-        </ul>
-      </section>
-
       <section aria-labelledby="team">
-        <h2 id="team">Team</h2>
+        <h2 id="team">Team and code</h2>
         <ul>
           <li>Armaan: frontend, UI/UX, sky viewer, candidate dashboard</li>
           <li>Bodhi: NASA data research, image analysis, scientific validation</li>
         </ul>
+        <p>
+          Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;. Everything is open source (MIT):{" "}
+          <a href={REPO} target="_blank" rel="noopener noreferrer">
+            github.com/epsretriever/spherex-planet-x
+          </a>
+          , including the pipeline, the published data and the survey runs.
+        </p>
       </section>
     </div>
   );

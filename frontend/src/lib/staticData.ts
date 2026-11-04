@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CandidateDetail, CandidateList, FieldDetail, FieldList, ObjectDetail, ObjectList, ObjectPrediction, Survey } from "./contract";
+import type { CandidateDetail, CandidateList, FieldDetail, FieldList, InjectionStudy, InjectionStudyIndex, ObjectDetail, ObjectList, ObjectPrediction, Survey } from "./contract";
 
 /**
  * Build-time access to the pipeline's published data in public/data/ (the same files the Worker
@@ -59,6 +59,13 @@ export function staticSurvey(): Survey | null {
 /** The lists the name table is built from, for the first render. */
 export function staticNameSeed() {
   return { candidates: staticCandidates()?.candidates ?? [], fields: staticFields()?.fields ?? [] };
+}
+
+/** The newest published injection-recovery study. */
+export function staticInjectionStudy(): InjectionStudy | null {
+  const idx = read<InjectionStudyIndex>("injection/index.json");
+  const newest = [...(idx?.studies ?? [])].sort((a, b) => b.generated_utc.localeCompare(a.generated_utc))[0];
+  return newest && ID_RE.test(newest.study_id) ? read<InjectionStudy>(`injection/${newest.study_id}.json`) : null;
 }
 
 /** Next requires at least one param for a static export; this one renders the 404 page. */
