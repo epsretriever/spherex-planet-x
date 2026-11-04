@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
 import { GrowthCharts } from "@/components/home/GrowthCharts";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
+import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
 import { formatUtcDate } from "@/lib/format";
 import { staticCandidates, staticGrowth, staticSurvey } from "@/lib/staticData";
@@ -102,6 +103,7 @@ export default function LandingPage() {
             <Link href="/leads/" className="button">
               {unidentified != null ? `${unidentified} unexplained leads` : "Unexplained leads"}
             </Link>
+            <TourButton />
             <Link href="#how" className={styles.textLink}>
               How it works ↓
             </Link>

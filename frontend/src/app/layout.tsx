@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
 import { TopBar } from "@/components/TopBar";
+import { Tour } from "@/components/tour/Tour";
 import { pageMeta, SITE_URL } from "@/lib/meta";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import styles from "./layout.module.css";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Footer />
+        <Tour />
       </body>
     </html>
   );
