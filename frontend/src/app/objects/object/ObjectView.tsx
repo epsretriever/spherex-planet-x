@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { JplLinksRow } from "@/components/JplLinks";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { ErrorState } from "@/components/DataState";
 import { Deferred } from "@/components/Deferred";
@@ -131,6 +132,7 @@ function ObjectPage({ o, seed }: { o: ObjectDetail; seed?: NameSeed }) {
           <JplStatus known={o.known_object} />
         </div>
         <h1 className={styles.title}>{name.title}</h1>
+        <JplLinksRow matched={o.known_object.matched} designation={o.known_object.designation} published={o.known_object.jpl_links} />
         <p className={`mono ${styles.id}`}>
           <span className="visually-hidden">Object ID </span>
           {o.object_id}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JplLinksRow } from "./JplLinks";
 import { assetUrl } from "@/lib/api";
 import type { CandidateSummary } from "@/lib/contract";
 import type { ObjectName } from "@/lib/names";
@@ -34,6 +35,7 @@ export function CandidateCard({ c, name, reason }: { c: CandidateSummary; name: 
           </Link>
         </h2>
         <p className={styles.summary}>{c.summary_plain}</p>
+        <JplLinksRow matched={c.known_object_matched} designation={c.known_object_designation} />
         {reason && (
           <p className={styles.reason}>
             <span aria-hidden="true">✦</span> <span className="visually-hidden">Why it&apos;s unusual: </span>

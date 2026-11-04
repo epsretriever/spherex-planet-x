@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { JplLinksRow } from "@/components/JplLinks";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import cardStyles from "@/components/CandidateCard.module.css";
 import { EmptyState, ErrorState } from "@/components/DataState";
@@ -89,6 +90,7 @@ function ObjectCard({ o, title }: { o: ObjectSummary; title: string }) {
           </Link>
         </h2>
         <p className={cardStyles.summary}>{o.summary_plain}</p>
+        <JplLinksRow matched={o.known_object_matched} designation={o.known_object_designation} />
         <dl className={cardStyles.stats}>
           <div>
             <dt>Sightings</dt>

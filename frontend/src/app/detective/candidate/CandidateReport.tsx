@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { candidateHref } from "@/components/CandidateCard";
+import { JplLinksRow } from "@/components/JplLinks";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { QualityMeter } from "@/components/QualityMeter";
 import { ErrorState } from "@/components/DataState";
@@ -181,6 +182,7 @@ function Report({ c, name, nameFor }: { c: CandidateDetail; name: ObjectName; na
           <JplStatus known={c.known_object} />
         </div>
         <h1 className={styles.title}>{name.title}</h1>
+        <JplLinksRow matched={c.known_object.matched} designation={c.known_object.designation} published={c.known_object.jpl_links} />
         <p className={`mono ${styles.id}`}>
           <span className="visually-hidden">Pipeline ID </span>
           {name.id}
