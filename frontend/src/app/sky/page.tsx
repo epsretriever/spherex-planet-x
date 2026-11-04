@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
-import { staticFields, staticSurvey } from "@/lib/staticData";
+import { staticFields, staticGrowth, staticSurvey } from "@/lib/staticData";
 import { skyTile } from "@/components/SkyMap";
 import { SkyView } from "./SkyView";
 
@@ -38,7 +38,9 @@ export default function SkyPage() {
               }
             : null
         }
-        fieldNames={Object.fromEntries(fields.map((f) => [f.field_id, f.name]))} />
+        fieldNames={Object.fromEntries(fields.map((f) => [f.field_id, f.name]))}
+        growth={staticGrowth()}
+      />
     </div>
   );
 }

@@ -34,6 +34,19 @@ export function depthColor(m50: number | null): string | null {
   return `var(${RAMP[i]})`;
 }
 
+/** Moving objects per tile: one hue family, brighter and larger with more objects (size is the second cue). */
+export const OBJECT_STEPS = [
+  { min: 1, label: "1 object", color: "var(--ir-4)", r: 6 },
+  { min: 2, label: "2 objects", color: "var(--ir-6)", r: 8 },
+  { min: 3, label: "3 or more", color: "var(--ir-7)", r: 10 },
+] as const;
+
+export function objectsStep(n: number) {
+  return [...OBJECT_STEPS].reverse().find((s) => n >= s.min) ?? OBJECT_STEPS[0];
+}
+
+export type SkyColorBy = "objects" | "depth";
+
 const TILE_STATUS_TEXT: Record<SurveyTile["status"], string> = {
   processed: "searched, moving objects found",
   empty: "searched, nothing found",
@@ -108,12 +121,15 @@ export function SkyMap({
   planetNine,
   tileName,
   emptyCells,
+  colorBy = "objects",
 }: {
   tiles: SkyTile[];
   planetNine?: PlanetNineRegion | null;
   tileName?: (t: SkyTile) => string | undefined;
   /** Searched patches with nothing found ([ra_deg, dec_deg]), as the survey publishes them since v1.2. */
   emptyCells?: [number, number][];
+  /** What the colour of a tile with moving objects shows. */
+  colorBy?: SkyColorBy;
 }) {
   const statics = useMemo(() => {
     const raLines = Array.from({ length: 12 }, (_, i) => i * 30).map((ra) => ({
@@ -212,13 +228,15 @@ export function SkyMap({
           .filter((t) => t.status === "processed")
           .map((t) => {
             const p = at(t.center.ra_deg, t.center.dec_deg);
-            const color = depthColor(t.m50_ab) ?? "var(--track)";
+            const step = objectsStep(t.n_candidates);
+            const color = colorBy === "depth" ? (depthColor(t.m50_ab) ?? "var(--track)") : step.color;
+            const r = colorBy === "depth" ? 7 : step.r;
             const label = tileLabel(t, tileName?.(t));
             const mark = (
               <>
                 <circle cx={p.x} cy={p.y} r={22} className={styles.hit} />
-                <circle cx={p.x} cy={p.y} r={14} className={styles.halo} style={{ stroke: color }} />
-                <circle cx={p.x} cy={p.y} r={7} className={styles.tile} style={{ fill: color }} />
+                <circle cx={p.x} cy={p.y} r={r + 7} className={styles.halo} style={{ stroke: color }} />
+                <circle cx={p.x} cy={p.y} r={r} className={styles.tile} style={{ fill: color }} />
                 <title>{label}</title>
               </>
             );

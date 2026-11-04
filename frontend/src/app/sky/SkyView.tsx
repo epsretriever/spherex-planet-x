@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
-import { DEPTH_RANGE, SkyMap, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
+import type { GrowthDay } from "@/lib/staticData";
+import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
 import { fmt, formatUtcDate, formatUtcDateTime } from "@/lib/format";
@@ -38,8 +40,17 @@ const TABLE_ROWS = 30;
 export type SkySurvey = Omit<Survey, "tiles"> & { tiles: SkyTile[] };
 
 /** The survey footprint: as published at build time, then as the API serves it now. */
-export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fieldNames: Record<string, string> }) {
+export function SkyView({
+  initial,
+  fieldNames,
+  growth = [],
+}: {
+  initial: SkySurvey | null;
+  fieldNames: Record<string, string>;
+  growth?: GrowthDay[];
+}) {
   const [showAll, setShowAll] = useState(false);
+  const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
   useEffect(() => {
@@ -113,13 +124,34 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
       {/* The map and table lay out after the header paints, as the evidence report does. */}
       <Deferred fallback={<div className={`card ${styles.mapCard} ${styles.mapPlaceholder}`} aria-hidden="true" />}>
       <figure className={`card ${styles.mapCard}`}>
-        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} />
+        {anyDepth && (
+          <fieldset className={styles.colorBy}>
+            <legend>Colour tiles by</legend>
+            {(["objects", "depth"] as const).map((v) => (
+              <label key={v}>
+                <input type="radio" name="sky-color" value={v} checked={colorBy === v} onChange={() => setColorBy(v)} />
+                {v === "objects" ? "Moving objects" : "Depth (m₅₀)"}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} colorBy={anyDepth ? colorBy : "objects"} />
         <figcaption className={styles.legend}>
           <ul>
             <li>
-              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}){anyDepth ? ", coloured by depth" : ""}: select
-              one to open it
+              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}): select one to open
+              its patch
             </li>
+            {(colorBy === "objects" || !anyDepth) && (
+              <li className={styles.countKey}>
+                  {OBJECT_STEPS.map((st) => (
+                    <span key={st.min}>
+                      <span className={styles.swCount} style={{ background: st.color, width: st.r * 1.6, height: st.r * 1.6 }} aria-hidden="true" />
+                      {st.label}
+                    </span>
+                  ))}
+              </li>
+            )}
             {statuses.has("empty") && (
               <li>
                 <span className={styles.swEmpty} aria-hidden="true" /> Searched, nothing found ({count("empty")})
@@ -152,7 +184,7 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
               </>
             )}
           </ul>
-          {anyDepth && (
+          {anyDepth && colorBy === "depth" && (
             <p className={styles.ramp}>
               <span>
                 Shallower · m₅₀ {DEPTH_RANGE[0]}
@@ -182,6 +214,8 @@ export function SkyView({ initial, fieldNames }: { initial: SkySurvey | null; fi
           )}
         </figcaption>
       </figure>
+
+      <CoverageChart days={growth} />
 
       <section className={styles.section} aria-labelledby="tiles-title">
         <h2 id="tiles-title">Tiles searched</h2>
