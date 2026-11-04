@@ -1,0 +1,1966 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.56e0ec2",
+  "build_run_id": "gh-41906851583-1",
+  "field_id": "sv-2025w292a-l0165-n002",
+  "name": "Survey tile in Pisces",
+  "blurb": "A 0.3 degree patch 0.2 degrees north of the ecliptic in Pisces, imaged by SPHEREx 25 times in 9 visits over 25 hours. Picked automatically by the survey because it was imaged often enough to follow a moving object.",
+  "summary_plain": "25 SPHEREx images of this patch taken over 25 hours starting 2025-07-19, at wavelengths from 0.87 to 2.17 µm. The pipeline found 1 moving object.",
+  "center": {
+    "ra_deg": 15.11449,
+    "dec_deg": 6.74456
+  },
+  "ecliptic_lat_deg": 0.272,
+  "size_deg": {
+    "width": 0.3,
+    "height": 0.3
+  },
+  "thumbnail_url": "/data/fields/sv-2025w292a-l0165-n002/thumb.webp",
+  "data_release": "QR2",
+  "origin": "run",
+  "generated_utc": "2026-11-04T20:49:23Z",
+  "wcs": {
+    "projection": "TAN",
+    "crval": [
+      15.11449,
+      6.74456
+    ],
+    "crpix": [
+      88.5,
+      88.5
+    ],
+    "cdelt_arcsec": 6.15,
+    "width_px": 176,
+    "height_px": 176,
+    "rotation_deg": 0.0
+  },
+  "stretch": {
+    "type": "asinh",
+    "min": -0.03638,
+    "max": 1.15551,
+    "softening": 0.02,
+    "units": "MJy/sr",
+    "zodi_subtracted": true
+  },
+  "epochs": [
+    {
+      "epoch_id": "e01",
+      "obs_id": "2025W29_2A_0510_1",
+      "time_utc": "2025-07-19T11:07:35.325Z",
+      "mjd": 60875.4636033,
+      "time_start_utc": "2025-07-19T11:06:37.766Z",
+      "time_end_utc": "2025-07-19T11:08:32.884Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.8721,
+      "bandwidth_um": 0.0221,
+      "wavelength_um_range": [
+        0.8522,
+        0.8923
+      ],
+      "band_index": 6,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e01.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0510_1D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0510_1",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0510_1D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1259,
+            1534,
+            1070,
+            1349
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0084,
+      "n_detections": 265,
+      "spacecraft_geocentric_km": [
+        6087.413,
+        2649.307,
+        2332.11
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0510_1D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0510_1",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0510_1D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1259,
+          1534,
+          1070,
+          1349
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e02",
+      "obs_id": "2025W29_2A_0510_2",
+      "time_utc": "2025-07-19T11:09:44.254Z",
+      "mjd": 60875.4650955,
+      "time_start_utc": "2025-07-19T11:08:46.695Z",
+      "time_end_utc": "2025-07-19T11:10:41.813Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.8928,
+      "bandwidth_um": 0.0229,
+      "wavelength_um_range": [
+        0.8725,
+        0.9134
+      ],
+      "band_index": 7,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e02.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0510_2D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0510_2",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0510_2D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1258,
+            1533,
+            955,
+            1234
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0047,
+      "n_detections": 285,
+      "spacecraft_geocentric_km": [
+        5794.265,
+        2365.804,
+        3212.215
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0510_2D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0510_2",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0510_2D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1258,
+          1533,
+          955,
+          1234
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e03",
+      "obs_id": "2025W29_2A_0527_1",
+      "time_utc": "2025-07-19T12:40:54.604Z",
+      "mjd": 60875.5284098,
+      "time_start_utc": "2025-07-19T12:39:57.045Z",
+      "time_end_utc": "2025-07-19T12:41:52.163Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.9139,
+      "bandwidth_um": 0.0236,
+      "wavelength_um_range": [
+        0.8932,
+        0.9354
+      ],
+      "band_index": 8,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e03.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0527_1D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0527_1",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_1D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1253,
+            1529,
+            840,
+            1119
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.004,
+      "n_detections": 281,
+      "spacecraft_geocentric_km": [
+        6318.559,
+        3081.831,
+        366.988
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0527_1D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0527_1",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_1D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1253,
+          1529,
+          840,
+          1119
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e04",
+      "obs_id": "2025W29_2A_0527_2",
+      "time_utc": "2025-07-19T12:43:03.535Z",
+      "mjd": 60875.529902,
+      "time_start_utc": "2025-07-19T12:42:05.976Z",
+      "time_end_utc": "2025-07-19T12:44:01.094Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.9358,
+      "bandwidth_um": 0.024,
+      "wavelength_um_range": [
+        0.9144,
+        0.9574
+      ],
+      "band_index": 9,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e04.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0527_2D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0527_2",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_2D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1252,
+            1527,
+            725,
+            1004
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0043,
+      "n_detections": 274,
+      "spacecraft_geocentric_km": [
+        6271.655,
+        2908.753,
+        1320.003
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0527_2D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0527_2",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_2D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1252,
+          1527,
+          725,
+          1004
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e05",
+      "obs_id": "2025W29_2A_0527_3",
+      "time_utc": "2025-07-19T12:45:12.466Z",
+      "mjd": 60875.5313943,
+      "time_start_utc": "2025-07-19T12:44:14.907Z",
+      "time_end_utc": "2025-07-19T12:46:10.025Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.9578,
+      "bandwidth_um": 0.0245,
+      "wavelength_um_range": [
+        0.9363,
+        0.9806
+      ],
+      "band_index": 10,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e05.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0527_3D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0527_3",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_3D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1250,
+            1526,
+            609,
+            889
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0044,
+      "n_detections": 273,
+      "spacecraft_geocentric_km": [
+        6105.493,
+        2680.366,
+        2247.85
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0527_3D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0527_3",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_3D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1250,
+          1526,
+          609,
+          889
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e06",
+      "obs_id": "2025W29_2A_0527_4",
+      "time_utc": "2025-07-19T12:47:21.397Z",
+      "mjd": 60875.5328865,
+      "time_start_utc": "2025-07-19T12:46:23.838Z",
+      "time_end_utc": "2025-07-19T12:48:18.956Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 0.9811,
+      "bandwidth_um": 0.0256,
+      "wavelength_um_range": [
+        0.9583,
+        1.0037
+      ],
+      "band_index": 11,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e06.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0527_4D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0527_4",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_4D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1248,
+            1524,
+            494,
+            773
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0034,
+      "n_detections": 290,
+      "spacecraft_geocentric_km": [
+        5823.205,
+        2401.001,
+        3132.827
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0527_4D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0527_4",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0527_4D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1248,
+          1524,
+          494,
+          773
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e07",
+      "obs_id": "2025W29_2A_0528_1",
+      "time_utc": "2025-07-19T12:49:51.816Z",
+      "mjd": 60875.5346275,
+      "time_start_utc": "2025-07-19T12:48:54.257Z",
+      "time_end_utc": "2025-07-19T12:50:49.375Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 1.0039,
+      "bandwidth_um": 0.0267,
+      "wavelength_um_range": [
+        0.9813,
+        1.0278
+      ],
+      "band_index": 12,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e07.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0528_1D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0528_1",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0528_1D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1242,
+            1518,
+            379,
+            659
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0031,
+      "n_detections": 298,
+      "spacecraft_geocentric_km": [
+        5354.893,
+        2018.176,
+        4087.767
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0528_1D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0528_1",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0528_1D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1242,
+          1518,
+          379,
+          659
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e08",
+      "obs_id": "2025W29_2A_0547_1",
+      "time_utc": "2025-07-19T14:25:18.493Z",
+      "mjd": 60875.6009085,
+      "time_start_utc": "2025-07-19T14:24:20.934Z",
+      "time_end_utc": "2025-07-19T14:26:16.052Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 1.0283,
+      "bandwidth_um": 0.0272,
+      "wavelength_um_range": [
+        1.0045,
+        1.0521
+      ],
+      "band_index": 13,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e08.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0547_1D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0547_1",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0547_1D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1240,
+            1516,
+            264,
+            543
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0039,
+      "n_detections": 293,
+      "spacecraft_geocentric_km": [
+        5801.841,
+        2391.222,
+        3179.048
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0547_1D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0547_1",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0547_1D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1240,
+          1516,
+          264,
+          543
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e09",
+      "obs_id": "2025W29_2A_0547_2",
+      "time_utc": "2025-07-19T14:27:27.423Z",
+      "mjd": 60875.6024007,
+      "time_start_utc": "2025-07-19T14:26:29.864Z",
+      "time_end_utc": "2025-07-19T14:28:24.982Z",
+      "exposure_s": 113.583,
+      "detector": 1,
+      "bandpass": "SPHEREx-D1",
+      "wavelength_um_center": 1.0526,
+      "bandwidth_um": 0.0277,
+      "wavelength_um_range": [
+        1.0288,
+        1.0773
+      ],
+      "band_index": 14,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e09.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0547_2D1_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0547_2",
+          "planeid": null,
+          "detector": 1,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0547_2D1_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            1238,
+            1515,
+            149,
+            428
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0071,
+      "n_detections": 302,
+      "spacecraft_geocentric_km": [
+        5403.374,
+        2063.399,
+        4000.596
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0547_2D1_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0547_2",
+        "planeid": null,
+        "detector": 1,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/1/level2_2025W29_2A_0547_2D1_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          1238,
+          1515,
+          149,
+          428
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e10",
+      "obs_id": "2025W29_2A_0565_1",
+      "time_utc": "2025-07-19T15:59:31.493Z",
+      "mjd": 60875.6663367,
+      "time_start_utc": "2025-07-19T15:58:33.934Z",
+      "time_end_utc": "2025-07-19T16:00:29.051Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.1734,
+      "bandwidth_um": 0.0284,
+      "wavelength_um_range": [
+        1.1464,
+        1.2011
+      ],
+      "band_index": 19,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e10.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0565_1D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0565_1",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_1D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            954,
+            1230,
+            1523,
+            1798
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.002,
+      "n_detections": 322,
+      "spacecraft_geocentric_km": [
+        6215.992,
+        2842.978,
+        1674.705
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0565_1D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0565_1",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_1D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          954,
+          1230,
+          1523,
+          1798
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e11",
+      "obs_id": "2025W29_2A_0565_2",
+      "time_utc": "2025-07-19T16:01:40.425Z",
+      "mjd": 60875.667829,
+      "time_start_utc": "2025-07-19T16:00:42.866Z",
+      "time_end_utc": "2025-07-19T16:02:37.984Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.2016,
+      "bandwidth_um": 0.029,
+      "wavelength_um_range": [
+        1.1738,
+        1.2296
+      ],
+      "band_index": 20,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e11.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0565_2D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0565_2",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_2D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            954,
+            1230,
+            1408,
+            1683
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0025,
+      "n_detections": 339,
+      "spacecraft_geocentric_km": [
+        6006.017,
+        2594.215,
+        2588.406
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0565_2D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0565_2",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_2D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          954,
+          1230,
+          1408,
+          1683
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e12",
+      "obs_id": "2025W29_2A_0565_3",
+      "time_utc": "2025-07-19T16:03:49.355Z",
+      "mjd": 60875.6693212,
+      "time_start_utc": "2025-07-19T16:02:51.796Z",
+      "time_end_utc": "2025-07-19T16:04:46.914Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.2301,
+      "bandwidth_um": 0.0295,
+      "wavelength_um_range": [
+        1.2021,
+        1.2592
+      ],
+      "band_index": 21,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e12.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0565_3D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0565_3",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_3D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            953,
+            1230,
+            1293,
+            1568
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0023,
+      "n_detections": 337,
+      "spacecraft_geocentric_km": [
+        5681.792,
+        2296.103,
+        3452.735
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0565_3D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0565_3",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_3D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          953,
+          1230,
+          1293,
+          1568
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e13",
+      "obs_id": "2025W29_2A_0565_4",
+      "time_utc": "2025-07-19T16:05:58.287Z",
+      "mjd": 60875.6708135,
+      "time_start_utc": "2025-07-19T16:05:00.728Z",
+      "time_end_utc": "2025-07-19T16:06:55.846Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.2597,
+      "bandwidth_um": 0.0302,
+      "wavelength_um_range": [
+        1.2306,
+        1.2891
+      ],
+      "band_index": 22,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e13.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0565_4D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0565_4",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_4D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            952,
+            1229,
+            1177,
+            1453
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0027,
+      "n_detections": 340,
+      "spacecraft_geocentric_km": [
+        5249.477,
+        1954.309,
+        4251.203
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0565_4D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0565_4",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0565_4D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          952,
+          1229,
+          1177,
+          1453
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e14",
+      "obs_id": "2025W29_2A_0582_1",
+      "time_utc": "2025-07-19T17:41:52.591Z",
+      "mjd": 60875.7374142,
+      "time_start_utc": "2025-07-19T17:40:55.032Z",
+      "time_end_utc": "2025-07-19T17:42:50.150Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.2896,
+      "bandwidth_um": 0.0309,
+      "wavelength_um_range": [
+        1.2601,
+        1.3197
+      ],
+      "band_index": 23,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e14.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0582_1D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0582_1",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0582_1D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            948,
+            1225,
+            1063,
+            1339
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0029,
+      "n_detections": 353,
+      "spacecraft_geocentric_km": [
+        5637.344,
+        2267.371,
+        3543.002
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0582_1D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0582_1",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0582_1D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          948,
+          1225,
+          1063,
+          1339
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e15",
+      "obs_id": "2025W29_2A_0582_2",
+      "time_utc": "2025-07-19T17:44:01.523Z",
+      "mjd": 60875.7389065,
+      "time_start_utc": "2025-07-19T17:43:03.964Z",
+      "time_end_utc": "2025-07-19T17:44:59.081Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.3202,
+      "bandwidth_um": 0.0317,
+      "wavelength_um_range": [
+        1.2901,
+        1.3511
+      ],
+      "band_index": 24,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e15.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0582_2D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0582_2",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0582_2D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            947,
+            1224,
+            947,
+            1223
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0025,
+      "n_detections": 349,
+      "spacecraft_geocentric_km": [
+        5194.146,
+        1920.683,
+        4333.363
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0582_2D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0582_2",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0582_2D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          947,
+          1224,
+          947,
+          1223
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e16",
+      "obs_id": "2025W29_2A_0597_1",
+      "time_utc": "2025-07-19T19:19:28.199Z",
+      "mjd": 60875.8051875,
+      "time_start_utc": "2025-07-19T19:18:30.640Z",
+      "time_end_utc": "2025-07-19T19:20:25.758Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.3515,
+      "bandwidth_um": 0.0325,
+      "wavelength_um_range": [
+        1.3208,
+        1.383
+      ],
+      "band_index": 25,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e16.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0597_1D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0597_1",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0597_1D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            944,
+            1221,
+            832,
+            1109
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0027,
+      "n_detections": 352,
+      "spacecraft_geocentric_km": [
+        5674.228,
+        2307.091,
+        3457.914
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0597_1D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0597_1",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0597_1D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          944,
+          1221,
+          832,
+          1109
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e17",
+      "obs_id": "2025W29_2A_0597_2",
+      "time_utc": "2025-07-19T19:21:37.130Z",
+      "mjd": 60875.8066797,
+      "time_start_utc": "2025-07-19T19:20:39.571Z",
+      "time_end_utc": "2025-07-19T19:22:34.689Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.3838,
+      "bandwidth_um": 0.0333,
+      "wavelength_um_range": [
+        1.3522,
+        1.4163
+      ],
+      "band_index": 26,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e17.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0597_2D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0597_2",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0597_2D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            944,
+            1221,
+            717,
+            993
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0023,
+      "n_detections": 350,
+      "spacecraft_geocentric_km": [
+        5242.068,
+        1964.027,
+        4255.915
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0597_2D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0597_2",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0597_2D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          944,
+          1221,
+          717,
+          993
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e18",
+      "obs_id": "2025W29_2A_0614_1",
+      "time_utc": "2025-07-19T20:59:31.157Z",
+      "mjd": 60875.8746662,
+      "time_start_utc": "2025-07-19T20:58:33.598Z",
+      "time_end_utc": "2025-07-19T21:00:28.716Z",
+      "exposure_s": 113.583,
+      "detector": 2,
+      "bandpass": "SPHEREx-D2",
+      "wavelength_um_center": 1.4169,
+      "bandwidth_um": 0.0342,
+      "wavelength_um_range": [
+        1.3843,
+        1.4502
+      ],
+      "band_index": 27,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e18.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0614_1D2_spx_l2b-v20-2025-261.fits",
+          "obs_id": "2025W29_2A_0614_1",
+          "planeid": null,
+          "detector": 2,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0614_1D2_spx_l2b-v20-2025-261.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            942,
+            1219,
+            601,
+            878
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0048,
+      "n_detections": 353,
+      "spacecraft_geocentric_km": [
+        5220.127,
+        1955.381,
+        4286.742
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0614_1D2_spx_l2b-v20-2025-261.fits",
+        "obs_id": "2025W29_2A_0614_1",
+        "planeid": null,
+        "detector": 2,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-261/2/level2_2025W29_2A_0614_1D2_spx_l2b-v20-2025-261.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          942,
+          1219,
+          601,
+          878
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e19",
+      "obs_id": "2025W29_2A_0645_1",
+      "time_utc": "2025-07-20T00:10:13.766Z",
+      "mjd": 60876.0071038,
+      "time_start_utc": "2025-07-20T00:09:16.207Z",
+      "time_end_utc": "2025-07-20T00:11:11.324Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 2.0268,
+      "bandwidth_um": 0.0503,
+      "wavelength_um_range": [
+        1.9818,
+        2.0735
+      ],
+      "band_index": 43,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e19.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0645_1D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0645_1",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_1D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            634,
+            911,
+            776,
+            1049
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0037,
+      "n_detections": 408,
+      "spacecraft_geocentric_km": [
+        6054.112,
+        2696.276,
+        2364.355
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0645_1D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0645_1",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_1D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          634,
+          911,
+          776,
+          1049
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e20",
+      "obs_id": "2025W29_2A_0645_2",
+      "time_utc": "2025-07-20T00:12:22.696Z",
+      "mjd": 60876.008596,
+      "time_start_utc": "2025-07-20T00:11:25.137Z",
+      "time_end_utc": "2025-07-20T00:13:20.255Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 2.0738,
+      "bandwidth_um": 0.0517,
+      "wavelength_um_range": [
+        2.0276,
+        2.122
+      ],
+      "band_index": 44,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e20.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0645_2D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0645_2",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_2D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            634,
+            912,
+            660,
+            934
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0025,
+      "n_detections": 424,
+      "spacecraft_geocentric_km": [
+        5759.57,
+        2408.322,
+        3242.56
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0645_2D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0645_2",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_2D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          634,
+          912,
+          660,
+          934
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e21",
+      "obs_id": "2025W29_2A_0645_3",
+      "time_utc": "2025-07-20T00:14:33.162Z",
+      "mjd": 60876.010106,
+      "time_start_utc": "2025-07-20T00:13:35.603Z",
+      "time_end_utc": "2025-07-20T00:15:30.720Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 2.1222,
+      "bandwidth_um": 0.0533,
+      "wavelength_um_range": [
+        2.0748,
+        2.1714
+      ],
+      "band_index": 45,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e21.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0645_3D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0645_3",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_3D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            634,
+            912,
+            545,
+            819
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0046,
+      "n_detections": 410,
+      "spacecraft_geocentric_km": [
+        5348.322,
+        2069.009,
+        4071.113
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0645_3D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0645_3",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_3D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          634,
+          912,
+          545,
+          819
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e22",
+      "obs_id": "2025W29_2A_0645_4",
+      "time_utc": "2025-07-20T00:16:42.093Z",
+      "mjd": 60876.0115983,
+      "time_start_utc": "2025-07-20T00:15:44.534Z",
+      "time_end_utc": "2025-07-20T00:17:39.651Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 2.1719,
+      "bandwidth_um": 0.0546,
+      "wavelength_um_range": [
+        2.1232,
+        2.222
+      ],
+      "band_index": 46,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e22.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0645_4D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0645_4",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_4D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            634,
+            912,
+            430,
+            704
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0041,
+      "n_detections": 416,
+      "spacecraft_geocentric_km": [
+        4840.833,
+        1695.221,
+        4808.735
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0645_4D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0645_4",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0645_4D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          634,
+          912,
+          430,
+          704
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e23",
+      "obs_id": "2025W29_2A_0744_2",
+      "time_utc": "2025-07-20T11:36:25.674Z",
+      "mjd": 60876.4836305,
+      "time_start_utc": "2025-07-20T11:35:28.115Z",
+      "time_end_utc": "2025-07-20T11:37:23.233Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 1.6489,
+      "bandwidth_um": 0.0394,
+      "wavelength_um_range": [
+        1.6173,
+        1.6865
+      ],
+      "band_index": 34,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e23.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0744_2D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0744_2",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_2D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            641,
+            917,
+            1808,
+            2040
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0028,
+      "n_detections": 336,
+      "spacecraft_geocentric_km": [
+        5843.869,
+        2551.98,
+        2971.368
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0744_2D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0744_2",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_2D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          641,
+          917,
+          1808,
+          2040
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e24",
+      "obs_id": "2025W29_2A_0744_3",
+      "time_utc": "2025-07-20T11:38:34.605Z",
+      "mjd": 60876.4851227,
+      "time_start_utc": "2025-07-20T11:37:37.046Z",
+      "time_end_utc": "2025-07-20T11:39:32.164Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 1.6868,
+      "bandwidth_um": 0.0401,
+      "wavelength_um_range": [
+        1.6496,
+        1.7257
+      ],
+      "band_index": 35,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e24.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0744_3D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0744_3",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_3D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            641,
+            918,
+            1694,
+            1966
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0043,
+      "n_detections": 388,
+      "spacecraft_geocentric_km": [
+        5476.18,
+        2228.96,
+        3808.98
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0744_3D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0744_3",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_3D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          641,
+          918,
+          1694,
+          1966
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    },
+    {
+      "epoch_id": "e25",
+      "obs_id": "2025W29_2A_0744_4",
+      "time_utc": "2025-07-20T11:40:43.536Z",
+      "mjd": 60876.486615,
+      "time_start_utc": "2025-07-20T11:39:45.977Z",
+      "time_end_utc": "2025-07-20T11:41:41.095Z",
+      "exposure_s": 113.583,
+      "detector": 3,
+      "bandpass": "SPHEREx-D3",
+      "wavelength_um_center": 1.7259,
+      "bandwidth_um": 0.0415,
+      "wavelength_um_range": [
+        1.6874,
+        1.7655
+      ],
+      "band_index": 36,
+      "image": {
+        "url": "/data/fields/sv-2025w292a-l0165-n002/e25.webp",
+        "width_px": 176,
+        "height_px": 176,
+        "format": "webp",
+        "source": {
+          "file": "level2_2025W29_2A_0744_4D3_spx_l2b-v20-2025-262.fits",
+          "obs_id": "2025W29_2A_0744_4",
+          "planeid": null,
+          "detector": 3,
+          "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_4D3_spx_l2b-v20-2025-262.fits",
+          "cutout_url": null,
+          "cutout_method": "s3_byte_range",
+          "cutout_region_pix": [
+            641,
+            918,
+            1579,
+            1851
+          ],
+          "data_release": "QR2",
+          "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+        }
+      },
+      "flagged_pixel_fraction": 0.0063,
+      "n_detections": 382,
+      "spacecraft_geocentric_km": [
+        5004.315,
+        1863.536,
+        4573.938
+      ],
+      "source": {
+        "file": "level2_2025W29_2A_0744_4D3_spx_l2b-v20-2025-262.fits",
+        "obs_id": "2025W29_2A_0744_4",
+        "planeid": null,
+        "detector": 3,
+        "archive_url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/2025W29_2A/l2b-v20-2025-262/3/level2_2025W29_2A_0744_4D3_spx_l2b-v20-2025-262.fits",
+        "cutout_url": null,
+        "cutout_method": "s3_byte_range",
+        "cutout_region_pix": [
+          641,
+          918,
+          1579,
+          1851
+        ],
+        "data_release": "QR2",
+        "processing_note": "Zodiacal light model (ZODI) and residual background (2-D plus per-row) subtracted; pixels SPHEREx flags as unusable, and detector-edge rows with raised noise from edge glow, are filled from their neighbors (or set to the sky level) for display only and only inside the detector, while measurements use the masked data; pixels outside the detector are transparent; fixed asinh stretch shared by all images of the field; reprojected to the field grid"
+      }
+    }
+  ],
+  "blink_pairs": [
+    {
+      "epoch_id_a": "e10",
+      "epoch_id_b": "e22",
+      "time_separation_hours": 8.286,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.59696,
+      "label_plain": "Different wavelengths (1.17 and 2.17 µm), 8.3 hours apart; the moving object shifts 345 arcsec: brightness changes are expected",
+      "displacement_arcsec": 344.8,
+      "default": true
+    },
+    {
+      "epoch_id_a": "e10",
+      "epoch_id_b": "e21",
+      "time_separation_hours": 8.25,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.5758,
+      "label_plain": "Different wavelengths (1.17 and 2.12 µm), 8.3 hours apart; the moving object shifts 343 arcsec: brightness changes are expected",
+      "displacement_arcsec": 343.3,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e11",
+      "epoch_id_b": "e22",
+      "time_separation_hours": 8.25,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.57525,
+      "label_plain": "Different wavelengths (1.20 and 2.17 µm), 8.3 hours apart; the moving object shifts 343 arcsec: brightness changes are expected",
+      "displacement_arcsec": 343.3,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e10",
+      "epoch_id_b": "e20",
+      "time_separation_hours": 8.214,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.55457,
+      "label_plain": "Different wavelengths (1.17 and 2.07 µm), 8.2 hours apart; the moving object shifts 343 arcsec: brightness changes are expected",
+      "displacement_arcsec": 343.0,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e12",
+      "epoch_id_b": "e22",
+      "time_separation_hours": 8.215,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.55367,
+      "label_plain": "Different wavelengths (1.23 and 2.17 µm), 8.2 hours apart; the moving object shifts 343 arcsec: brightness changes are expected",
+      "displacement_arcsec": 342.8,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e11",
+      "epoch_id_b": "e21",
+      "time_separation_hours": 8.215,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.55394,
+      "label_plain": "Different wavelengths (1.20 and 2.12 µm), 8.2 hours apart; the moving object shifts 342 arcsec: brightness changes are expected",
+      "displacement_arcsec": 341.8,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e11",
+      "epoch_id_b": "e20",
+      "time_separation_hours": 8.178,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.53258,
+      "label_plain": "Different wavelengths (1.20 and 2.07 µm), 8.2 hours apart; the moving object shifts 342 arcsec: brightness changes are expected",
+      "displacement_arcsec": 341.5,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e12",
+      "epoch_id_b": "e21",
+      "time_separation_hours": 8.179,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.53223,
+      "label_plain": "Different wavelengths (1.23 and 2.12 µm), 8.2 hours apart; the moving object shifts 341 arcsec: brightness changes are expected",
+      "displacement_arcsec": 341.3,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e12",
+      "epoch_id_b": "e20",
+      "time_separation_hours": 8.143,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.51073,
+      "label_plain": "Different wavelengths (1.23 and 2.07 µm), 8.1 hours apart; the moving object shifts 341 arcsec: brightness changes are expected",
+      "displacement_arcsec": 341.0,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e10",
+      "epoch_id_b": "e19",
+      "time_separation_hours": 8.178,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.53334,
+      "label_plain": "Different wavelengths (1.17 and 2.03 µm), 8.2 hours apart; the moving object shifts 341 arcsec: brightness changes are expected",
+      "displacement_arcsec": 340.7,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e11",
+      "epoch_id_b": "e19",
+      "time_separation_hours": 8.143,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.51121,
+      "label_plain": "Different wavelengths (1.20 and 2.03 µm), 8.1 hours apart; the moving object shifts 339 arcsec: brightness changes are expected",
+      "displacement_arcsec": 339.2,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e12",
+      "epoch_id_b": "e19",
+      "time_separation_hours": 8.107,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.48924,
+      "label_plain": "Different wavelengths (1.23 and 2.03 µm), 8.1 hours apart; the moving object shifts 339 arcsec: brightness changes are expected",
+      "displacement_arcsec": 338.7,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e14",
+      "epoch_id_b": "e22",
+      "time_separation_hours": 6.58,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.50978,
+      "label_plain": "Different wavelengths (1.29 and 2.17 µm), 6.6 hours apart; the moving object shifts 274 arcsec: brightness changes are expected",
+      "displacement_arcsec": 274.3,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e15",
+      "epoch_id_b": "e22",
+      "time_separation_hours": 6.545,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.48779,
+      "label_plain": "Different wavelengths (1.32 and 2.17 µm), 6.5 hours apart; the moving object shifts 273 arcsec: brightness changes are expected",
+      "displacement_arcsec": 273.2,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e14",
+      "epoch_id_b": "e21",
+      "time_separation_hours": 6.545,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.48807,
+      "label_plain": "Different wavelengths (1.29 and 2.12 µm), 6.5 hours apart; the moving object shifts 273 arcsec: brightness changes are expected",
+      "displacement_arcsec": 272.7,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e14",
+      "epoch_id_b": "e20",
+      "time_separation_hours": 6.508,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.46631,
+      "label_plain": "Different wavelengths (1.29 and 2.07 µm), 6.5 hours apart; the moving object shifts 272 arcsec: brightness changes are expected",
+      "displacement_arcsec": 272.4,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e15",
+      "epoch_id_b": "e21",
+      "time_separation_hours": 6.509,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.46595,
+      "label_plain": "Different wavelengths (1.32 and 2.12 µm), 6.5 hours apart; the moving object shifts 272 arcsec: brightness changes are expected",
+      "displacement_arcsec": 271.6,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e15",
+      "epoch_id_b": "e20",
+      "time_separation_hours": 6.473,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.44408,
+      "label_plain": "Different wavelengths (1.32 and 2.07 µm), 6.5 hours apart; the moving object shifts 271 arcsec: brightness changes are expected",
+      "displacement_arcsec": 271.3,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e14",
+      "epoch_id_b": "e19",
+      "time_separation_hours": 6.473,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.44458,
+      "label_plain": "Different wavelengths (1.29 and 2.03 µm), 6.5 hours apart; the moving object shifts 270 arcsec: brightness changes are expected",
+      "displacement_arcsec": 270.1,
+      "default": false
+    },
+    {
+      "epoch_id_a": "e15",
+      "epoch_id_b": "e19",
+      "time_separation_hours": 6.437,
+      "lambda_matched": false,
+      "delta_lambda_frac": 0.42223,
+      "label_plain": "Different wavelengths (1.32 and 2.03 µm), 6.4 hours apart; the moving object shifts 269 arcsec: brightness changes are expected",
+      "displacement_arcsec": 269.0,
+      "default": false
+    }
+  ],
+  "movers": [
+    {
+      "candidate_id": "sv-2025w292a-l0165-n002-c01",
+      "classification": "unmatched",
+      "label_plain": "Unexplained",
+      "quality_level": "medium",
+      "rate_arcsec_per_hr": 41.712,
+      "track": [
+        {
+          "epoch_id": "e10",
+          "time_utc": "2025-07-19T15:59:31.493Z",
+          "mjd": 60875.6663367,
+          "ra_deg": 15.0970101,
+          "dec_deg": 6.7351408,
+          "x_grid": 98.661,
+          "y_grid": 82.987
+        },
+        {
+          "epoch_id": "e11",
+          "time_utc": "2025-07-19T16:01:40.425Z",
+          "mjd": 60875.667829,
+          "ra_deg": 15.0971806,
+          "dec_deg": 6.7357051,
+          "x_grid": 98.562,
+          "y_grid": 83.317
+        },
+        {
+          "epoch_id": "e12",
+          "time_utc": "2025-07-19T16:03:49.355Z",
+          "mjd": 60875.6693212,
+          "ra_deg": 15.097319,
+          "dec_deg": 6.7357539,
+          "x_grid": 98.482,
+          "y_grid": 83.345
+        },
+        {
+          "epoch_id": "e14",
+          "time_utc": "2025-07-19T17:41:52.591Z",
+          "mjd": 60875.7374142,
+          "ra_deg": 15.1144438,
+          "dec_deg": 6.7443512,
+          "x_grid": 88.527,
+          "y_grid": 88.378
+        },
+        {
+          "epoch_id": "e15",
+          "time_utc": "2025-07-19T17:44:01.523Z",
+          "mjd": 60875.7389065,
+          "ra_deg": 15.11455,
+          "dec_deg": 6.7447845,
+          "x_grid": 88.465,
+          "y_grid": 88.631
+        },
+        {
+          "epoch_id": "e19",
+          "time_utc": "2025-07-20T00:10:13.766Z",
+          "mjd": 60876.0071038,
+          "ra_deg": 15.1802256,
+          "dec_deg": 6.781269,
+          "x_grid": 50.29,
+          "y_grid": 109.991
+        },
+        {
+          "epoch_id": "e20",
+          "time_utc": "2025-07-20T00:12:22.696Z",
+          "mjd": 60876.008596,
+          "ra_deg": 15.1806998,
+          "dec_deg": 6.7817476,
+          "x_grid": 50.014,
+          "y_grid": 110.271
+        },
+        {
+          "epoch_id": "e21",
+          "time_utc": "2025-07-20T00:14:33.162Z",
+          "mjd": 60876.010106,
+          "ra_deg": 15.1810452,
+          "dec_deg": 6.7812909,
+          "x_grid": 49.813,
+          "y_grid": 110.004
+        },
+        {
+          "epoch_id": "e22",
+          "time_utc": "2025-07-20T00:16:42.093Z",
+          "mjd": 60876.0115983,
+          "ra_deg": 15.1815431,
+          "dec_deg": 6.7812786,
+          "x_grid": 49.524,
+          "y_grid": 109.997
+        }
+      ]
+    }
+  ]
+}
