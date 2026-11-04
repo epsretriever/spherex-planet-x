@@ -103,3 +103,99 @@ def test_dichroic_partner_does_not_inherit_file_size():
     p = dichroic_partner(k)
     assert p.detector == 5 and "/5/level2_" in p.key and "D5_" in p.key
     assert p.size is None
+
+
+def test_next_segments_skip_finished_and_spread_over_the_year():
+    from spherex_px.survey import _spread_order, resolve_segments
+
+    class Archive(FakeArchive):
+        def level2_segments(self, release):
+            return {"qr2": [f"2025W{w:02d}_1A" for w in range(20, 28)], "qr3": []}[release]
+
+    assert sorted(_spread_order(8)) == list(range(8))
+    assert _spread_order(8)[:2] == [0, 4]  # the first picks are far apart
+    state = {
+        "qr2/2025W20_1A": {"planned": 10, "searched": 10, "complete": True},
+        "qr2/2025W24_1A": {"planned": 10, "searched": 4, "complete": False},
+    }
+    got = resolve_segments(["next:3"], Archive(), state)
+    # The unfinished segment first, then fresh ones spread out; the finished one never.
+    assert got[0] == "qr2/2025W24_1A"
+    assert "qr2/2025W20_1A" not in got and len(got) == 3
+
+
+def test_blocks_group_neighbours_and_are_never_split():
+    from spherex_px.survey import PlannedTile, group_blocks, select_blocks
+
+    def t(seg, i, j):
+        return PlannedTile(f"{seg}-{i}-{j}", 0, 0, 0.3 * i, 0.3 * j, seg, 10, 3, 20, "Aquarius")
+
+    tiles = [t("a", i, j) for i in range(8) for j in range(4)] + [t("b", 0, 0)]
+    blocks = group_blocks(tiles, 4)
+    assert sorted(len(b) for b in blocks) == [1, 16, 16]
+    picked = select_blocks(tiles, 17)
+    assert len(picked) == 17  # one whole block of a, then b's block
+    assert {p.segment for p in picked} == {"a", "b"}
+
+
+def test_plan_skips_tiles_already_searched(tmp_path, monkeypatch):
+    import json
+
+    from spherex_px import survey
+    from spherex_px.survey import PlannedTile
+
+    tiles = [
+        PlannedTile(f"sv-x-{i}", 0, 0, 0.3 * i, 0, "qr2/2025W23_1C", 10, 3, 20, "Aquarius")
+        for i in range(5)
+    ]
+    monkeypatch.setattr(survey, "plan_segment", lambda *a, **k: list(tiles))
+    monkeypatch.setattr("spherex_px.data.index.CoverageIndex", lambda *a, **k: None)
+    data = tmp_path / "data"
+    (data / "survey").mkdir(parents=True)
+    fp = {
+        "tiles": [
+            {
+                "tile_id": "sv-x-0",
+                "ra_deg": 0,
+                "dec_deg": 0,
+                "elon_deg": 0,
+                "elat_deg": 0,
+                "size_deg": 0.3,
+                "segment": "qr2/2025W23_1C",
+                "n_exposures": 10,
+                "n_visits": 3,
+                "first_utc": None,
+                "last_utc": None,
+                "status": "empty",
+                "n_candidates": 0,
+                "detail": None,
+                "searched_utc": "x",
+                "run_id": "r",
+            },
+            {
+                "tile_id": "sv-x-1",
+                "ra_deg": 0,
+                "dec_deg": 0,
+                "elon_deg": 0.3,
+                "elat_deg": 0,
+                "size_deg": 0.3,
+                "segment": "qr2/2025W23_1C",
+                "n_exposures": 10,
+                "n_visits": 3,
+                "first_utc": None,
+                "last_utc": None,
+                "status": "failed",
+                "n_candidates": 0,
+                "detail": "x",
+                "searched_utc": "x",
+                "run_id": "r",
+            },
+        ]
+    }
+    (data / "survey" / "footprint.json").write_text(json.dumps(fp))
+    out = tmp_path / "plan.json"
+    got = survey.plan(["qr2/2025W23_1C"], out, data_dir=data)
+    # The empty tile is done; the failed one is retried.
+    assert [t.field_id for t in got] == [f"sv-x-{i}" for i in range(1, 5)]
+    meta = json.loads(survey.plan_meta_path(out).read_text())
+    assert meta == {"qr2/2025W23_1C": {"planned": 5, "already_searched": 1}}

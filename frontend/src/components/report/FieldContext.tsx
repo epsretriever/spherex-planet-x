@@ -92,7 +92,7 @@ export function FieldContext({ candidate }: { candidate: CandidateDetail }) {
         compact
       />
       <p className={styles.note} style={{ marginTop: "var(--space-2)" }}>
-        Zoomed in on {state.data.name}. Circles mark the measured positions
+        Zoomed in from the patch &ldquo;{state.data.name}&rdquo;. Circles mark the measured positions
         {ctx.predicted.length ? "; dashed white circles mark where JPL predicted the known object would be" : ""}.{" "}
         <Link href={fieldHref(state.data.field_id)}>Open the whole patch →</Link>
       </p>

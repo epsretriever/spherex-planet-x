@@ -11,8 +11,10 @@ import {
   type FieldDetail,
   type FieldList,
   type InjectionStudy,
+  type InjectionStudyIndex,
   type ObjectDetail,
   type ObjectList,
+  type ObjectPrediction,
   type Survey,
   type Versioned,
 } from "./contract";
@@ -28,6 +30,7 @@ import {
  *   fields/{field_id}.json          or field_detail.json
  *   candidates.json
  *   candidates/{candidate_id}.json  or candidate_detail.json
+ *   injection/index.json            the published studies (newest is shown on /limits)
  *   injection/{study_id}.json       or injection_study.json
  */
 
@@ -186,14 +189,32 @@ export async function getInjectionStudy(studyId: string, signal?: AbortSignal): 
   return checkVersion(body, "injection");
 }
 
+/** The published injection studies (data/injection/index.json). */
+export async function getInjectionIndex(signal?: AbortSignal): Promise<InjectionStudyIndex> {
+  const body = await getJson<InjectionStudyIndex>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/injection/index.json` : "/api/injection",
+    signal,
+  );
+  expectArray(body, "studies", "Injection study index");
+  return checkVersion(body, "injection index");
+}
+
 /**
- * Finds the injection study to show: the one named in the URL, or the study
- * that the first injected candidate belongs to.
+ * Finds the injection study to show when the URL names none: the newest study
+ * in the published index, or else the study that the first injected candidate
+ * belongs to.
  */
 export async function findInjectionStudyId(signal?: AbortSignal): Promise<string> {
+  try {
+    const index = await getInjectionIndex(signal);
+    const newest = [...index.studies].sort((a, b) => b.generated_utc.localeCompare(a.generated_utc))[0];
+    if (newest) return newest.study_id;
+  } catch (err) {
+    if (!(err instanceof DataError) || err.reason !== "not_found") throw err;
+  }
   const list = await getCandidates({ classification: ["injected"] }, signal);
   const first = list.candidates[0];
-  if (!first) throw new DataError("not_found", "No injected candidates were published.");
+  if (!first) throw new DataError("not_found", "No injection study was published.");
   const detail = await getCandidate(first.candidate_id, signal);
   if (!detail.injection?.study_id) throw new DataError("not_found", "Injected candidate has no study.");
   return detail.injection.study_id;
@@ -212,6 +233,16 @@ export async function getObject(objectId: string, signal?: AbortSignal): Promise
   expectArray(body, "detections", "Object");
   if (body.object_id !== objectId) throw new DataError("not_found", `No object ${objectId}.`);
   return checkVersion({ ...body, history: body.history ?? [], candidate_ids: body.candidate_ids ?? [], field_ids: body.field_ids ?? [] }, "object");
+}
+
+/** An object's preliminary-orbit prediction (404 while it has no orbit). */
+export async function getPrediction(objectId: string, days = 60, signal?: AbortSignal): Promise<ObjectPrediction & { note_plain?: string | null }> {
+  const body = await getJson<ObjectPrediction & { note_plain?: string | null }>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/objects/${enc(objectId)}/prediction.json` : `/api/objects/${enc(objectId)}/prediction?days=${days}`,
+    signal,
+  );
+  expectArray(body, "points", "Prediction");
+  return checkVersion(body, "prediction");
 }
 
 export async function getSurvey(signal?: AbortSignal): Promise<Survey> {
@@ -287,6 +318,11 @@ export async function searchCandidates(query: string, signal?: AbortSignal): Pro
 export function assetUrl(url: string | null | undefined): string {
   if (!url) return "";
   if (/^(https?:|data:|blob:)/i.test(url)) return url;
-  if (USE_FIXTURES) return `${FIXTURE_BASE}/${url.replace(/^\/+/, "")}`;
+  if (USE_FIXTURES) {
+    const path = url.replace(/^\/+/, "");
+    // Static data already points at /data/...; don't nest it twice.
+    if (`/${path}`.startsWith(`${FIXTURE_BASE}/`)) return `/${path}`;
+    return `${FIXTURE_BASE}/${path}`;
+  }
   return url.startsWith("/") ? url : `/${url}`;
 }

@@ -3,7 +3,8 @@ import type { AppEnv } from "../app";
 import type { JplOrbitComparison, ObjectList } from "../contract";
 import { ApiError } from "../errors";
 import { requireStaticJson } from "../static-data";
-import { readRecords } from "../store";
+import { readRecordsFor } from "../store";
+import { SCHEMA_VERSION } from "../version";
 
 /**
  * Validation results.
@@ -43,18 +44,21 @@ const r = (x: number | null, d: number) => (x === null ? null : Math.round(x * 1
 validation.get("/jpl-orbits", async (c) => {
   const list = await requireStaticJson<ObjectList>(c.env, "objects.json", "object list");
   const real = list.objects.filter((o) => o.classification !== "injected" && o.candidate_ids.length > 0);
-  const recs = await readRecords(c.get("deps"), list.pipeline_version, real.map((o) => o.candidate_ids[0]!));
+  const recs = await readRecordsFor(
+    c.get("deps"),
+    real.map((o) => ({ candidate_id: o.candidate_ids[0]!, pipeline_version: o.pipeline_version ?? list.pipeline_version })),
+  );
   const rows: (JplOrbitComparison & { object_id: string })[] = [];
   let identified = 0;
   for (const o of real) {
     const rec = recs.get(o.candidate_ids[0]!);
-    if (!rec?.enrichment.matched) continue;
+    if (!rec?.enrichment.matched && !o.known_object_matched) continue;
     identified += 1;
-    if (rec.orbit_comparison) rows.push({ object_id: o.object_id, ...rec.orbit_comparison });
+    if (rec?.orbit_comparison) rows.push({ object_id: o.object_id, ...rec.orbit_comparison });
   }
   c.header("Cache-Control", "public, max-age=300");
   return c.json({
-    schema_version: "1.1",
+    schema_version: SCHEMA_VERSION,
     pipeline_version: list.pipeline_version,
     n_identified: identified,
     n_compared: rows.length,

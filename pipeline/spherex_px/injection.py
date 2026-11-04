@@ -13,6 +13,7 @@ per-field results, and the false-positive rate with a Poisson 95% interval.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -26,6 +27,7 @@ from scipy import stats
 
 from . import schemas as S
 from .build import DETECT, LINK, FieldBuilder, FieldSpec, load_showcase, utc_now, write_json
+from .data.s3 import Level2Key
 from .science.detect import Prepared, detect
 from .science.grid import angular_sep_arcsec
 from .science.inject import (
@@ -112,9 +114,71 @@ def load_checkpoint(path: Path) -> list[RunResult]:
     return out
 
 
-def load_field(spec: FieldSpec) -> FieldData:
+ARCHIVE_HOST = ".amazonaws.com/"
+
+
+def published_keys(out_dir: Path, field_id: str) -> list[Level2Key]:
+    """The Level 2 files a published field was built from, read from its field JSON.
+
+    Survey tiles are injected into exactly the exposures the survey searched, so the study
+    does not need the week segment's header index."""
+    doc = json.loads((out_dir / "fields" / f"{field_id}.json").read_text())
+    keys = []
+    for e in doc["epochs"]:
+        url = e["source"]["archive_url"]
+        k = Level2Key.parse(url.split(ARCHIVE_HOST, 1)[1]) if ARCHIVE_HOST in url else None
+        if k is None:
+            raise ValueError(f"{field_id}: cannot parse archive_url {url}")
+        keys.append(k)
+    return keys
+
+
+def published_spec(out_dir: Path, field_id: str) -> FieldSpec:
+    doc = json.loads((out_dir / "fields" / f"{field_id}.json").read_text())
+    return FieldSpec(
+        field_id=field_id,
+        name=doc["name"],
+        blurb=doc["blurb"],
+        ra_deg=doc["center"]["ra_deg"],
+        dec_deg=doc["center"]["dec_deg"],
+        size_deg=doc["size_deg"]["width"],
+        segments=[],
+        origin=doc.get("origin", "run"),
+    )
+
+
+def resolve_fields(
+    out_dir: Path,
+    field_ids: list[str] | None = None,
+    survey: bool = False,
+    max_fields: int | None = None,
+) -> list[FieldSpec]:
+    """Fields to inject into, in a fixed order.
+
+    Default: the showcase fields. `survey=True`: every published survey tile (origin "run"),
+    spread evenly over the list when `max_fields` caps them. `field_ids` picks fields by id,
+    showcase or published."""
+    showcase = {s.field_id: s for s in load_showcase()}
+    if field_ids:
+        return [showcase.get(f) or published_spec(out_dir, f) for f in field_ids]
+    if not survey:
+        return list(showcase.values())
+    listing = json.loads((out_dir / "fields.json").read_text())["fields"]
+    ids = sorted(f["field_id"] for f in listing if f.get("origin") == "run")
+    if max_fields and len(ids) > max_fields:
+        step = len(ids) / max_fields
+        ids = [ids[int(i * step)] for i in range(max_fields)]
+    return [published_spec(out_dir, f) for f in ids]
+
+
+def load_field(spec: FieldSpec, out_dir: Path | None = None) -> FieldData:
     b = FieldBuilder(spec)
-    epochs = b.load(b.exposures())
+    keys = (
+        b.exposures()
+        if spec.origin == "showcase" or out_dir is None
+        else published_keys(out_dir, spec.field_id)
+    )
+    epochs = b.load(keys)
     data = [e.data for e in epochs]
     assign_clusters(data)
     # The movers the normal pipeline finds in the unmodified images (real asteroids).
@@ -370,21 +434,10 @@ def planet_context(grid: list[S.RecoveryCell]) -> S.PlanetContext:
     return S.PlanetContext(assumptions=PLANET, rows=rows)
 
 
-def run_study(
-    study_id: str,
-    field_ids: list[str] | None = None,
-    trials_per_cell: int = 200,
-    seed: int = 20261030,
-    workers: int = 4,
-    out_dir: Path | None = None,
-) -> S.InjectionStudy:
-    from .build import DEFAULT_OUT
-
-    out_dir = out_dir or DEFAULT_OUT
-    specs = [s for s in load_showcase() if field_ids is None or s.field_id in field_ids]
-    for spec in specs:
-        log.info("loading %s", spec.field_id)
-        _FIELDS[spec.field_id] = load_field(spec)
+def plan_jobs(
+    specs: list[FieldSpec], trials_per_cell: int, seed: int
+) -> list[tuple[str, int, list[tuple[float, str, float]], int]]:
+    """Every (field, run, cells, seed) job of a study, fixed by the fields, trials and seed."""
     cells = [(m, "linear", r) for m in MAG_BINS for r in LINEAR_RATES] + [
         (m, "parallax", d) for m in MAG_BINS for d in DISTANCES_AU
     ]
@@ -396,13 +449,19 @@ def run_study(
     for run, start in enumerate(range(0, len(pool_cells), INJECTIONS_PER_RUN)):
         fid = specs[run % len(specs)].field_id
         jobs.append((fid, run, pool_cells[start : start + INJECTIONS_PER_RUN], seed + run))
-    log.info("%d injections in %d runs over %d fields", len(pool_cells), len(jobs), len(specs))
-    # Finished runs are appended to a checkpoint, so an interrupted study resumes where it
-    # stopped. The jobs are fixed by the seed and parameters, which name the file.
-    ckpt = (
-        CHECKPOINT_DIR
-        / f"{study_id}-s{seed}-t{trials_per_cell}-{'_'.join(s.field_id for s in specs)}.jsonl"
-    )
+    return jobs
+
+
+def checkpoint_path(
+    study_id: str, specs: list[FieldSpec], seed: int, trials_per_cell: int, shard: str = ""
+) -> Path:
+    ids = "_".join(s.field_id for s in specs)
+    tag = ids if len(ids) <= 80 else hashlib.sha256(ids.encode()).hexdigest()[:12]
+    return CHECKPOINT_DIR / f"{study_id}-s{seed}-t{trials_per_cell}-{tag}{shard}.jsonl"
+
+
+def run_jobs(jobs: list, ckpt: Path, workers: int) -> list[RunResult]:
+    """Runs the jobs not already in the checkpoint, appending each finished run to it."""
     results = load_checkpoint(ckpt)
     done = {r.trials[0].run for r in results if r.trials}
     todo = [j for j in jobs if j[1] not in done]
@@ -425,7 +484,109 @@ def run_study(
                     el,
                     el / k * (len(todo) - k),
                 )
+    return results
+
+
+def run_study(
+    study_id: str,
+    field_ids: list[str] | None = None,
+    trials_per_cell: int = 200,
+    seed: int = 20261030,
+    workers: int = 4,
+    out_dir: Path | None = None,
+    survey: bool = False,
+    max_fields: int | None = None,
+) -> S.InjectionStudy:
+    from .build import DEFAULT_OUT
+
+    out_dir = out_dir or DEFAULT_OUT
+    specs = resolve_fields(out_dir, field_ids, survey, max_fields)
+    for spec in specs:
+        log.info("loading %s", spec.field_id)
+        _FIELDS[spec.field_id] = load_field(spec, out_dir)
+    jobs = plan_jobs(specs, trials_per_cell, seed)
+    log.info("%d runs over %d fields", len(jobs), len(specs))
+    # Finished runs are appended to a checkpoint, so an interrupted study resumes where it
+    # stopped. The jobs are fixed by the seed and parameters, which name the file.
+    results = run_jobs(jobs, checkpoint_path(study_id, specs, seed, trials_per_cell), workers)
     checks = photometry_check(_FIELDS[specs[-1].field_id])
+    return summarize(study_id, specs, results, out_dir, checks)
+
+
+def run_shard(
+    study_id: str,
+    shard: int,
+    of: int,
+    shard_out: Path,
+    field_ids: list[str] | None = None,
+    trials_per_cell: int = 200,
+    seed: int = 20261030,
+    workers: int = 4,
+    out_dir: Path | None = None,
+    survey: bool = False,
+    max_fields: int | None = None,
+) -> Path:
+    """One shard of a study: the runs on fields shard, shard+of, ... of the field list.
+
+    Writes the shard's runs (JSON lines) and, for shard 0, the photometry check to
+    `shard_out`; `merge_shards` combines them into the study."""
+    from .build import DEFAULT_OUT
+
+    out_dir = out_dir or DEFAULT_OUT
+    specs = resolve_fields(out_dir, field_ids, survey, max_fields)
+    mine = {s.field_id for s in specs[shard::of]}
+    jobs = [j for j in plan_jobs(specs, trials_per_cell, seed) if j[0] in mine]
+    loaded = set()
+    for spec in specs:
+        if spec.field_id not in mine:
+            continue
+        log.info("loading %s", spec.field_id)
+        try:
+            _FIELDS[spec.field_id] = load_field(spec, out_dir)
+            loaded.add(spec.field_id)
+        except Exception as err:  # one unreadable tile costs that tile's runs, not the shard
+            log.warning("skipping field %s: %s: %s", spec.field_id, type(err).__name__, err)
+    jobs = [j for j in jobs if j[0] in loaded]
+    log.info("shard %d/%d: %d runs over %d fields", shard, of, len(jobs), len(loaded))
+    shard_out.mkdir(parents=True, exist_ok=True)
+    ckpt = shard_out / f"runs-{shard:03d}.jsonl"
+    run_jobs(jobs, ckpt, workers)
+    if shard == 0 and loaded:
+        first = next(s.field_id for s in specs if s.field_id in loaded)
+        checks = photometry_check(_FIELDS[first])
+        (shard_out / "photometry.json").write_text(
+            json.dumps([c.model_dump(mode="json") for c in checks])
+        )
+    return ckpt
+
+
+def merge_shards(
+    study_id: str,
+    shard_files: list[Path],
+    field_ids: list[str] | None = None,
+    out_dir: Path | None = None,
+    survey: bool = False,
+    max_fields: int | None = None,
+) -> S.InjectionStudy:
+    """Combine shard outputs (runs-*.jsonl and photometry.json) into the published study.
+
+    Only fields with at least one finished run are part of the study."""
+    from .build import DEFAULT_OUT
+
+    out_dir = out_dir or DEFAULT_OUT
+    results: list[RunResult] = []
+    checks: list[S.PhotometryCheck] = []
+    for f in shard_files:
+        if f.name == "photometry.json":
+            checks = [S.PhotometryCheck(**c) for c in json.loads(f.read_text())]
+        else:
+            results.extend(load_checkpoint(f))
+    seen = {t.field_id for r in results for t in r.trials}
+    specs = [
+        s for s in resolve_fields(out_dir, field_ids, survey, max_fields) if s.field_id in seen
+    ]
+    if not specs:
+        raise RuntimeError("no finished injection runs to merge")
     return summarize(study_id, specs, results, out_dir, checks)
 
 
@@ -618,22 +779,36 @@ def summarize(
         example_candidate_ids=[],
     )
     write_json(out_dir / "injection" / f"{study_id}.json", study)
-    write_json(
-        out_dir / "injection" / "index.json",
-        S.InjectionStudyIndex(
-            pipeline_version=study.pipeline_version,
-            build_run_id=build_run_id(),
-            studies=[
-                S.InjectionStudyRef(
-                    study_id=study_id,
-                    generated_utc=study.generated_utc,
-                    field_ids=study.field_ids,
-                    n_injected=study.n_injected,
-                )
-            ],
-        ),
-    )
+    write_index(out_dir)
     return study
+
+
+def write_index(out_dir: Path) -> S.InjectionStudyIndex | None:
+    """Rebuild injection/index.json from every published study file, newest first."""
+    folder = out_dir / "injection"
+    studies = (
+        [json.loads(p.read_text()) for p in sorted(folder.glob("*.json")) if p.name != "index.json"]
+        if folder.is_dir()
+        else []
+    )
+    if not studies:
+        return None
+    studies.sort(key=lambda d: d["generated_utc"], reverse=True)
+    index = S.InjectionStudyIndex(
+        pipeline_version=studies[0]["pipeline_version"],
+        build_run_id=build_run_id(),
+        studies=[
+            S.InjectionStudyRef(
+                study_id=d["study_id"],
+                generated_utc=d["generated_utc"],
+                field_ids=d["field_ids"],
+                n_injected=d["n_injected"],
+            )
+            for d in studies
+        ],
+    )
+    write_json(folder / "index.json", index)
+    return index
 
 
 EXAMPLES = [
@@ -656,9 +831,11 @@ def build_examples(
     from .data.l2file import Cutout  # noqa: F401  (kept for type clarity)
 
     out_dir = out_dir or DEFAULT_OUT
-    spec = next(s for s in load_showcase() if s.field_id == field_id)
+    spec = resolve_fields(out_dir, [field_id])[0]
     builder = FieldBuilder(spec, out_dir)
-    epochs = builder.load(builder.exposures())
+    epochs = builder.load(
+        builder.exposures() if spec.origin == "showcase" else published_keys(out_dir, field_id)
+    )
     data0 = [e.data for e in epochs]
     assign_clusters(data0)
     field_json = S.FieldDetail.model_validate_json(

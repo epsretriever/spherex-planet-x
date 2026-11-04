@@ -77,13 +77,14 @@ describe("normalizeFilter", () => {
 describe("applyFilter", () => {
   const ids = (xs: CandidateSummary[]) => xs.map((x) => x.candidate_id);
 
+  // Unexplained first whatever the sort, then known objects, then simulated ones.
   it("hides SIMULATED objects unless asked, and sorts by score", () => {
-    expect(ids(applyFilter(LIST, EMPTY_FILTER))).toEqual(["a", "b", "d"]);
-    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, include_injected: true }))).toEqual(["a", "c", "b", "d"]);
+    expect(ids(applyFilter(LIST, EMPTY_FILTER))).toEqual(["a", "d", "b"]);
+    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, include_injected: true }))).toEqual(["a", "d", "b", "c"]);
   });
 
   it("keeps SIMULATED objects alongside a type filter when included", () => {
-    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, classification: ["known_object"], include_injected: true }))).toEqual(["c", "b"]);
+    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, classification: ["known_object"], include_injected: true }))).toEqual(["b", "c"]);
   });
 
   it("filters by speed, excluding unmeasured speeds", () => {
@@ -100,11 +101,11 @@ describe("applyFilter", () => {
   });
 
   it("sorts by speed and date", () => {
-    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "rate" }))).toEqual(["a", "b", "d"]);
-    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "newest" }))).toEqual(["b", "d", "a"]);
-    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["a", "b", "d"]);
+    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "rate" }))).toEqual(["a", "d", "b"]);
+    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "newest" }))).toEqual(["d", "a", "b"]);
+    expect(ids(applyFilter(LIST, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["a", "d", "b"]);
     const scored = LIST.map((c) => ({ ...c, anomaly_score: c.candidate_id === "d" ? 0.9 : c.candidate_id === "b" ? 0.4 : null }));
-    expect(ids(applyFilter(scored, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["d", "b", "a"]);
+    expect(ids(applyFilter(scored, { ...EMPTY_FILTER, sort: "unusual" }))).toEqual(["d", "a", "b"]);
   });
 });
 

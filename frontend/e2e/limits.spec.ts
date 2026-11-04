@@ -32,7 +32,9 @@ test("the page leads with a plain summary and shows distance and planet context 
   await expect(page.getByText(/our pipeline finds at least half of them down to magnitude/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "How far away can we see?" })).toBeVisible();
   const planet = page.getByRole("region", { name: "Planet brightness by distance" });
-  await expect(planet.getByText("Could be missed")).toBeVisible();
+  await expect(planet.getByText("Too slow for this test to detect")).toBeVisible();
+  await expect(page.getByText("Bright objects at asteroid-like speeds")).toBeVisible();
+  await expect(page.getByText(/About the overall number/)).toBeVisible();
   await expect(page.getByText("Thermal model")).toBeVisible();
 });
 

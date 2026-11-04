@@ -1,26 +1,9 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { CardListSkeleton } from "@/components/Skeletons";
-import { CandidateBrowser } from "./CandidateBrowser";
+import { Moved } from "@/components/Moved";
 
-export const metadata: Metadata = {
-  title: "Detective",
-};
+export const metadata: Metadata = { title: "Objects", robots: { index: false }, alternates: { canonical: "/objects/" } };
 
+/** The Detective list is now the Objects page (same search and filters, same query string). */
 export default function DetectivePage() {
-  return (
-    <div className="container">
-      <header className="page-header">
-        <p className="eyebrow">Detective</p>
-        <h1>Moving-object candidates</h1>
-        <p className="lede">
-          Every dot our pipeline caught moving, with the evidence for and against it. Most turn out to be known asteroids. The
-          unexplained ones are where the detective work starts.
-        </p>
-      </header>
-      <Suspense fallback={<CardListSkeleton label="Loading candidates" />}>
-        <CandidateBrowser />
-      </Suspense>
-    </div>
-  );
+  return <Moved to="/objects/" label="Objects" />;
 }

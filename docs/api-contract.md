@@ -13,12 +13,12 @@ The deployed product is one Cloudflare Worker, `spherex-planet-x`, that serves b
 ```
 
 - **Pixels are processed offline** by `pipeline/` (Workers have CPU limits). It writes static JSON and WebP images to `frontend/public/data/`, which the Next.js static export copies into `frontend/out/data/`.
-- **The Worker** serves `/api/*` from that static data through `env.ASSETS` and adds live data. `/api/coverage` queries IRSA TAP, and every candidate's `known_object` block is filled at request time from JPL SBIdent and Horizons for each epoch. The frontend calls relative `/api/*` URLs only.
+- **The Worker** serves `/api/*` from that static data through `env.ASSETS` and adds live data. `/api/coverage` queries IRSA TAP, and every candidate's `known_object` block comes from JPL SBIdent and Horizons: checked by the survey pipeline in CI (final when matched), and by the Worker in the background for unexplained and unchecked candidates. The frontend calls relative `/api/*` URLs only.
 - **Source of truth for shapes:** the Pydantic models in [`pipeline/spherex_px/schemas.py`](../pipeline/spherex_px/schemas.py). The Worker's TypeScript types in [`worker/src/contract.ts`](../worker/src/contract.ts) mirror them, and Worker tests validate responses against the exported JSON Schema.
 - **JSON Schema:** [`shared/schema/`](../shared/schema/), exported from the models with `spherex-px export-schema`. A test fails if the exports are stale. The frontend can generate TypeScript types from these files.
 - **Example responses:** [`shared/fixtures/`](../shared/fixtures/). Every fixture is a real backend response recorded from real SPHEREx data (see [Fixtures](#fixtures)), and a test validates each one against the models.
 
-Changes to the contract go into all three in the same commit. Breaking changes bump the major `schema_version`. Additive changes bump the minor: v1.1 added objects, the survey, AI, sky requests and vetting votes. Responses carry `schema_version: "1.1"`, and static files built before v1.1 still say `"1.0"`. Clients accept any `1.x`.
+Changes to the contract go into all three in the same commit. Breaking changes bump the major `schema_version`. Additive changes bump the minor: v1.1 added objects, the survey, AI, sky requests and vetting votes. v1.2 added the pipeline's JPL triage (`known_object.enrichment: "pipeline"`, `known_object.jpl_links`, `record_level`, nullable `detections[].stamp`), per-candidate `pipeline_version` in list summaries, and the compact survey footprint (`empty_cells`, `totals.sky_fraction_searched`). Responses carry `schema_version: "1.2"`; static files built earlier still say `"1.0"` or `"1.1"`. Clients accept any `1.x`.
 
 ## Conventions
 
@@ -72,13 +72,22 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 
 ### Known-object enrichment
 
-The pipeline writes every candidate with `known_object.checked = false`, `enrichment: "static"` and `catalogs_checked: []`, because the offline builder has no JPL access. It never writes a match it did not check.
+The field builder writes every candidate with `known_object.checked = false`, `enrichment: "static"` and `catalogs_checked: []`. It never writes a match it did not check.
+
+**Triage in the pipeline (v1.2).** After each survey run, the `Survey` Action's merge job runs `spherex-px triage` (`pipeline/spherex_px/triage.py`) on the new candidates, and on a few older ones JPL had not answered for. It runs the same check as the Worker (steps 1–3 below, same radii and rules) from CI, never in a request, and writes the result into the candidate file with `enrichment: "pipeline"`:
+
+- **Known** (one catalogued object explains every detection): `classification: "known_object"`, `known_object.jpl_links {sbdb_url, horizons_url}` (JPL's Small-Body Database for the orbit, Horizons for ephemerides) and `record_level: "minimal"`: the per-detection stamps (`detections[].stamp: null`) and our own orbit products (orbit, clones, prediction) are not kept, except for an orbit-validation sample of up to 60 identified objects that keep our orbit so it stays compared with JPL's. Detections, motion, spectrum points, the thumbnail and the field page are kept.
+- **Unexplained** (JPL answered, nothing matched): `record_level: "full"`, everything kept (stamps, orbit, prediction, clones, spectrum, vetting), so it can be judged real and new or not.
+- **Not checked** (JPL did not answer): `checked: false` with a `not_checked_reason`; nothing is dropped and the next triage or the Worker retries it.
+
+The Worker treats a pipeline match as **final**: it is served as is (`Cache-Control: public, max-age=3600`), never looked up again, and never refreshed by the cron. Unexplained and unchecked candidates get the Worker lookups below; when both a pipeline result and a stored Worker result exist, the newer checked one is served (`enrichment` says which).
 
 **When it runs.** JPL lookups take 10–30 seconds, so a visitor never waits for one. Results are stored globally in D1 (binding `DB`, table `enrichment`, `worker/src/store.ts`), so a list of any length reads them in one query. Results stored in Workers KV (binding `ENRICHMENT`) before D1 held them are still read and copied into D1 by the cron and by detail views:
 
 - `GET /api/candidates/{candidate_id}` returns the stored result with `enrichment: "cached"`. If there is none yet, it answers immediately with `checked: false`, `enrichment: "pending"` and `Cache-Control: no-store`, and starts the lookup in the background. Clients fetch the report again every few seconds until `enrichment` is no longer `pending`.
 - `GET /api/candidates` folds in stored results and starts one background lookup for a candidate that has none.
-- A Cron Trigger every 10 minutes (`worker/src/scheduled.ts`) refreshes, within one invocation's subrequest budget, results that are missing, failed, or older than 24 hours.
+- A Cron Trigger every 10 minutes (`worker/src/scheduled.ts`) refreshes, within one invocation's subrequest budget, results of **unexplained and unchecked** candidates that are missing, failed, or older than 24 hours (new asteroids get catalogued). Pipeline matches are skipped, except one lookup per orbit-validation object for the orbit comparison.
+- Stored results are keyed by the candidate's own `pipeline_version` (list summaries carry it since v1.2, because incremental survey runs publish data from several pipeline commits together).
 - A failed lookup is retried after 30 minutes. A lock (D1 table `locks`) stops two lookups for the same candidate running at once.
 
 **What a lookup does** (`worker/src/enrich.ts`):
@@ -96,7 +105,7 @@ Injected candidates are never sent to JPL and are never relabelled.
 
 ### Paging
 
-`GET /api/fields`, `/api/candidates` and `/api/objects` take `limit` (1–500) and `offset` (default 0); without `limit` they return everything, as the static files do. Responses add `total` (items matching the filters, before paging), `offset`, `limit` and `next_offset` (the offset of the next page, or `null` on the last page). Invalid values return `400`. Order is the static file's order, so pages are stable for one data version.
+`GET /api/fields`, `/api/candidates` and `/api/objects` take `limit` (1–500) and `offset` (default 0); without `limit` they return everything, as the static files do. Responses add `total` (items matching the filters, before paging), `offset`, `limit` and `next_offset` (the offset of the next page, or `null` on the last page). Invalid values return `400`. Lists are ordered for review: unexplained and unchecked first, then likely artifacts and unconfirmed pairs, then known objects, then simulated ones; by `overall_score` within each group (stable for one data version).
 
 ## Field (`FieldSummary`, `FieldDetail`)
 
@@ -125,10 +134,11 @@ There is no separate `simulated` boolean. `classification == "injected"` is the 
 
 ### Blocks
 
-- `detections[]`: `epoch_id`, `obs_id`, `time_utc`, `mjd`, `ra_deg`, `dec_deg`, `pos_err_arcsec`, native `x_pix`/`y_pix` (0-based detector pixels), common-grid `x_grid`/`y_grid` (for overlays), `flux_ujy`, `flux_err_ujy`, `snr`, wavelength fields, `band_index`, `flag_bits`, `flag_names`, `flagged_pixels_in_aperture`, `psf_fit_reduced_chi2`, `stamp {url, width_px: 64, height_px: 64, format, source}`, `spacecraft_geocentric_km`, `source`.
+- `detections[]`: `epoch_id`, `obs_id`, `time_utc`, `mjd`, `ra_deg`, `dec_deg`, `pos_err_arcsec`, native `x_pix`/`y_pix` (0-based detector pixels), common-grid `x_grid`/`y_grid` (for overlays), `flux_ujy`, `flux_err_ujy`, `snr`, wavelength fields, `band_index`, `flag_bits`, `flag_names`, `flagged_pixels_in_aperture`, `psf_fit_reduced_chi2`, `stamp {url, width_px: 64, height_px: 64, format, source} | null` (null in a minimal record), `spacecraft_geocentric_km`, `source`.
+- `record_level`: `full` (default) or `minimal` (JPL identified the object; see [Known-object enrichment](#known-object-enrichment)). Objects carry the same field.
 - `motion`: `model` (`linear | parallax | none`), `n_detections`, `time_span_hours`, `rate_arcsec_per_hr`, `rate_err_arcsec_per_hr`, `position_angle_deg`, `ra_rate_arcsec_per_hr`, `dec_rate_arcsec_per_hr`, `fit_residual_rms_arcsec`, `fit_chi2`, `fit_dof`, `distance_au_estimate {best, lo, hi} | null`.
 - Plain-language text after a failed lookup: when a stored lookup could not reach JPL, `summary_plain` says the catalog couldn't be reached and the check is retried automatically. Never-checked and pending candidates keep their own wording.
-- `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`, `enrichment` (`static | live | cached | pending`).
+- `known_object`: `checked`, `not_checked_reason`, `matched`, `catalogs_checked`, `search_radius_arcsec`, `designation`, `predicted_vmag`, `per_epoch[] {epoch_id, predicted_ra_deg, predicted_dec_deg, separation_arcsec}`, `nearest {designation, separation_arcsec} | null` (when unmatched), `observer`, `query_utc`, `enrichment` (`static | pipeline | live | cached | pending`), `jpl_links {sbdb_url, horizons_url} | null` (matched only).
   - `catalogs_checked` lists **only services we actually queried**: `"JPL SBIdent"` and/or `"JPL Horizons"`. The model rejects anything else, so MPC can never appear unless we start calling it and update the contract.
 - `scores`: `motion_consistency`, `snr`, `artifact_likelihood`, `overall` (all in [0, 1]), `quality_level` (`low | medium | high`), `method: "rule_based_v1"`, `definition`. **The score is a rule-based ranking, not a probability.** Nothing in the UI or text may describe it as a classifier probability. Thresholds: `high` if `overall ≥ 0.6`, `medium` if `≥ 0.3`, else `low`.
 - `vetting[]`: raw checks `{check, description, value, threshold, passed}`. `passed` is `null` when a check couldn't be evaluated.
@@ -177,6 +187,7 @@ Synthetic moving objects are injected into the **real** cutouts of the published
 - `example_candidate_ids`: candidates classified `injected` (label "SIMULATED"), with full evidence reports and an `injection` block giving the truth. They're never sent to JPL and never relabelled. List them with `/api/candidates?classification=injected`.
 - Intervals are Wilson 95% for fractions and Poisson 95% for counts.
 - `InjectionStudyIndex {studies[] {study_id, generated_utc, field_ids, n_injected}}`.
+- Built by the `Injection study` Action (`.github/workflows/injection.yml`): `spherex-px injection-study <id> --survey` injects into every published survey tile, reading the exact Level 2 exposures listed in each tile's field JSON, in 20 parallel shards (`--shard k --of 20`), then `--merge` combines them, and `spherex-px publish` folds the per-tile m50 into `survey.json`. The Limits page shows the newest study in the index.
 
 ## Objects (`ObjectSummary`, `ObjectDetail`, `ObjectPrediction`)
 
@@ -210,16 +221,17 @@ A linked object has every detection (each exposure once), `field_ids` and `candi
 
 `{generated_utc, name, description, tile_size_deg, data_releases, tiles[], totals, last_run, runs[]}`.
 
-- `tiles[]`: `{tile_id, center, ecliptic_lon_deg, ecliptic_lat_deg, size_deg, status, n_epochs, n_visits, first_time_utc, last_time_utc, last_processed_utc, field_id, n_candidates, m50_ab, m50_study_id, detail}`. `status`:
+- `tiles[]`: showcase fields, survey tiles with a field page, and failed tiles (since v1.2 survey tiles searched with nothing found are in `empty_cells`, so the file stays small as the survey grows): `{tile_id, center, ecliptic_lon_deg, ecliptic_lat_deg, size_deg, status, n_epochs, n_visits, first_time_utc, last_time_utc, last_processed_utc, field_id, n_candidates, m50_ab, m50_study_id, detail}`. `status`:
   - `processed`: searched, and the search found a moving object; `field_id` is its field page.
   - `empty`: searched, no moving object passed vetting, so there is no field page (`field_id: null`). This is how the sky map shows where we looked and found nothing.
   - `failed`: the last search of this tile failed; `detail` says why (for example an S3 read error). It is retried by the next run that plans it.
   - `pending` / `no_data`: covered but not searched yet / no repeated SPHEREx visits.
 - `m50_ab` is the 50% completeness magnitude (linear tracks at 3–100″/hr) for that tile from the newest published injection study (`m50_study_id`), null where no study has measured it.
-- `totals {n_tiles, n_processed, area_deg2_processed, n_epochs, n_candidates, n_objects, n_searched, n_empty, n_failed, area_deg2_searched}`; `n_searched` and `area_deg2_searched` count processed plus empty tiles. The Worker adds `n_known_objects` (see endpoints).
+- `empty_cells {size_deg, n_tiles, positions[] [ra_deg, dec_deg]}`: survey tiles searched with nothing found; `n_tiles` counts searches, `positions` the distinct 0.3° patches (a patch searched in two weeks appears once), rounded to 0.01°.
+- `totals {n_tiles, n_processed, area_deg2_processed, n_epochs, n_candidates, n_objects, n_searched, n_empty, n_failed, area_deg2_searched, sky_fraction_searched}`; `n_searched` counts processed plus empty tile searches; `area_deg2_searched` is the distinct sky searched (survey tiles on the same 0.3° ecliptic grid point in different weeks count once) and `sky_fraction_searched` that area over 41,253 deg². The Worker adds `n_known_objects` (see endpoints).
 - `last_run` and `runs[]` (newest first, up to 20) come from the run ledger: `{run_id, started_utc, finished_utc, pipeline_version, n_new_files (exposures in tiles searched for the first time), n_tiles_processed (tiles searched), n_new_objects (objects not published before), segments, n_tiles_with_movers, n_tiles_empty, n_tiles_failed, n_candidates, workflow_url}`.
 - `planet_nine {citation, url, epoch_utc, cell_deg, population, n_population, n_remaining, cells[] {ra_deg, dec_deg, fraction}} | absent`: the published Planet Nine search region, for the sky map. Source: Brown & Batygin (2021), AJ 162, 219, reference population v3 on CaltechDATA (record `8fjad-x7y61`), 100,000 synthetic Planet Nine orbits with sky positions at `epoch_utc` (2018-06-01; the planet would move well under a degree since). Only members the ZTF, DES and Pan-STARRS searches would not have detected are binned (the region still open: `n_remaining` of `n_population`); `fraction` is each RA/Dec cell's share of them, summing to 1, with empty cells omitted. Written by `spherex-px planet-nine` in the `Planet Nine region` Action (`.github/workflows/planet-nine.yml`) to `data/survey/planet_nine.json`; the Worker adds it to `/api/survey`.
-- Storage: after each run of the `Survey` Action (`.github/workflows/survey.yml`), `spherex-px survey-ledger` updates `data/survey/footprint.json` (every tile ever searched, with its latest result) and appends to `data/survey/ledger.json`; `spherex-px publish` folds both into `survey.json`.
+- Storage: after each run of the `Survey` Action (`.github/workflows/survey.yml`), `spherex-px survey-ledger` updates `data/survey/footprint.json` (every tile ever searched, with its latest result), `data/survey/segments.json` (per week segment: tiles planned, tiles searched, finished) and appends to `data/survey/ledger.json`; `spherex-px publish` folds them into `survey.json`. Runs are incremental: `spherex-px survey-plan next:N` picks the next N unfinished week segments and plans only tiles the footprint has no result for (failed ones are retried), and new tiles are added to the published data rather than replacing it.
 
 ## AI (`AiWriteup`, `AiAnswer`, `AiSearch`, `Digest`)
 

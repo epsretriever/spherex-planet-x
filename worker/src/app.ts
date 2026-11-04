@@ -14,7 +14,9 @@ import { validation } from "./routes/validation";
 export type AppEnv = { Bindings: Env; Variables: { deps: Deps } };
 
 export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "waitUntil">) => Deps = defaultDeps) {
-  const app = new Hono<AppEnv>();
+  // strict: false so /api/injection/ and /api/injection/{id}/ match like their slashless forms
+  // (the site uses trailing slashes, and proxies may keep them).
+  const app = new Hono<AppEnv>({ strict: false });
 
   app.use("/api/*", cors({ origin: "*", allowMethods: ["GET", "POST", "OPTIONS"] }));
   app.use("/api/*", async (c, next) => {

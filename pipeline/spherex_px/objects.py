@@ -96,7 +96,17 @@ def object_from_candidate(
             )
         ],
         provenance=c.provenance,
+        record_level=c.record_level,
     )
+
+
+def review_priority(classification, matched: bool) -> int:
+    """List order: unexplained (and not yet checked) first, then weak detections, then known."""
+    if matched or classification == S.Classification.known_object:
+        return 2
+    if classification in (S.Classification.likely_artifact, S.Classification.unconfirmed_pair):
+        return 1
+    return 0
 
 
 #: Classification of a linked object: the most informative of its tracklets'.
@@ -160,6 +170,7 @@ def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
     t = sorted(d.mjd for d in o.detections)
     return S.ObjectSummary(
         object_id=o.object_id,
+        pipeline_version=o.pipeline_version,
         classification=o.classification,
         label_plain=o.label_plain,
         summary_plain=o.summary_plain,
@@ -268,10 +279,34 @@ def build_survey(
             t.m50_ab = m50_by_field[t.tile_id]
             t.m50_study_id = study_id
     published = {t.tile_id for t in tiles}
+    empty = []
     if footprint is not None:
-        tiles += [tile_from_footprint(t) for t in footprint.tiles if t.tile_id not in published]
+        rest = [t for t in footprint.tiles if t.tile_id not in published]
+        empty = [t for t in rest if t.status == "empty"]
+        # Failed tiles stay full records (they carry the reason); a tile the footprint calls
+        # kept whose field is no longer published (rebuilt elsewhere) counts as searched.
+        tiles += [tile_from_footprint(t) for t in rest if t.status != "empty"]
     processed = [t for t in tiles if t.status == S.TileStatus.processed]
     searched = [t for t in tiles if t.status in (S.TileStatus.processed, S.TileStatus.empty)]
+
+    # Distinct sky: survey tiles of different weeks on the same 0.3 deg ecliptic grid point are
+    # one patch; showcase fields count on their own.
+    def cell(lon: float, lat: float) -> tuple[int, int]:
+        return round(lon / 0.3) % 1200, round(lat / 0.3)
+
+    sky = {
+        cell(t.ecliptic_lon_deg, t.ecliptic_lat_deg)
+        for t in searched
+        if t.tile_id.startswith("sv-")
+    }
+    showcase_area = sum(t.size_deg**2 for t in searched if not t.tile_id.startswith("sv-"))
+    empty_pos: dict[tuple[int, int], tuple[float, float]] = {}
+    for t in empty:
+        empty_pos.setdefault(
+            cell(t.elon_deg, t.elat_deg), (round(t.ra_deg, 2), round(t.dec_deg, 2))
+        )
+    sky |= set(empty_pos)
+    area = round(len(sky) * 0.3**2 + showcase_area, 4)
     releases = sorted({f.data_release for f in fields})
     runs = sorted(runs or [], key=lambda r: r.finished_utc, reverse=True)
     return S.Survey(
@@ -286,17 +321,25 @@ def build_survey(
         tile_size_deg=0.3,
         data_releases=releases,
         tiles=tiles,
+        empty_cells=S.SurveyEmptyCells(
+            size_deg=0.3,
+            n_tiles=len(empty),
+            positions=[list(p) for _, p in sorted(empty_pos.items())],
+        )
+        if footprint is not None
+        else None,
         totals=S.SurveyTotals(
-            n_tiles=len(tiles),
+            n_tiles=len(tiles) + len(empty),
             n_processed=len(processed),
             area_deg2_processed=round(sum(t.size_deg**2 for t in processed), 4),
-            n_epochs=sum(t.n_epochs for t in tiles),
+            n_epochs=sum(t.n_epochs for t in tiles) + sum(t.n_exposures for t in empty),
             n_candidates=sum(t.n_candidates for t in tiles),
             n_objects=n_objects,
-            n_searched=len(searched),
-            n_empty=sum(t.status == S.TileStatus.empty for t in tiles),
+            n_searched=len(searched) + len(empty),
+            n_empty=sum(t.status == S.TileStatus.empty for t in tiles) + len(empty),
             n_failed=sum(t.status == S.TileStatus.failed for t in tiles),
-            area_deg2_searched=round(sum(t.size_deg**2 for t in searched), 4),
+            area_deg2_searched=area,
+            sky_fraction_searched=round(area / 41252.96, 8),
         ),
         last_run=runs[0] if runs else None,
         runs=runs[:20],
@@ -377,7 +420,12 @@ def write_objects_and_survey(
                 prediction_doc(orbit, o.object_id, version, stamp),
             )
     summaries = sorted(
-        (summary_of_object(o) for o in objects), key=lambda s: (-s.overall_score, s.object_id)
+        (summary_of_object(o) for o in objects),
+        key=lambda s: (
+            review_priority(s.classification, s.known_object_matched),
+            -s.overall_score,
+            s.object_id,
+        ),
     )
     write_json(
         out_dir / "objects.json",
@@ -406,4 +454,76 @@ def write_objects_and_survey(
         m50=injection_m50(out_dir),
     )
     write_json(out_dir / "survey.json", survey)
+    record_growth(out_dir, survey, distinct_objects(summaries), now)
     return len(objects), len(fields)
+
+
+SKY_DEG2 = 41252.96
+
+
+def distinct_objects(summaries) -> int:
+    """Objects with repeat sightings of one known JPL object counted once (as the site lists them)."""
+    return len(
+        {
+            (
+                s.known_object_designation
+                if s.known_object_matched and s.known_object_designation
+                else s.object_id
+            )
+            for s in summaries
+            if s.classification != S.Classification.injected
+        }
+    )
+
+
+def live_identified(api: str) -> tuple[int, int] | None:
+    """(identified, unidentified) objects as the live site lists them: JPL results live in the
+    Worker's store, not in the published files. None when the API does not answer."""
+    import logging
+
+    from .data.http import request
+
+    try:
+        objs = request("GET", f"{api.rstrip('/')}/api/objects").json()["objects"]
+    except Exception as err:  # the chart point just goes without these two numbers
+        logging.getLogger(__name__).warning("growth: live object counts unavailable (%s)", err)
+        return None
+    real = [o for o in objs if o.get("classification") != "injected"]
+    known = sum(1 for o in real if o.get("classification") == "known_object")
+    return known, len(real) - known
+
+
+def record_growth(out_dir: Path, survey, n_objects: int, now: str) -> None:
+    """One point per UTC day (the day's last publish wins) for the home page growth chart.
+
+    With SURVEY_LIVE_API set (the survey workflow), objects and the identified/unidentified
+    split come from the live Worker, which holds the JPL results (as of the previous run)."""
+    import os
+
+    t = survey.totals
+    area = t.area_deg2_searched or t.area_deg2_processed
+    point = {
+        "date": now[:10],
+        "tiles_searched": t.n_searched or t.n_processed,
+        "area_deg2": round(area, 2),
+        "sky_percent": round(100 * area / SKY_DEG2, 4),
+        "candidates": t.n_candidates,
+        "objects": n_objects,
+    }
+    path = out_dir / "growth.json"
+    days = json.loads(path.read_text())["days"] if path.exists() else []
+    prev = next((d for d in days if d["date"] == point["date"]), None)
+    live = (
+        live_identified(os.environ["SURVEY_LIVE_API"])
+        if os.environ.get("SURVEY_LIVE_API")
+        else None
+    )
+    if live:
+        point["identified"], point["unidentified"] = live
+        point["objects"] = sum(live)
+    elif prev and "identified" in prev:  # keep today's earlier live numbers
+        point["identified"], point["unidentified"] = prev["identified"], prev["unidentified"]
+        point["objects"] = prev["objects"]
+    days = [d for d in days if d["date"] != point["date"]] + [point]
+    days.sort(key=lambda d: d["date"])
+    path.write_text(json.dumps({"days": days}, indent=1) + "\n")

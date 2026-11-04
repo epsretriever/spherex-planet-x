@@ -142,7 +142,11 @@ def orbit_for(out_dir: Path, c: S.CandidateDetail) -> OrbitRecord | None:
     """The cached orbit for a candidate, fitting (and caching) it when missing or stale."""
     if c.classification == S.Classification.injected or c.motion.model == S.MotionModel.none:
         return None
-    return cached_orbit(orbit_path(out_dir, c.candidate_id), c.detections, c.candidate_id)
+    p = orbit_path(out_dir, c.candidate_id)
+    if c.record_level == "minimal":
+        # A known object: JPL has its orbit; only the validation sample keeps ours.
+        return OrbitRecord.model_validate_json(p.read_text()) if p.exists() else None
+    return cached_orbit(p, c.detections, c.candidate_id)
 
 
 def linked_orbit(out_dir: Path, primary_id: str, dets: list[S.Detection]) -> OrbitRecord | None:
