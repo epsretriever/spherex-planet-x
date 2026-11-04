@@ -16,6 +16,7 @@ export const SECTIONS: Section[] = [
   { href: "/", label: "Home", blurb: "What this is and how it works", match: "/" },
   { href: "/explore/", label: "Explore", blurb: "Blink real SPHEREx images and spot what moved", match: "/explore" },
   { href: "/detective/", label: "Detective", blurb: "Every moving object, with the evidence for and against", match: "/detective" },
+  { href: "/leads/", label: "Leads", blurb: "What JPL can't explain, ranked, with what would confirm each one", match: "/leads" },
   { href: "/objects/", label: "Objects", blurb: "Each moving object, tracked across visits, with its distance and orbit", match: "/objects" },
   { href: "/sky/", label: "Sky map", blurb: "Every patch of sky we've searched, and what's left", match: "/sky" },
   { href: "/limits/", label: "Limits", blurb: "Where Planet X could still be hiding: how faint and slow we can see", match: "/limits" },

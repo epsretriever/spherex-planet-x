@@ -69,6 +69,8 @@ export default function LandingPage() {
   const survey = staticSurvey();
   const candidates = staticCandidates();
   const t = survey?.totals;
+  // Objects JPL couldn't identify, as last recorded from the live site by the pipeline.
+  const unidentified = staticGrowth().findLast((d) => d.unidentified != null)?.unidentified ?? null;
   const stats = [
     t && { value: fmtInt(t.n_epochs), label: "SPHEREx images analyzed" },
     t && { value: fmtInt(t.n_searched ?? t.n_processed), label: "patches of sky searched" },
@@ -97,8 +99,8 @@ export default function LandingPage() {
             <Link href="/explore/" className="button button-primary">
               Explore the sky →
             </Link>
-            <Link href="/detective/" className="button">
-              See the evidence
+            <Link href="/leads/" className="button">
+              {unidentified != null ? `${unidentified} unexplained leads` : "Unexplained leads"}
             </Link>
             <Link href="#how" className={styles.textLink}>
               How it works ↓
@@ -185,6 +187,15 @@ export default function LandingPage() {
             </div>
           </div>
           <div className={styles.modes}>
+            <Link href="/leads/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Unexplained leads</span>
+              <h3>What JPL can&apos;t explain</h3>
+              <p>
+                The objects no known asteroid or comet explains, ranked by the strength of the evidence, each with a blink, the case for
+                and against, and where to point a telescope to confirm it.
+              </p>
+              <span className={styles.modeCta}>See the leads →</span>
+            </Link>
             <Link href="/explore/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Explorer</span>
               <h3>Blink the sky</h3>

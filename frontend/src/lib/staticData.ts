@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { CandidateDetail, CandidateList, FieldDetail, FieldList, ObjectDetail, ObjectList, Survey } from "./contract";
+import type { CandidateDetail, CandidateList, FieldDetail, FieldList, ObjectDetail, ObjectList, ObjectPrediction, Survey } from "./contract";
 
 /**
  * Build-time access to the pipeline's published data in public/data/ (the same files the Worker
@@ -44,6 +44,11 @@ export function staticObjects(): ObjectList | null {
 
 export function staticObject(id: string): ObjectDetail | null {
   return ID_RE.test(id) ? read<ObjectDetail>(`objects/${id}.json`) : null;
+}
+
+/** An object's orbit prediction (only once it has an orbit). */
+export function staticPrediction(id: string): (ObjectPrediction & { note_plain?: string | null }) | null {
+  return ID_RE.test(id) ? read<ObjectPrediction & { note_plain?: string | null }>(`objects/${id}/prediction.json`) : null;
 }
 
 export function staticSurvey(): Survey | null {
