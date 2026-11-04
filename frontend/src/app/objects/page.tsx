@@ -1,26 +1,32 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { PageGuide } from "@/components/PageGuide";
 import { PrefetchData } from "@/components/PrefetchData";
-import { staticNameSeed, staticObjects } from "@/lib/staticData";
-import { ObjectListView } from "./ObjectListView";
+import { CardListSkeleton } from "@/components/Skeletons";
+import { pageMeta } from "@/lib/meta";
+import { ObjectsHub } from "./ObjectsHub";
 
-export const metadata: Metadata = {
-  title: "Objects",
-  description: "Every moving object our pipeline tracked in SPHEREx data, linked across visits, with its distance and orbit.",
-};
+export const metadata: Metadata = pageMeta(
+  "Objects",
+  "Every moving object found in real NASA SPHEREx images: search and filter them, see the unexplained leads ranked, the ones JPL identified, and the patches of sky we searched.",
+  "/objects/",
+);
 
 export default function ObjectsPage() {
   return (
     <div className="container">
-      <PrefetchData urls={["/api/objects", "/api/candidates?include_injected=true", "/api/fields"]} />
+      <PrefetchData urls={["/api/candidates", "/api/objects", "/api/fields"]} />
       <header className="page-header">
-        <p className="eyebrow">Objects</p>
-        <h1>Every object we&apos;ve tracked</h1>
+        <PageGuide>Find any moving object we tracked, and open its evidence report.</PageGuide>
+        <h1>Objects</h1>
         <p className="lede">
-          An object is one body in the solar system: every sighting we linked to it, across visits and patches of sky. Open one to follow
-          its track, see how far away it is and, once we can fit one, its orbit.
+          Everything our pipeline caught moving in SPHEREx images. Most are known asteroids; the unexplained ones are where the detective
+          work starts.
         </p>
       </header>
-      <ObjectListView initial={staticObjects()} seed={staticNameSeed()} />
+      <Suspense fallback={<CardListSkeleton label="Loading objects" />}>
+        <ObjectsHub />
+      </Suspense>
     </div>
   );
 }

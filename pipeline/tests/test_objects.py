@@ -18,8 +18,6 @@ def test_publish_keeps_the_data_version(tmp_path):
     """Lists must carry the version of the files they list (the Worker keys JPL results by it)."""
     import json
 
-    import pytest
-
     from spherex_px.build import publish
     from spherex_px.contract import FIXTURE_DIR
 
@@ -38,7 +36,12 @@ def test_publish_keeps_the_data_version(tmp_path):
     obj = json.loads((tmp_path / "objects" / f"obj-{cand['candidate_id']}.json").read_text())
     assert obj["pipeline_version"] == cand["pipeline_version"]
 
+    # Incremental survey runs publish data from several commits: lists carry the newest,
+    # each candidate summary its own.
     cand["pipeline_version"] = "0.0.0+git.other"
+    cand["provenance"]["generated_utc"] = "2099-01-01T00:00:00Z"
     (tmp_path / "candidates" / f"{cand['candidate_id']}.json").write_text(json.dumps(cand))
-    with pytest.raises(ValueError, match="mixes pipeline versions"):
-        publish(tmp_path)
+    publish(tmp_path)
+    lst = json.loads((tmp_path / "candidates.json").read_text())
+    assert lst["pipeline_version"] == "0.0.0+git.other"
+    assert lst["candidates"][0]["pipeline_version"] == "0.0.0+git.other"

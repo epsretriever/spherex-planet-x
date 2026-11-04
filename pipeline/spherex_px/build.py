@@ -133,9 +133,24 @@ class Epoch:
 
 class FieldBuilder:
     def __init__(
-        self, spec: FieldSpec, out_dir: Path = DEFAULT_OUT, archive: S3Archive | None = None
+        self,
+        spec: FieldSpec,
+        out_dir: Path = DEFAULT_OUT,
+        archive: S3Archive | None = None,
+        *,
+        light: bool = False,
+        cover_points: list[tuple[float, float]] | None = None,
+        track_filter=None,
     ):
+        """``light``: search only (no ZODI plane read; see L2File.cutout). ``cover_points``:
+        use every exposure that covers any of these positions, not just the center (a survey
+        block searches several tiles at once)."""
         self.spec = spec
+        self.light = light
+        #: Optional (ra, dec) -> bool on a track's median position: a survey tile drops tracks
+        #: that belong to a neighbouring tile, so one object is published once.
+        self.track_filter = track_filter
+        self.cover_points = cover_points or [(spec.ra_deg, spec.dec_deg)]
         self.out = out_dir
         self.archive = archive or S3Archive()
         self.index = CoverageIndex(archive=self.archive)
@@ -152,7 +167,13 @@ class FieldBuilder:
             release, segment = s.split("/")
             self.index.index_segment(release, segment)
             segs.append(segment)
-        cov = self.index.covering(self.spec.ra_deg, self.spec.dec_deg, edge_px=30, segments=segs)
+        cov, seen = [], set()
+        for ra, dec in self.cover_points:
+            for e in self.index.covering(ra, dec, edge_px=30, segments=segs):
+                if e.key.key not in seen:
+                    seen.add(e.key.key)
+                    cov.append(e)
+        cov.sort(key=lambda e: e.mjd_avg)
         keys = []
         for e in cov:
             if e.l2dqa and e.l2dqa.strip() != "Pass":
@@ -176,7 +197,7 @@ class FieldBuilder:
 
         def read(key: Level2Key) -> Epoch | None:
             f = L2File(key, self.archive)
-            c = f.cutout(self.spec.ra_deg, self.spec.dec_deg, size)
+            c = f.cutout(self.spec.ra_deg, self.spec.dec_deg, size, with_zodi=not self.light)
             if c is None:
                 return None
             p = prepare(c, DETECT)
@@ -214,7 +235,8 @@ class FieldBuilder:
 
     # -- build -------------------------------------------------------------------
 
-    def build(self) -> tuple[S.FieldDetail, list[S.CandidateDetail]]:
+    def search(self) -> tuple[list[Epoch], list[Track]]:
+        """Read, detect and link: the moving-object search without any rendering."""
         spec = self.spec
         keys = self.exposures()
         if not keys:
@@ -233,6 +255,15 @@ class FieldBuilder:
         transients = find_transients(data, sightings, LINK)
         tracks = link_tracks(data, transients, LINK)
         tracks = [t for t in tracks if self._inside(t, data)]
+        if self.track_filter is not None:
+            tracks = [
+                t
+                for t in tracks
+                if self.track_filter(
+                    float(np.median([s.ra for s in t.sightings])),
+                    float(np.median([s.dec for s in t.sightings])),
+                )
+            ]
         log.info(
             "%s: %d sightings, %d transients, %d tracks",
             spec.field_id,
@@ -240,6 +271,15 @@ class FieldBuilder:
             len(transients),
             len(tracks),
         )
+        return epochs, tracks
+
+    def classify(self, tr: Track, epochs: list[Epoch]) -> S.Classification:
+        """Vetting class of a track, without rendering stamps (same rules as _candidate)."""
+        return vet(self._measurements(tr, epochs))[2]
+
+    def build(self) -> tuple[S.FieldDetail, list[S.CandidateDetail]]:
+        spec = self.spec
+        epochs, tracks = self.search()
 
         field_dir = self.out / "fields" / spec.field_id
         images = [
@@ -607,6 +647,7 @@ def _flag_names(value: int, bits: dict[str, int]) -> list[str]:
 def summary_of(c: S.CandidateDetail) -> S.CandidateSummary:
     return S.CandidateSummary(
         candidate_id=c.candidate_id,
+        pipeline_version=c.pipeline_version,
         field_id=c.field_id,
         classification=c.classification,
         label_plain=c.label_plain,
@@ -666,6 +707,8 @@ def write_json(path: Path, model) -> None:
 
 def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     """Rebuild fields.json and candidates.json from the per-field and per-candidate files."""
+    from .objects import review_priority
+
     fields, cands = [], []
     for p in sorted((out_dir / "fields").glob("*.json")):
         fields.append(S.FieldDetail.model_validate_json(p.read_text()))
@@ -674,16 +717,14 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
     by_field: dict[str, list[S.CandidateDetail]] = {}
     for c in cands:
         by_field.setdefault(c.field_id, []).append(c)
-    # Lists carry the version and run of the data they list, not of whoever ran publish:
-    # the Worker keys stored JPL results by pipeline_version, so a list and its detail files
-    # must agree.
-    versions = {f.pipeline_version for f in fields} | {c.pipeline_version for c in cands}
-    if len(versions) > 1:
-        raise ValueError(
-            f"published data mixes pipeline versions {sorted(versions)}; rebuild every field "
-            "with one pipeline commit"
-        )
-    version = versions.pop() if versions else pipeline_version(require_clean=True)
+    # The survey adds tiles run by run, so published data can come from several pipeline
+    # commits. Lists carry the newest one (the run that last added data); every candidate
+    # summary carries its own, which is what the Worker keys stored JPL results by.
+    by_time = sorted(
+        [(f.generated_utc, f.pipeline_version) for f in fields]
+        + [(c.provenance.generated_utc, c.pipeline_version) for c in cands]
+    )
+    version = by_time[-1][1] if by_time else pipeline_version(require_clean=True)
     runs = {f.build_run_id for f in fields if f.build_run_id}
     run_id = sorted(runs)[-1] if runs else build_run_id()
     now = utc_now()
@@ -702,7 +743,15 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
         ),
     )
     summaries = [
-        summary_of(c) for c in sorted(cands, key=lambda c: (-c.scores.overall, c.candidate_id))
+        summary_of(c)
+        for c in sorted(
+            cands,
+            key=lambda c: (
+                review_priority(c.classification, c.known_object.matched),
+                -c.scores.overall,
+                c.candidate_id,
+            ),
+        )
     ]
     write_json(
         out_dir / "candidates.json",
@@ -714,14 +763,17 @@ def publish(out_dir: Path = DEFAULT_OUT) -> tuple[int, int]:
             candidates=summaries,
         ),
     )
+    from .injection import write_index
     from .objects import write_objects_and_survey
+
+    write_index(out_dir)  # every published injection study, so survey.json gets the newest m50
 
     write_objects_and_survey(out_dir, fields, cands, version, run_id, now)
     return len(fields), len(cands)
 
 
 def build_field(
-    spec: FieldSpec, out_dir: Path = DEFAULT_OUT
+    spec: FieldSpec, out_dir: Path = DEFAULT_OUT, track_filter=None
 ) -> tuple[S.FieldDetail, list[S.CandidateDetail]]:
     # clear old outputs for this field
     import shutil
@@ -732,7 +784,7 @@ def build_field(
             shutil.rmtree(p)
         else:
             p.unlink()
-    detail, cands = FieldBuilder(spec, out_dir).build()
+    detail, cands = FieldBuilder(spec, out_dir, track_filter=track_filter).build()
     write_json(out_dir / "fields" / f"{spec.field_id}.json", detail)
     for c in cands:
         write_json(out_dir / "candidates" / f"{c.candidate_id}.json", c)

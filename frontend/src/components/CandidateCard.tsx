@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { JplLinksRow } from "./JplLinks";
 import { assetUrl } from "@/lib/api";
-import type { CandidateSummary } from "@/lib/contract";
+import type { CandidateSummary, ObjectSummary } from "@/lib/contract";
+import { DISTANCE_CLASSES, ORBIT_STATUS } from "@/lib/objects";
 import type { ObjectName } from "@/lib/names";
 import { formatHours, formatRate, formatUtcDate } from "@/lib/format";
 import { ClassificationBadge } from "./ClassificationBadge";
@@ -10,7 +12,18 @@ import styles from "./CandidateCard.module.css";
 
 export { candidateHref } from "@/lib/routes";
 
-export function CandidateCard({ c, name, reason }: { c: CandidateSummary; name: ObjectName; reason?: string | null }) {
+export function CandidateCard({
+  c,
+  name,
+  reason,
+  object,
+}: {
+  c: CandidateSummary;
+  name: ObjectName;
+  reason?: string | null;
+  /** The object this sighting belongs to, when the object list has loaded: adds visits, distance and orbit. */
+  object?: ObjectSummary;
+}) {
   return (
     <li className={`card ${styles.card}`} data-classification={c.classification}>
       <div className={styles.thumb}>
@@ -34,6 +47,7 @@ export function CandidateCard({ c, name, reason }: { c: CandidateSummary; name: 
           </Link>
         </h2>
         <p className={styles.summary}>{c.summary_plain}</p>
+        <JplLinksRow matched={c.known_object_matched} designation={c.known_object_designation} />
         {reason && (
           <p className={styles.reason}>
             <span aria-hidden="true">✦</span> <span className="visually-hidden">Why it&apos;s unusual: </span>
@@ -53,6 +67,22 @@ export function CandidateCard({ c, name, reason }: { c: CandidateSummary; name: 
             <dt>Speed</dt>
             <dd className="mono">{formatRate(c.rate_arcsec_per_hr)}</dd>
           </div>
+          {object && (
+            <>
+              <div>
+                <dt>Visits</dt>
+                <dd className="mono">{object.n_visits}</dd>
+              </div>
+              <div>
+                <dt>Where</dt>
+                <dd>{(DISTANCE_CLASSES[object.distance_class] ?? DISTANCE_CLASSES.unknown).label}</dd>
+              </div>
+              <div>
+                <dt>Orbit</dt>
+                <dd>{ORBIT_STATUS[object.orbit_status]}</dd>
+              </div>
+            </>
+          )}
         </dl>
         <p className={`mono ${styles.foot}`}>
           <span>{c.candidate_id}</span>

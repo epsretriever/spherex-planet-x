@@ -193,6 +193,8 @@ export interface CandidateSummary extends MlSummary {
   known_object_checked?: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Pipeline commit that built it (survey runs add data incrementally). */
+  pipeline_version?: string | null;
 }
 
 export interface CandidateList extends Versioned {
@@ -222,10 +224,13 @@ export interface Detection extends WavelengthFields {
   flag_names: string[];
   flagged_pixels_in_aperture: number;
   psf_fit_reduced_chi2: number | null;
-  stamp: ImageRef;
+  /** Null when the record is minimal (a known object). */
+  stamp: ImageRef | null;
   source: Source;
   /** PROPOSED (row 7): the CNN's P(real) for this stamp. */
   real_bogus?: number | null;
+  /** SPHEREx's geocentric ICRF position in km at the exposure, from the FITS headers. */
+  spacecraft_geocentric_km?: [number, number, number] | null;
   /** PROPOSED (row 7): occlusion saliency map for this stamp ("the model looked here"). */
   saliency?: ImageRef | null;
 }
@@ -270,8 +275,18 @@ export interface KnownObject {
    * Where this result came from. "pending": the Worker is asking JPL right now; fetch the
    * report again in a few seconds for the result.
    */
-  enrichment?: "static" | "live" | "cached" | "pending";
+  enrichment?: "static" | "pipeline" | "live" | "cached" | "pending";
+  /** JPL pages for a matched object's orbit (SBDB) and ephemerides (Horizons); null unless matched. */
+  jpl_links?: JplLinks | null;
 }
+
+export interface JplLinks {
+  sbdb_url: string;
+  horizons_url: string;
+}
+
+/** full: stamps and our orbit products kept. minimal: JPL identified it; stamps and our orbit not kept. */
+export type RecordLevel = "full" | "minimal";
 
 export interface Scores {
   motion_consistency: number;
@@ -388,6 +403,7 @@ export interface CandidateDetail extends Versioned {
   injection?: InjectionInfo | null;
   provenance: { run_id: string; generated_utc: string; parameters: Record<string, number | string | boolean> };
   disclaimer?: string;
+  record_level?: RecordLevel;
   anomaly?: Anomaly | null;
   neo_likelihood?: NeoLikelihood | null;
 }
@@ -426,6 +442,11 @@ export interface InjectionStudy extends Versioned {
   example_candidate_ids: string[];
 }
 
+/** GET /api/injection: the published injection studies. */
+export interface InjectionStudyIndex extends Versioned {
+  studies: { study_id: string; generated_utc: string; field_ids: string[]; n_injected: number }[];
+}
+
 /* ---- v1.1: objects, survey, AI (docs/api-contract.md, shared/schema/) ---- */
 
 export type DistanceClass = "neo" | "main_belt" | "jupiter_trojan" | "centaur" | "tno" | "unknown";
@@ -453,6 +474,8 @@ export interface ObjectSummary extends MlSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Pipeline commit that built it (survey runs add data incrementally). */
+  pipeline_version?: string | null;
   /** Other object IDs with the same JPL designation, merged into this entry. */
   also_seen_as?: string[];
 }
@@ -514,6 +537,7 @@ export interface ObjectDetail extends Versioned {
   history: { utc: string; run_id: string; change: string }[];
   provenance: CandidateDetail["provenance"];
   disclaimer?: string;
+  record_level?: RecordLevel;
   /** Other objects with the same JPL designation. */
   also_seen_as?: string[];
   anomaly?: Anomaly | null;
@@ -586,7 +610,10 @@ export interface Survey extends Versioned {
   description: string;
   tile_size_deg: number;
   data_releases: string[];
+  /** Showcase fields, tiles with a field page, failed tiles (empty survey tiles: empty_cells, since v1.2). */
   tiles: SurveyTile[];
+  /** Searched patches where nothing passed vetting: [ra_deg, dec_deg] of each distinct patch. */
+  empty_cells?: { size_deg: number; n_tiles: number; positions: [number, number][] } | null;
   totals: {
     n_tiles: number;
     n_processed: number;
@@ -598,7 +625,10 @@ export interface Survey extends Versioned {
     n_searched?: number;
     n_empty?: number;
     n_failed?: number;
+    /** Distinct sky searched (a patch searched in several weeks counts once). */
     area_deg2_searched?: number;
+    /** area_deg2_searched / 41,253 deg². */
+    sky_fraction_searched?: number | null;
     n_known_objects?: number | null;
   };
   last_run: {

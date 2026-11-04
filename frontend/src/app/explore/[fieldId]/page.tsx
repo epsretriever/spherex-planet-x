@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
+import { fieldHref } from "@/lib/routes";
 import { NO_PAGES, staticField, staticFields, staticNameSeed } from "@/lib/staticData";
 import { FieldView } from "../field/FieldView";
 
@@ -16,7 +18,7 @@ type Params = { params: Promise<{ fieldId: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const field = staticField((await params).fieldId);
-  return field ? { title: field.name, description: field.blurb } : {};
+  return field ? pageMeta(field.name, field.blurb, fieldHref(field.field_id)) : {};
 }
 
 export default async function FieldPage({ params }: Params) {

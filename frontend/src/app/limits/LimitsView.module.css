@@ -30,6 +30,46 @@
   font-size: var(--text-2xl);
 }
 
+.big .sub {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.big .lead {
+  border-color: var(--accent);
+}
+
+@media (min-width: 720px) {
+  .big .lead {
+    grid-column: span 2;
+  }
+}
+
+.overall {
+  margin: 0;
+  max-width: 85ch;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.overall strong {
+  color: var(--text);
+}
+
+.slowNote {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--warning);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  max-width: 85ch;
+}
+
+.slowNote p {
+  margin: 0;
+}
+
 .big small {
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -148,7 +188,13 @@
   color: var(--ok);
 }
 
-.table td[data-verdict="missed"] {
+.table td[data-verdict="too_slow"],
+.table td[data-verdict="never_found"],
+.table td[data-verdict="not_tested"] {
+  color: var(--text-muted);
+}
+
+.table td[data-verdict="too_faint"] {
   color: var(--warning);
 }
 

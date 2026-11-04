@@ -1,10 +1,98 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "redirects": [
+    {
+      "source": "/detective/candidate",
+      "destination": "/objects/object/?id=obj-:cid",
+      "permanent": true,
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<cid>[a-z0-9][a-z0-9._-]{0,95})"
+        }
+      ]
+    },
+    {
+      "source": "/detective/candidate/",
+      "destination": "/objects/object/?id=obj-:cid",
+      "permanent": true,
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<cid>[a-z0-9][a-z0-9._-]{0,95})"
+        }
+      ]
+    },
+    {
+      "source": "/detective/candidate",
+      "destination": "/objects/",
+      "permanent": true
+    },
+    {
+      "source": "/detective/candidate/",
+      "destination": "/objects/",
+      "permanent": true
+    },
+    {
+      "source": "/detective",
+      "destination": "/objects/",
+      "permanent": true
+    },
+    {
+      "source": "/detective/",
+      "destination": "/objects/",
+      "permanent": true
+    },
+    {
+      "source": "/detective/:cid",
+      "destination": "/objects/obj-:cid/",
+      "permanent": true
+    },
+    {
+      "source": "/detective/:cid/",
+      "destination": "/objects/obj-:cid/",
+      "permanent": true
+    },
+    {
+      "source": "/leads",
+      "destination": "/objects/?view=leads",
+      "permanent": true
+    },
+    {
+      "source": "/leads/",
+      "destination": "/objects/?view=leads",
+      "permanent": true
+    },
+    {
+      "source": "/explore",
+      "destination": "/objects/?view=patches",
+      "permanent": true
+    },
+    {
+      "source": "/explore/",
+      "destination": "/objects/?view=patches",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/api/:path*/", "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/api/:path*" },
-    { "source": "/api/:path*", "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/api/:path*" },
-    { "source": "/static/:path*/", "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/static/:path*" },
-    { "source": "/static/:path*", "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/static/:path*" }
+    {
+      "source": "/api/:path*/",
+      "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/api/:path*"
+    },
+    {
+      "source": "/static/:path*/",
+      "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/static/:path*"
+    },
+    {
+      "source": "/static/:path*",
+      "destination": "https://spherex-planet-x.bodhishanbhag.workers.dev/static/:path*"
+    }
   ]
 }
