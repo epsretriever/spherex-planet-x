@@ -21,6 +21,7 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
+from astropy.wcs import NoConvergence
 from scipy import stats
 
 from .detect import Detections, Prepared, measure
@@ -148,9 +149,19 @@ def build_sightings(epochs: list[EpochData], params: LinkParams) -> list[Sightin
 
 
 def _covered(prep: Prepared, ra: float, dec: float, margin: float = 3) -> tuple[bool, float, float]:
-    x, y = prep.cutout.wcs.all_world2pix([ra], [dec], 0)
-    x, y = float(x[0]), float(y[0])
     ny, nx = prep.sci.shape
+    w = prep.cutout.wcs
+    # The distortion (SIP) inverse can diverge far outside the cutout, which a survey block's
+    # positions often are for an exposure that only overlaps part of it: reject those with the
+    # linear solution first, and treat a non-converging inverse as not covered.
+    lx, ly = w.wcs_world2pix([ra], [dec], 0)
+    if not (-50 <= float(lx[0]) < nx + 50 and -50 <= float(ly[0]) < ny + 50):
+        return False, float(lx[0]), float(ly[0])
+    try:
+        x, y = w.all_world2pix([ra], [dec], 0)
+    except NoConvergence:
+        return False, float(lx[0]), float(ly[0])
+    x, y = float(x[0]), float(y[0])
     if not (margin <= x < nx - margin and margin <= y < ny - margin):
         return False, x, y
     if prep.bad[int(round(y)), int(round(x))]:
@@ -175,38 +186,75 @@ def find_transients(
     covering: dict[int, list[EpochData]] = {}
     for e in epochs:
         covering.setdefault(e.cluster, []).append(e)
-    out = []
     clusters = sorted(set(by_cluster) | set(covering))
-    for s in sightings:
+    if not sightings:
+        return []
+    ra = np.array([s.ra for s in sightings])
+    dec = np.array([s.dec for s in sightings])
+    own = np.array([s.cluster for s in sightings])
+    # matched[k, c]: another sighting within static_radius in cluster c (vectorized per cluster)
+    from scipy.spatial import cKDTree
+
+    def unit(r, d):
+        r, d = np.radians(r), np.radians(d)
+        return np.column_stack([np.cos(d) * np.cos(r), np.cos(d) * np.sin(r), np.sin(d)])
+
+    xyz = unit(ra, dec)
+    # chord length for static_radius (plus a hair so the <= test matches the angular one)
+    chord = 2 * math.sin(math.radians(params.static_radius_arcsec / 3600) / 2) * (1 + 1e-9)
+    matched: dict[int, np.ndarray] = {}
+    for c in clusters:
+        others = [k for k in range(len(sightings)) if own[k] == c]
+        m = np.zeros(len(sightings), bool)
+        if others:
+            dist, _ = cKDTree(xyz[others]).query(xyz, k=1, distance_upper_bound=chord)
+            m = np.isfinite(dist) & (own != c)
+        matched[c] = m
+    first_pass = params.static_min_fraction <= 0
+    already = np.zeros(len(sightings), bool)
+    if first_pass:
+        for c in clusters:
+            already |= matched[c]
+    # Forced photometry, one batched measure() per exposure (it processes the whole cutout,
+    # so a call per position would cost the cutout's size each time).
+    snr_sum: dict[tuple[int, int], list[float]] = {}
+    for e in epochs:
+        ks = [k for k in range(len(sightings)) if own[k] != e.cluster and not already[k]]
+        if not ks:
+            continue
+        xs, ys, kept = [], [], []
+        for k in ks:
+            ok, x, y = _covered(e.prep, float(ra[k]), float(dec[k]))
+            if ok:
+                xs.append(x)
+                ys.append(y)
+                kept.append(k)
+        if not kept:
+            continue
+        snrs = measure(e.prep, np.array(xs), np.array(ys)).snr
+        for k, v in zip(kept, snrs, strict=True):
+            snr_sum.setdefault((k, e.cluster), []).append(float(v))
+    out = []
+    for k, s in enumerate(sightings):
+        if already[k]:
+            continue
         n_cov = n_static = 0
         for c in clusters:
             if c == s.cluster:
                 continue
-            others = by_cluster.get(c, [])
-            matched = False
-            if others:
-                sep = angular_sep_arcsec(
-                    s.ra, s.dec, [o.ra for o in others], [o.dec for o in others]
-                )
-                matched = bool(np.min(sep) <= params.static_radius_arcsec)
-            snrs = []
-            for e in covering.get(c, []):
-                ok, x, y = _covered(e.prep, s.ra, s.dec)
-                if ok:
-                    snrs.append(float(measure(e.prep, np.array([x]), np.array([y])).snr[0]))
-            if not snrs and not matched:
+            snrs = snr_sum.get((k, c), [])
+            m = bool(matched[c][k])
+            if not snrs and not m:
                 continue  # this visit doesn't cover the position
             n_cov += 1
-            if matched or (snrs and sum(snrs) / math.sqrt(len(snrs)) >= params.static_forced_snr):
+            if m or (snrs and sum(snrs) / math.sqrt(len(snrs)) >= params.static_forced_snr):
                 n_static += 1
-                if params.static_min_fraction <= 0:
+                if first_pass:
                     break
         if n_cov == 0:
             continue
         frac = n_static / n_cov
-        static = (
-            n_static > 0 if params.static_min_fraction <= 0 else frac >= params.static_min_fraction
-        )
+        static = n_static > 0 if first_pass else frac >= params.static_min_fraction
         if not static:
             out.append(s)
     return out

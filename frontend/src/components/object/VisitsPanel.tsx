@@ -3,7 +3,7 @@ import { Panel } from "@/components/report/Panel";
 import type { ObjectDetail } from "@/lib/contract";
 import { formatHours, formatInterval, formatUtcDateTime, formatUtcTime } from "@/lib/format";
 import { groupVisits } from "@/lib/objects";
-import { candidateHref, fieldHref } from "@/lib/routes";
+import { candidateHref, fieldHref, objectIdFor } from "@/lib/routes";
 import styles from "./Object.module.css";
 
 /** The object's sightings grouped into visits, with the time between visits and where each was seen. */
@@ -54,9 +54,13 @@ export function VisitsPanel({ object, fieldName }: { object: ObjectDetail; field
                       {v.candidate_ids.map((c, j) => (
                         <span key={c}>
                           {j > 0 && ", "}
-                          <Link href={candidateHref(c)} prefetch={false}>
-                            Evidence report{v.candidate_ids.length > 1 ? ` ${j + 1}` : ""}
-                          </Link>
+                          {objectIdFor(c) === object.object_id ? (
+                            <a href="#evidence">Images{v.candidate_ids.length > 1 ? ` ${j + 1}` : ""}</a>
+                          ) : (
+                            <Link href={candidateHref(c)} prefetch={false}>
+                              Report{v.candidate_ids.length > 1 ? ` ${j + 1}` : ""}
+                            </Link>
+                          )}
                         </span>
                       ))}
                     </>

@@ -24,11 +24,11 @@ export default function NotFound() {
         address mistyped.
       </p>
       <div className={styles.actions}>
-        <Link href="/explore/" className="button button-primary">
-          Explore the sky →
+        <Link href="/objects/" className="button button-primary">
+          Browse the objects →
         </Link>
-        <Link href="/detective/" className="button">
-          See the candidates
+        <Link href="/sky/" className="button">
+          Open the sky map
         </Link>
         <Link href="/" className="button">
           Home

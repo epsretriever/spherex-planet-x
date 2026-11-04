@@ -98,6 +98,40 @@
       "title": "SkyPosition",
       "type": "object"
     },
+    "SurveyEmptyCells": {
+      "additionalProperties": false,
+      "description": "Searched sky where nothing passed vetting, in compact form (survey.json would otherwise\ngrow by a full tile record per searched tile).",
+      "properties": {
+        "size_deg": {
+          "description": "Tile size",
+          "title": "Size Deg",
+          "type": "number"
+        },
+        "n_tiles": {
+          "description": "Empty tile searches (a patch searched in two weeks counts twice)",
+          "title": "N Tiles",
+          "type": "integer"
+        },
+        "positions": {
+          "description": "[ra_deg, dec_deg] of each distinct empty patch, rounded to 0.01 deg",
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Positions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "size_deg",
+        "n_tiles",
+        "positions"
+      ],
+      "title": "SurveyEmptyCells",
+      "type": "object"
+    },
     "SurveyRun": {
       "additionalProperties": false,
       "properties": {
@@ -383,8 +417,22 @@
         },
         "area_deg2_searched": {
           "default": 0.0,
+          "description": "Distinct sky searched (a patch searched in several weeks counts once)",
           "title": "Area Deg2 Searched",
           "type": "number"
+        },
+        "sky_fraction_searched": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "area_deg2_searched / 41,253 deg2 (the whole sky)",
+          "title": "Sky Fraction Searched"
         }
       },
       "required": [
@@ -413,10 +461,11 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "default": "1.1",
+      "default": "1.2",
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ],
       "title": "Schema Version",
       "type": "string"
@@ -462,11 +511,23 @@
       "type": "array"
     },
     "tiles": {
+      "description": "Showcase fields, tiles with a field page and failed tiles. Survey tiles searched with nothing found are in empty_cells (since v1.2)",
       "items": {
         "$ref": "#/$defs/SurveyTile"
       },
       "title": "Tiles",
       "type": "array"
+    },
+    "empty_cells": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SurveyEmptyCells"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "totals": {
       "$ref": "#/$defs/SurveyTotals"

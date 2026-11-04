@@ -26,6 +26,9 @@ from .schemas import Model
 
 FOOTPRINT = Path("survey") / "footprint.json"
 LEDGER = Path("survey") / "ledger.json"
+#: Per week segment: tiles the plan found worth searching, how many are searched, and whether
+#: the segment is finished (survey.resolve_segments "next:N" moves on to new segments).
+SEGMENTS = Path("survey") / "segments.json"
 TILE_SIZE_DEG = 0.3
 
 
@@ -72,6 +75,29 @@ def load_ledger(out_dir: Path) -> Ledger:
     return Ledger.model_validate_json(p.read_text()) if p.exists() else Ledger(runs=[])
 
 
+def load_segments(out_dir: Path) -> dict[str, dict]:
+    p = out_dir / SEGMENTS
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
+def update_segments(out_dir: Path, footprint: Footprint, plan_meta: dict[str, dict]) -> dict:
+    state = load_segments(out_dir)
+    searched: dict[str, int] = {}
+    for t in footprint.tiles:
+        state.setdefault(t.segment, {})
+        if t.status != "failed":
+            searched[t.segment] = searched.get(t.segment, 0) + 1
+    for seg, m in plan_meta.items():
+        state.setdefault(seg, {})["planned"] = int(m["planned"])
+    for seg, st in state.items():
+        st["searched"] = searched.get(seg, 0)
+        st["complete"] = st.get("planned") is not None and st["searched"] >= st["planned"]
+    path = out_dir / SEGMENTS
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(dict(sorted(state.items())), indent=1) + "\n")
+    return state
+
+
 def _published_object_ids(out_dir: Path) -> set[str]:
     p = out_dir / "objects.json"
     if not p.exists():
@@ -104,6 +130,7 @@ def record_run(
     started_utc: str,
     finished_utc: str,
     workflow_url: str | None = None,
+    plan_meta: dict[str, dict] | None = None,
 ) -> S.SurveyRun:
     """Fold shard reports (survey-shard-N.json) into the footprint and append to the ledger.
 
@@ -143,7 +170,13 @@ def record_run(
             run_id=run_id,
         )
     footprint = Footprint(tiles=sorted(by_id.values(), key=lambda t: (t.elon_deg, t.elat_deg)))
-    write_json(out_dir / FOOTPRINT, footprint)
+    # One line per tile: the footprint grows by thousands of tiles per run.
+    path = out_dir / FOOTPRINT
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        '{"tiles": [\n' + ",\n".join(t.model_dump_json() for t in footprint.tiles) + "\n]}\n"
+    )
+    update_segments(out_dir, footprint, plan_meta or {})
 
     new_objects = _candidate_objects(out_dir) - _published_object_ids(out_dir)
     run = S.SurveyRun(

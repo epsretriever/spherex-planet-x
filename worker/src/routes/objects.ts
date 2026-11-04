@@ -16,7 +16,8 @@ import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
-import { readRecord, readRecords, refreshRecord } from "../store";
+import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
+import { reviewPriority } from "./candidates";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
 
 export const objects = new Hono<AppEnv>();
@@ -30,11 +31,16 @@ const refOf = (o: { candidate_ids: string[] }, pipelineVersion: string) => ({
 /** Every object with its stored JPL result applied (one store query). */
 export async function enrichedObjects(env: Env, deps: Deps): Promise<{ list: ObjectList; objects: ObjectSummary[] }> {
   const list = await requireStaticJson<ObjectList>(env, "objects.json", "object list");
-  const real = list.objects.filter((s) => s.classification !== "injected" && s.candidate_ids.length > 0);
-  const recs = await readRecords(deps, list.pipeline_version, real.map((s) => refOf(s, list.pipeline_version).candidate_id));
+  // Objects the survey pipeline matched to a known object are final: no store lookup.
+  const final = (s: ObjectSummary) => s.known_object_checked && s.known_object_matched;
+  const real = list.objects.filter((s) => s.classification !== "injected" && s.candidate_ids.length > 0 && !final(s));
+  const recs = await readRecordsFor(
+    deps,
+    real.map((s) => refOf(s, s.pipeline_version ?? list.pipeline_version)),
+  );
   const out = list.objects.map((s): ObjectSummary => {
-    if (s.classification === "injected" || s.candidate_ids.length === 0) return s;
-    const rec = recs.get(refOf(s, list.pipeline_version).candidate_id);
+    if (s.classification === "injected" || s.candidate_ids.length === 0 || final(s)) return s;
+    const rec = recs.get(s.candidate_ids[0]!);
     if (!rec) return s;
     const k = rec.enrichment.known_object;
     const classification: Classification = rec.enrichment.matched ? "known_object" : s.classification;
@@ -111,9 +117,14 @@ objects.get("/", async (c) => {
   const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
   const sort = c.req.query("sort") ?? "score";
   if (sort !== "score" && sort !== "anomaly") throw badRequest("sort must be 'score' or 'anomaly'");
-  let rows = dedupe ? mergeByDesignation(all) : all;
-  // Most unusual first; objects without a ranking keep the published order after them.
-  if (sort === "anomaly") rows = [...rows].sort((a, b) => (a.anomaly_rank ?? Infinity) - (b.anomaly_rank ?? Infinity));
+  const rows = dedupe ? mergeByDesignation(all) : all;
+  if (sort === "anomaly") {
+    // Most unusual first; objects without a ranking keep the review order after them.
+    rows.sort((a, b) => (a.anomaly_rank ?? Infinity) - (b.anomaly_rank ?? Infinity) || reviewPriority(a) - reviewPriority(b));
+  } else {
+    // Unexplained first, then weak detections, then known objects; best score first within each.
+    rows.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
+  }
   const page = paginate(rows, paging);
   c.header("Cache-Control", "public, max-age=60");
   return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, objects: page.items });
@@ -140,10 +151,13 @@ export async function loadObject(
   let cacheable = true;
   let pending = false;
   let comparison: JplOrbitComparison | null = null;
-  if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
-    const rec = await readRecord(deps, refOf(obj, obj.pipeline_version));
+  if (isFinalMatch(obj.known_object)) {
+    matched = true; // identified by the survey pipeline: final
+  } else if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
+    const rec = newestRecord(await readRecord(deps, refOf(obj, obj.pipeline_version)), pipelineRecord(obj.known_object));
     if (rec) {
-      known = { ...rec.enrichment.known_object, enrichment: "cached" };
+      const k = rec.enrichment.known_object;
+      known = { ...k, enrichment: k.enrichment === "pipeline" ? "pipeline" : "cached" };
       matched = rec.enrichment.matched;
       cacheable = rec.status === "checked";
       comparison = rec.orbit_comparison ?? null;

@@ -123,9 +123,9 @@ export function summary(c: CandidateDetail): CandidateSummary {
     mean_snr: 18,
     overall_score: c.scores.overall,
     quality_level: c.scores.quality_level,
-    known_object_checked: false,
-    known_object_matched: false,
-    known_object_designation: null,
+    known_object_checked: c.known_object.checked,
+    known_object_matched: c.known_object.matched,
+    known_object_designation: c.known_object.designation,
   };
 }
 

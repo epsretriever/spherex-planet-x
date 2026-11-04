@@ -81,3 +81,11 @@ describe("credibleLevels", () => {
     expect(credibleLevels([])).toEqual([]);
   });
 });
+
+describe("objectsStep", () => {
+  it("steps up in colour and size with the number of moving objects", async () => {
+    const { objectsStep } = await import("@/components/SkyMap");
+    expect(objectsStep(1).r).toBeLessThan(objectsStep(2).r);
+    expect(objectsStep(7)).toBe(objectsStep(3));
+  });
+});

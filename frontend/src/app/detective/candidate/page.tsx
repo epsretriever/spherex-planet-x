@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { PrefetchData } from "@/components/PrefetchData";
-import { ReportSkeleton } from "@/components/Skeletons";
-import { CandidateReportFromQuery } from "./CandidateReport";
+import { Moved } from "@/components/Moved";
 
-export const metadata: Metadata = {
-  title: "Evidence report",
-};
+export const metadata: Metadata = { title: "Object report", robots: { index: false } };
 
-export default function CandidatePage() {
-  return (
-    <div className="container">
-      <PrefetchData urls={["/api/candidates/{id}", "/api/candidates?include_injected=true", "/api/fields"]} />
-      <Suspense fallback={<ReportSkeleton />}>
-        <CandidateReportFromQuery />
-      </Suspense>
-    </div>
-  );
+/** /detective/candidate/?id=X is now /objects/object/?id=obj-X. */
+export default function CandidateQueryPage() {
+  return <Moved to="/objects/" label="the object's report" />;
 }

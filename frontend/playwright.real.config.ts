@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  * Build first (`npm run build` at the root), then `npm run test:real` here.
  */
 const PORT = Number(process.env.REAL_PORT ?? 8788);
+// REAL_BASE=https://… runs the same checks against a deployed site instead (no local server).
+const BASE = process.env.REAL_BASE?.replace(/\/+$/, "");
 
 export default defineConfig({
   testDir: "./e2e-real",
@@ -16,7 +18,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never", outputFolder: "playwright-report-real" }]] : "list",
   outputDir: "test-results-real",
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
+    baseURL: BASE ?? `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     reducedMotion: "reduce",
   },
@@ -25,7 +27,9 @@ export default defineConfig({
     { name: "tablet-768", use: { ...devices["Desktop Chrome"], viewport: { width: 768, height: 1024 } } },
     { name: "desktop-1280", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } } },
   ],
-  webServer: {
+  webServer: BASE
+    ? undefined
+    : {
     // env.offline: every binding except Workers AI, which needs Cloudflare credentials (AI panels
     // then show their template text).
     command: `npx wrangler dev --env offline --port ${PORT} --ip 127.0.0.1`,

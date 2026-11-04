@@ -140,12 +140,13 @@ def row_background(sci: np.ndarray, bad: np.ndarray, smooth_rows: int = 5) -> np
     rows, removes it without touching sources.
     """
     ny, nx = sci.shape
+    ok = ~bad & np.isfinite(sci)
     prof = np.full(ny, np.nan)
-    for y in range(ny):
-        vals = sci[y][~bad[y] & np.isfinite(sci[y])]
-        if vals.size >= 20:
-            _, med, _ = sigma_clipped_stats(vals, sigma=3.0, maxiters=3)
-            prof[y] = med
+    rows = ok.sum(axis=1) >= 20
+    if rows.any():
+        # All rows at once (sigma clipping along axis 1) instead of one call per row.
+        _, med, _ = sigma_clipped_stats(sci[rows], mask=~ok[rows], sigma=3.0, maxiters=3, axis=1)
+        prof[rows] = np.asarray(med, float)
     if not np.isfinite(prof).any():
         return np.zeros_like(sci)
     prof = np.where(np.isfinite(prof), prof, np.nanmedian(prof))
