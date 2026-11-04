@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
 
 /**
  * Every page, at every width, on the real published data. Each test saves a full-page
@@ -12,15 +12,39 @@ interface Ids {
 }
 
 let ids: Ids;
+let base: string | undefined;
 
-/** JSON from the API. Asks for gzip/brotli: a proxy may otherwise answer in zstd, which the request client can't decode. */
-async function getJson(request: APIRequestContext, url: string) {
-  return (await request.get(url, { headers: { "accept-encoding": "gzip, deflate, br" } })).json();
+/**
+ * JSON from the API, fetched by a real browser page: a proxy (Vercel) may answer in zstd, which
+ * Playwright's request client can't decode but Chromium can.
+ */
+async function getJson(browser: Browser, url: string) {
+  const ctx = await browser.newContext({ baseURL: base });
+  try {
+    const page = await ctx.newPage();
+    await page.goto("/robots.txt").catch(() => undefined);
+    return await page.evaluate(async (u) => (await fetch(u)).json(), url);
+  } finally {
+    await ctx.close();
+  }
 }
 
-test.beforeAll(async ({ request }) => {
-  const fields = await getJson(request, "/api/fields");
-  const cands = await getJson(request, "/api/candidates?include_injected=true");
+/** A page's HTML as served (before any script runs). */
+async function getHtml(browser: Browser, url: string) {
+  const ctx = await browser.newContext({ baseURL: base, javaScriptEnabled: false });
+  try {
+    const page = await ctx.newPage();
+    await page.goto(url);
+    return await page.content();
+  } finally {
+    await ctx.close();
+  }
+}
+
+test.beforeAll(async ({ browser, baseURL }) => {
+  base = baseURL;
+  const fields = await getJson(browser, "/api/fields");
+  const cands = await getJson(browser, "/api/candidates?include_injected=true");
   expect(fields.fields.length, "the pipeline has published at least one field").toBeGreaterThan(0);
   expect(cands.candidates.length, "the pipeline has published at least one candidate").toBeGreaterThan(0);
   // Prefer the candidate with the most sightings: it's the longest report, the hardest layout.
@@ -87,8 +111,8 @@ test("patches of sky tab", async ({ page }, info) => {
   await expect(page.locator("main li").first()).toBeVisible();
 });
 
-test("explore field opens on the backend's default pair", async ({ page, request }, info) => {
-  const field = await getJson(request, `/api/fields/${ids.field}`);
+test("explore field opens on the backend's default pair", async ({ page, browser }, info) => {
+  const field = await getJson(browser, `/api/fields/${ids.field}`);
   await checkPage(page, info, `/explore/${ids.field}/`, "field");
   await expect(page.getByRole("img", { name: /SPHEREx infrared image/ }).first()).toBeVisible();
   const def = field.blink_pairs.find((p: { default?: boolean }) => p.default) ?? field.blink_pairs[0];
@@ -145,9 +169,9 @@ test("sky map", async ({ page }, info) => {
   await expect(map.getByRole("link")).not.toHaveCount(0);
 });
 
-test("objects list and an object page", async ({ page, request }, info) => {
+test("objects list and an object page", async ({ page, browser }, info) => {
   await checkPage(page, info, "/objects/", "objects");
-  const list = await getJson(request, "/api/objects");
+  const list = await getJson(browser, "/api/objects");
   const top = [...list.objects].sort((a: { n_detections: number }, b: { n_detections: number }) => b.n_detections - a.n_detections)[0];
   await checkPage(page, info, `/objects/${top.object_id}/`, "object");
   await expect(page.getByText(new RegExp(`Object ID\\s*${top.object_id}`))).toBeVisible();
@@ -173,12 +197,12 @@ test("404", async ({ page }, info) => {
   expect(errors.filter((e) => !/404/.test(e))).toEqual([]);
 });
 
-test("object pages are prerendered with their content and title", async ({ request }) => {
-  const fieldName = (await getJson(request, `/api/fields/${ids.field}`)).name as string;
-  const html = await (await request.get(`/objects/obj-${ids.candidate}/`, { headers: { "accept-encoding": "gzip, deflate, br" } })).text();
+test("object pages are prerendered with their content and title", async ({ browser }) => {
+  const fieldName = (await getJson(browser, `/api/fields/${ids.field}`)).name as string;
+  const html = await getHtml(browser, `/objects/obj-${ids.candidate}/`);
   expect(html).toMatch(/<title>[^<]*(Moving object|Simulated object|\(?\d)/);
   expect(html).toContain(ids.candidate);
-  const field = await (await request.get(`/explore/${ids.field}/`, { headers: { "accept-encoding": "gzip, deflate, br" } })).text();
+  const field = await getHtml(browser, `/explore/${ids.field}/`);
   expect(field).toContain(fieldName);
 });
 
