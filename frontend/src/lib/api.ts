@@ -14,6 +14,7 @@ import {
   type InjectionStudyIndex,
   type ObjectDetail,
   type ObjectList,
+  type ObjectPrediction,
   type Survey,
   type Versioned,
 } from "./contract";
@@ -232,6 +233,16 @@ export async function getObject(objectId: string, signal?: AbortSignal): Promise
   expectArray(body, "detections", "Object");
   if (body.object_id !== objectId) throw new DataError("not_found", `No object ${objectId}.`);
   return checkVersion({ ...body, history: body.history ?? [], candidate_ids: body.candidate_ids ?? [], field_ids: body.field_ids ?? [] }, "object");
+}
+
+/** An object's preliminary-orbit prediction (404 while it has no orbit). */
+export async function getPrediction(objectId: string, days = 60, signal?: AbortSignal): Promise<ObjectPrediction & { note_plain?: string | null }> {
+  const body = await getJson<ObjectPrediction & { note_plain?: string | null }>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/objects/${enc(objectId)}/prediction.json` : `/api/objects/${enc(objectId)}/prediction?days=${days}`,
+    signal,
+  );
+  expectArray(body, "points", "Prediction");
+  return checkVersion(body, "prediction");
 }
 
 export async function getSurvey(signal?: AbortSignal): Promise<Survey> {

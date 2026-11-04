@@ -229,6 +229,8 @@ export interface Detection extends WavelengthFields {
   source: Source;
   /** PROPOSED (row 7): the CNN's P(real) for this stamp. */
   real_bogus?: number | null;
+  /** SPHEREx's geocentric ICRF position in km at the exposure, from the FITS headers. */
+  spacecraft_geocentric_km?: [number, number, number] | null;
   /** PROPOSED (row 7): occlusion saliency map for this stamp ("the model looked here"). */
   saliency?: ImageRef | null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
@@ -171,6 +172,9 @@ function ObjectPage({ o, seed }: { o: ObjectDetail; seed?: NameSeed }) {
           <p className={styles.disclaimer} role="note">
             {o.disclaimer || DISCLAIMER}
           </p>
+        )}
+        {o.classification !== "known_object" && o.classification !== "injected" && o.candidate_ids[0] && (
+          <FollowUpDownloads objectId={o.object_id} candidateId={o.candidate_ids[0]} />
         )}
       </header>
 

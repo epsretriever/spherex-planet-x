@@ -24,6 +24,7 @@ import {
 import { candidateHref, objectHref } from "@/lib/routes";
 import { useData } from "@/lib/useData";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
 import styles from "./Leads.module.css";
 
 type Ranked = Lead & { confidence: Confidence };
@@ -215,6 +216,7 @@ function LeadCard({ lead, rank }: { lead: Ranked; rank: number }) {
           </div>
           {lead.prediction && <EllipsePlot p={lead.prediction} />}
         </div>
+        <FollowUpDownloads objectId={lead.object_id} candidateId={lead.candidate_id} />
       </section>
 
       <footer className={styles.links}>
