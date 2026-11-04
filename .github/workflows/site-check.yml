@@ -45,7 +45,7 @@ jobs:
           for i in 1 2 3; do
             google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 \
               --dump-dom "$SITE/limits/" > limits.html || true
-            if ! grep -q "No injection test published yet" limits.html && grep -qi "planted" limits.html; then
+            if ! grep -q "No injection test published yet" limits.html && grep -q "Test size" limits.html; then
               break
             fi
             sleep 10
@@ -55,12 +55,13 @@ jobs:
           page = open("limits.html").read()
           text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", page)))
           assert "No injection test published yet" not in text, "Limits page still shows the empty state"
-          for word in ("Planted", "Found", "Faintest found half the time"):
+          for word in ("planted", "False alarms", "Test size"):
               assert word in text, f"missing {word!r}"
-          i = text.find("Planted")
+          i = text.find("Bright objects")
           print(text[i : i + 1500])
           EOF
       - name: Leads, tour, about and share cards on the live site
+        if: always()
         run: |
           set -euo pipefail
           for p in / /leads/ /about/ /sky/ /objects/; do
