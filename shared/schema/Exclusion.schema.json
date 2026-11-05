@@ -18,13 +18,22 @@
         "wl_eff_um": {
           "title": "Wl Eff Um",
           "type": "number"
+        },
+        "channels_um": {
+          "description": "Centre wavelength of each spectral channel; band fluxes average over them",
+          "items": {
+            "type": "number"
+          },
+          "title": "Channels Um",
+          "type": "array"
         }
       },
       "required": [
         "detector",
         "wl_min_um",
         "wl_max_um",
-        "wl_eff_um"
+        "wl_eff_um",
+        "channels_um"
       ],
       "title": "BandInfo",
       "type": "object"

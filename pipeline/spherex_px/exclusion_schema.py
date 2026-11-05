@@ -133,6 +133,9 @@ class BandInfo(Model):
     wl_min_um: float
     wl_max_um: float
     wl_eff_um: float
+    channels_um: list[float] = Field(
+        description="Centre wavelength of each spectral channel; band fluxes average over them"
+    )
 
 
 class ReferencePoint(Model):

@@ -750,7 +750,7 @@ export interface Exclusion extends Versioned {
   }[];
   reach_summary: { d_max_50_au: number | null; d_max_any_au: number | null; d_linker_limit_au: number | null };
   size_limits: { distance_au: number; geometric_albedo: number; t_int_k: number; min_diameter_km: number | null; reason: ExclusionReason }[];
-  bands: { detector: number; wl_min_um: number; wl_max_um: number; wl_eff_um: number }[];
+  bands: { detector: number; wl_min_um: number; wl_max_um: number; wl_eff_um: number; channels_um: number[] }[];
   measured_tiles: { tile_id: string; ra_deg: number; dec_deg: number; m50_ab: number; delta_mag: number; planet_nine_weight: number }[];
   planet_nine: {
     citation: string;
