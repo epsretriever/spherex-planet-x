@@ -703,3 +703,134 @@ export interface AiSearch extends Versioned {
   model: string | null;
   cached: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Composition: "What is it made of?" (ObjectComposition, CompositionValidation)
+// GET /api/objects/{object_id}/composition and GET /api/validation/composition.
+// Indicative only: a type read from SPHEREx colors, never definitive.
+// ---------------------------------------------------------------------------
+
+export interface CompositionPoint {
+  band_index: number | null;
+  wavelength_um: number;
+  epoch_id: string;
+  mjd: number;
+  flux_ujy: number;
+  flux_err_ujy: number;
+  /** Flux multiplied by this to bring it to the reference distances and phase. */
+  geometry_factor: number | null;
+  /** Relative reflectance, 1 over 1.0-1.2 µm; null when the point is excluded. */
+  reflectance: number | null;
+  reflectance_err: number | null;
+  thermal_fraction: number | null;
+  use: "taxonomy" | "hydration" | "continuum" | "none";
+  excluded_reason: string | null;
+}
+
+export interface TaxonomyMatch {
+  class_name: string;
+  complex: string;
+  chi2: number;
+  dof: number;
+  probability: number;
+}
+
+export interface CompositionTaxonomy {
+  best: TaxonomyMatch;
+  runner_up: TaxonomyMatch | null;
+  top: TaxonomyMatch[];
+  complex_probability: Record<string, number>;
+  best_complex: string;
+  best_complex_plain: string;
+  runner_up_complex: string | null;
+  confidence: "high" | "medium" | "low";
+  confidence_plain: string;
+  n_bands: number;
+  wavelength_span_um: number;
+  reduced_chi2: number;
+  slope_per_um: number;
+  slope_err_per_um: number;
+  slope_range_um: number[];
+  systematic_floor_frac: number;
+  template: { class_name: string; wavelength_um: number[]; reflectance: number[]; sigma: number[] };
+}
+
+export interface CompositionHydration {
+  status: "measured" | "not_covered" | "thermal" | "no_orbit";
+  band_um: number[];
+  continuum_um: number[];
+  band_depth: number | null;
+  band_depth_err: number | null;
+  snr: number | null;
+  n_band_points: number;
+  n_continuum_points: number;
+  continuum: "linear" | "flat" | null;
+  verdict: "band_seen" | "no_clear_band" | "not_measured";
+  verdict_plain: string;
+}
+
+export interface ObjectComposition extends Versioned {
+  object_id: string;
+  generated_utc: string;
+  simulated: boolean;
+  indicative_only: true;
+  status: "classified" | "insufficient_data";
+  result_plain: string;
+  geometry: {
+    method: "orbit_clones" | "same_night_only";
+    reference_mjd: number;
+    helio_distance_au: number | null;
+    observer_distance_au: number | null;
+    phase_angle_deg: number | null;
+    max_correction_frac: number;
+    phase_function: string;
+    note_plain: string;
+  };
+  normalisation: { window_um: number[]; method: "points_in_window" | "template_fit" | "median" | "none"; n_points: number };
+  points: CompositionPoint[];
+  taxonomy: CompositionTaxonomy | null;
+  hydration: CompositionHydration;
+  thermal: { helio_distance_min_au: number | null; flagged: boolean; model: string; note_plain: string };
+  caveats: string[];
+  references: { label: string; citation: string; url: string }[];
+}
+
+export interface CompositionAgreement {
+  n: number;
+  complex_agreement: number | null;
+  broad_agreement: number | null;
+}
+
+export interface CompositionValidation extends Versioned {
+  generated_utc: string;
+  truth_source: string;
+  truth_query_utc: string | null;
+  n_objects: number;
+  n_classified: number;
+  n_identified: number;
+  n_with_taxonomy: number;
+  n_compared: number;
+  overall: CompositionAgreement;
+  by_confidence: Record<string, CompositionAgreement>;
+  baseline_always_s: number | null;
+  rows: {
+    object_id: string;
+    designation: string;
+    spec_B: string | null;
+    spec_T: string | null;
+    sbdb_url: string;
+    truth_class: string | null;
+    truth_system: "SMASS" | "Tholen" | null;
+    truth_complex: string | null;
+    our_status: string | null;
+    our_class: string | null;
+    our_complex: string | null;
+    our_confidence: string | null;
+    complex_agrees: boolean | null;
+    broad_agrees: boolean | null;
+  }[];
+  /** SIMULATED: class means sampled at each real object's bands and errors. */
+  simulated_recovery: { confidence: "high" | "medium" | "low" | "all"; n: number; complex_recovered: number | null }[];
+  simulated_seed: number;
+  method_plain: string;
+}
