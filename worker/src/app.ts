@@ -4,6 +4,7 @@ import { type Deps, type Env, defaultDeps } from "./env";
 import { ApiError } from "./errors";
 import { askRoute, candidateWriteups, objectWriteups, searchRoute } from "./routes/ai";
 import { candidates } from "./routes/candidates";
+import { composition } from "./routes/composition";
 import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
 import { health } from "./routes/health";
@@ -36,6 +37,7 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/injection", injection);
   app.route("/api/coverage", coverage);
   app.route("/api/runs", runs);
+  app.route("/api", composition);
   app.route("/api/objects", objects);
   app.route("/api/survey", survey);
   app.route("/api/validation", validation);
