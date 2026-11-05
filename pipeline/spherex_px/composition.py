@@ -540,15 +540,31 @@ def fetch_truth(worker: str, out_path: Path) -> dict:
             and o.get("classification") != "injected"
         ]  # fmt: skip
         rows, failed = [], []
+        cache: dict[str, dict | str] = {}  # one SBDB call per designation
+
+        def lookup(sstr: str) -> dict | str:
+            url = f"{SBDB_API}?sstr={urllib.parse.quote(sstr)}&phys-par=1"
+            err = ""
+            for attempt in range(4):
+                time.sleep(1.0 + 4.0 * attempt)  # be gentle with JPL; back off on refusals
+                try:
+                    resp = cl.get(url)
+                    if resp.status_code in (403, 429) or resp.status_code >= 500:
+                        err = f"HTTP {resp.status_code} for {url}"
+                        continue
+                    resp.raise_for_status()
+                    return resp.json()
+                except (httpx.HTTPError, ValueError) as e:
+                    err = str(e)
+            return err[:200]
+
         for o in ident:
             sstr = _jpl_search_string(o["known_object_designation"])
-            url = f"{SBDB_API}?sstr={urllib.parse.quote(sstr)}&phys-par=1"
-            try:
-                resp = cl.get(url)
-                resp.raise_for_status()
-                doc = resp.json()
-            except (httpx.HTTPError, ValueError) as err:
-                failed.append({"object_id": o["object_id"], "error": str(err)[:200]})
+            if sstr not in cache:
+                cache[sstr] = lookup(sstr)
+            doc = cache[sstr]
+            if isinstance(doc, str):
+                failed.append({"object_id": o["object_id"], "error": doc})
                 continue
             phys = {p.get("name"): p.get("value") for p in doc.get("phys_par") or []}
             rows.append(
@@ -560,7 +576,6 @@ def fetch_truth(worker: str, out_path: Path) -> dict:
                     "sbdb_url": sbdb_url(o["known_object_designation"]),
                 }
             )
-            time.sleep(0.5)  # be gentle with JPL
     doc = {
         "source": "JPL SBDB API (ssd-api.jpl.nasa.gov/sbdb.api, phys-par: spec_B, spec_T) for objects "
         f"{worker.rstrip('/')}/api/objects reports as JPL-identified",
