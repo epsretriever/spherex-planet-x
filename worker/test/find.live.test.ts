@@ -115,6 +115,7 @@ describe.skipIf(!LIVE)("live precovery search", () => {
       console.log(`production lists ${groups.size} JPL-identified bodies; validating ${picked.length}`);
 
       const rows: Record<string, unknown>[] = [];
+      const recordable: { q: string; size: number; json: string }[] = [];
       let totalPipeline = 0;
       let totalRecovered = 0;
       for (const [q, objs] of picked) {
@@ -153,16 +154,16 @@ describe.skipIf(!LIVE)("live precovery search", () => {
         };
         rows.push(row);
         console.log(JSON.stringify(row));
-        // Record the first two complete searches as offline fixtures.
-        const recorded = rows.filter((r) => r.http_status === 200).length;
-        if (res.ok && recorded <= 2) {
-          const dir = join(here, "fixtures", "find");
-          mkdirSync(dir, { recursive: true });
-          writeFileSync(
-            join(dir, `${q.replace(/[^A-Za-z0-9]+/g, "_").toLowerCase()}.json`),
-            `${JSON.stringify({ recorded_utc: now.toISOString(), query: q, calls: client.calls, response: body }, null, 1)}\n`,
-          );
+        if (res.ok) {
+          const size = client.calls.reduce((t, c) => t + c.body.length, 0);
+          recordable.push({ q, size, json: `${JSON.stringify({ recorded_utc: now.toISOString(), query: q, calls: client.calls, response: body }, null, 1)}\n` });
         }
+      }
+      // The two smallest complete searches become offline fixtures.
+      const dir = join(here, "fixtures", "find");
+      mkdirSync(dir, { recursive: true });
+      for (const r of recordable.sort((a, b) => a.size - b.size).slice(0, 2)) {
+        writeFileSync(join(dir, `${r.q.replace(/[^A-Za-z0-9]+/g, "_").toLowerCase()}.json`), r.json);
       }
       // A name SBDB doesn't know, for the not-found path.
       {

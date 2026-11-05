@@ -16,7 +16,16 @@ export type SbdbParsed =
   | { status: "not_found" };
 export type SbdbLookup = SbdbParsed & { cached: boolean };
 
-export const sbdbUrl = (q: string) => `${SBDB_API}?${new URLSearchParams({ sstr: q, "phys-par": "1" }).toString()}`;
+/**
+ * A bare number is a numbered asteroid: ask by SPK id (20000000 + number), which is
+ * unambiguous. SBDB's text search (sstr) answered HTTP 502 for several plain numbers in our
+ * validation run (docs/find-validation.md).
+ */
+export function sbdbUrl(q: string): string {
+  const t = q.trim();
+  if (/^\d{1,7}$/.test(t) && Number(t) > 0) return `${SBDB_API}?${new URLSearchParams({ spk: String(20000000 + Number(t)), "phys-par": "1" }).toString()}`;
+  return `${SBDB_API}?${new URLSearchParams({ sstr: t, "phys-par": "1" }).toString()}`;
+}
 export const sbdbPage = (des: string) => `https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${encodeURIComponent(des)}`;
 export const horizonsPage = (des: string) => `https://ssd.jpl.nasa.gov/horizons/app.html#/?sstr=${encodeURIComponent(des)}`;
 
@@ -91,11 +100,17 @@ export function parseSbdb(status: number, body: string): SbdbParsed {
  * so a 4xx means "no such object"; 5xx stays an upstream error unless the body says otherwise.
  */
 export async function sbdbLookup(deps: Deps, query: string): Promise<SbdbLookup> {
-  const res = await upstreamText(deps, SBDB, sbdbUrl(query), {
-    timeoutMs: 15_000,
-    ttlSeconds: 24 * 3600,
-    okStatuses: [200, 300, 400, 404],
-  });
+  const get = () =>
+    upstreamText(deps, SBDB, sbdbUrl(query), { timeoutMs: 15_000, ttlSeconds: 24 * 3600, okStatuses: [200, 300, 400, 404] });
+  let res;
+  try {
+    res = await get();
+  } catch (err) {
+    // One retry after a gateway error (SBDB's front end answers 502 intermittently).
+    if (!(err instanceof UpstreamError) || err.upstreamStatus !== 502) throw err;
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await get();
+  }
   if (res.status === 400 || res.status === 404) return { status: "not_found", cached: res.cached };
   return { ...parseSbdb(res.status, res.body), cached: res.cached };
 }

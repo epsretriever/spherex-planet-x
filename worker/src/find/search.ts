@@ -40,8 +40,8 @@ export const BOX_SPAN_DEG = 3;
 export const BOX_DAYS = 12;
 export const MAX_BOXES_PER_QUERY = 40;
 export const MAX_TAP_QUERIES = 4;
-export const MAX_FRAMES = 400;
-export const MAX_EXACT_CHUNKS = 6;
+export const MAX_FRAMES = 800;
+export const MAX_EXACT_CHUNKS = 7;
 /** Exposures this close in time belong to one visit. */
 export const VISIT_GAP_DAYS = 30 / 1440;
 
