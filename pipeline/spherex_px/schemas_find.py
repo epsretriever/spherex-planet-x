@@ -57,7 +57,9 @@ class FindPrediction(Model):
     method: Literal["horizons_exact", "interpolated_daily"] = Field(
         description="Horizons at the exposure midpoint, or interpolated from Horizons' daily table"
     )
-    observer: Literal["geocenter"] = "geocenter"
+    observer: Literal["spherex", "geocenter"] = Field(
+        description="spherex: Horizons computed the position as seen from SPHEREx itself"
+    )
 
 
 class FindMeasurement(Model):
