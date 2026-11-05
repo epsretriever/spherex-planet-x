@@ -1,0 +1,96 @@
+# Thermal sizes ("How big is it?"): pull JPL data for objects JPL identified, then republish.
+#
+# Sizes come from SPHEREx's own spectra (pipeline/spherex_px/science/thermal.py) and are
+# recomputed by every `spherex-px publish`, including the survey's. Objects JPL identified need
+# two things from JPL that the machines building the site cannot always reach, so this workflow
+# pulls them on GitHub's runners:
+#   - JPL Small-Body Database: H and G (to tie size to albedo), the orbit, and the published
+#     diameter and albedo (mostly NEOWISE) used to validate our sizes;
+#   - JPL Horizons: distance from the Sun, from Earth and phase angle at each detection time.
+# Results go to frontend/public/data/thermal/jpl-inputs.json; publish then writes each object's
+# thermal block and frontend/public/data/validation/thermal.json, and the result is committed
+# to the branch the workflow ran on.
+name: Thermal sizes
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Most identified objects to pull from JPL in this run
+        default: "300"
+  schedule:
+    - cron: "41 4 * * *" # daily; the survey keeps identifying objects
+  push:
+    branches: [main, "claude/cool-volta-rpefc7"]
+    paths:
+      - pipeline/spherex_px/thermal.py
+      - pipeline/spherex_px/schemas_thermal.py
+      - pipeline/spherex_px/science/thermal.py
+      - pipeline/spherex_px/science/geometry.py
+      - pipeline/spherex_px/science/solar_spectrum.py
+      - .github/workflows/thermal.yml
+
+concurrency:
+  group: thermal-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  LIVE_API: https://spherex-planet-x.bodhishanbhag.workers.dev
+  SURVEY_LIVE_API: https://spherex-planet-x.bodhishanbhag.workers.dev
+  LIMIT: ${{ inputs.limit || '300' }}
+
+jobs:
+  thermal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e "pipeline[dev]"
+      - name: Science tests
+        working-directory: pipeline
+        run: python -m pytest -q tests/test_thermal.py
+      - name: Pull JPL data for identified objects
+        run: |
+          spherex-px thermal-inputs --api "$LIVE_API" --limit "$LIMIT" --summary thermal-summary.md
+          cp frontend/public/data/thermal/jpl-inputs.json "$RUNNER_TEMP/jpl-inputs.json"
+      - name: Republish and commit
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "spherex-thermal[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          out=frontend/public/data
+          for attempt in 1 2 3 4 5; do
+            git fetch -q origin "$BRANCH"
+            git reset -q --hard "origin/$BRANCH"
+            mkdir -p "$out/thermal"
+            cp "$RUNNER_TEMP/jpl-inputs.json" "$out/thermal/jpl-inputs.json"
+            spherex-px publish
+            python - <<'EOF' >> thermal-summary.md
+          import json
+          v = json.load(open("frontend/public/data/validation/thermal.json"))
+          print(f"Sized {v['n_sized']}, upper limits {v['n_upper_limit']}, not sizable "
+                f"{v['n_not_sizable']} of {v['n_objects']} objects.")
+          print(f"Validation: {v['n_compared']} compared with JPL diameters "
+                f"(median ratio {v['median_ratio']}, scatter {v['scatter_pct']}%); "
+                f"{v['n_identified']} identified, {v['n_with_jpl_diameter']} with a JPL diameter.")
+          EOF
+            git add -A "$out"
+            if git diff --cached --quiet; then echo "no changes"; break; fi
+            git commit -q -m "Thermal sizes: $(head -1 thermal-summary.md)" -m "$(tail -2 thermal-summary.md)" \
+              -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            if git push origin "HEAD:$BRANCH"; then break; fi
+            [ "$attempt" = 5 ] && exit 1
+            sleep $((attempt * 15))
+          done
+          cat thermal-summary.md >> "$GITHUB_STEP_SUMMARY"
