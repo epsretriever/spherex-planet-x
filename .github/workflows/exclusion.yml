@@ -1,0 +1,60 @@
+# What the survey has ruled out: turns the newest injection study and the survey footprint into
+# limits on a hypothetical distant planet, with member-level Planet Nine numbers from Brown &
+# Batygin's reference population (downloaded from CaltechDATA; runners can reach it). Commits
+# frontend/public/data/survey/exclusion.json to the branch it ran on; /api/exclusion serves it.
+name: Exclusion map
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - pipeline/spherex_px/exclusion.py
+      - pipeline/spherex_px/exclusion_schema.py
+      - pipeline/spherex_px/science/brightness.py
+      - pipeline/spherex_px/science/completeness.py
+      - .github/workflows/exclusion.yml
+  workflow_run:
+    workflows: ["Survey", "Injection study", "Planet Nine region"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: exclusion-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  exclusion:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest data on this branch
+        run: git pull --rebase origin "${GITHUB_REF_NAME}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/pyproject.toml
+      - run: pip install -e pipeline
+      - name: Download the Planet Nine reference population
+        working-directory: pipeline
+        run: python -c "from pathlib import Path; from spherex_px.planet_nine import fetch; fetch(Path('var/planet-nine'))"
+      - name: Build the exclusion map
+        working-directory: pipeline
+        run: spherex-px exclusion --population var/planet-nine/reference_population.csv | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit the exclusion map
+        run: |
+          git config user.name "spherex-survey[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/public/data/survey/exclusion.json
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "Exclusion map from the newest injection study and survey" \
+            -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          for i in 1 2 3; do
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 10
+          done
+          exit 1
