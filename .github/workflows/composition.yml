@@ -7,8 +7,9 @@
 #   3. spherex-px composition: data/objects/{object_id}/composition.json for every object.
 #   4. spherex-px composition-validate: data/validation/composition.json (agreement with the
 #      published classes, plus a simulated test), quoted in the run summary.
-#   5. Commit the results: to main after a Survey run, a push to main or on demand; to the pull
-#      request's own branch for a pull request from this repository.
+#   5. Commit the results to main after a Survey run, a push to main, weekly or on demand. On a
+#      pull request it only reports (run summary + artifact): commits by the workflow's token
+#      would leave the pull request's head without normal CI runs.
 name: Composition
 
 on:
@@ -80,8 +81,14 @@ jobs:
             jq '{n_objects, n_classified, n_identified, n_with_taxonomy, n_compared, overall, by_confidence, baseline_always_s, simulated_recovery, truth_query_utc}' frontend/public/data/validation/composition.json
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: composition-validation
+          path: |
+            frontend/public/data/validation/composition.json
+            frontend/public/data/validation/composition_truth.json
       - name: Commit
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "spherex-composition[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
