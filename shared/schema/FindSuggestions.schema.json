@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "FindSuggestion": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "catalog",
+            "sbdb"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "query",
+        "source"
+      ],
+      "title": "FindSuggestion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.2",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "query": {
+      "title": "Query",
+      "type": "string"
+    },
+    "suggestions": {
+      "items": {
+        "$ref": "#/$defs/FindSuggestion"
+      },
+      "title": "Suggestions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "query",
+    "suggestions"
+  ],
+  "title": "FindSuggestions",
+  "type": "object"
+}
