@@ -1340,3 +1340,8 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "VoteResult": VoteResult,
     "VettingStats": VettingStats,
 }
+
+# Precovery search models (GET /api/find) live in schemas_find.py.
+from .schemas_find import FIND_RESPONSE_MODELS  # noqa: E402
+
+ALL_RESPONSE_MODELS.update(FIND_RESPONSE_MODELS)
