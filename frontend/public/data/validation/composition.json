@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.a6e9db8",
+  "generated_utc": "2026-11-05T04:05:36Z",
+  "truth_source": "JPL SBDB spec_B (SMASSII) / spec_T (Tholen) for objects the live Worker reports as JPL-identified",
+  "truth_query_utc": null,
+  "n_objects": 237,
+  "n_classified": 202,
+  "n_identified": 0,
+  "n_with_taxonomy": 0,
+  "n_compared": 0,
+  "overall": {
+    "n": 0,
+    "complex_agreement": null,
+    "broad_agreement": null
+  },
+  "by_confidence": {
+    "high": {
+      "n": 0,
+      "complex_agreement": null,
+      "broad_agreement": null
+    },
+    "medium": {
+      "n": 0,
+      "complex_agreement": null,
+      "broad_agreement": null
+    },
+    "low": {
+      "n": 0,
+      "complex_agreement": null,
+      "broad_agreement": null
+    }
+  },
+  "baseline_always_s": null,
+  "rows": [],
+  "simulated_recovery": [
+    {
+      "confidence": "high",
+      "n": 415,
+      "complex_recovered": 0.894
+    },
+    {
+      "confidence": "medium",
+      "n": 1575,
+      "complex_recovered": 0.731
+    },
+    {
+      "confidence": "low",
+      "n": 18210,
+      "complex_recovered": 0.352
+    },
+    {
+      "confidence": "all",
+      "n": 20200,
+      "complex_recovered": 0.393
+    }
+  ],
+  "simulated_seed": 20261105,
+  "method_plain": "Real check: for every object JPL identified, its published taxonomy class (SMASSII spec_B preferred, else Tholen spec_T, from JPL's Small-Body Database) is reduced to its complex and compared with our best complex. Simulated check: every Bus-DeMeo class mean, varied within its class spread, is sampled at each real object's bands with that object's real errors, and classified the same way."
+}
