@@ -527,6 +527,7 @@ def build(out_dir: Path, population: dict[str, np.ndarray] | None = None) -> X.E
                 wl_min_um=b.wl_min_um,
                 wl_max_um=b.wl_max_um,
                 wl_eff_um=b.wl_eff_um,
+                channels_um=list(b.channels_um),
             )
             for b in spherex_bands()
         ],
