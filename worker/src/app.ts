@@ -6,6 +6,7 @@ import { askRoute, candidateWriteups, objectWriteups, searchRoute } from "./rout
 import { candidates } from "./routes/candidates";
 import { coverage } from "./routes/coverage";
 import { fields } from "./routes/fields";
+import { find } from "./find/route";
 import { health } from "./routes/health";
 import { objects, survey } from "./routes/objects";
 import { injection, runs } from "./routes/static-docs";
@@ -43,6 +44,7 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/objects", objectWriteups);
   app.route("/api/ask", askRoute);
   app.route("/api/search", searchRoute);
+  app.route("/api/find", find);
 
   app.notFound((c) => c.json(new ApiError(404, `no API route for ${c.req.path}`).toJSON(), 404));
   app.onError((err, c) => {

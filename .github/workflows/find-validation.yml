@@ -1,0 +1,49 @@
+# Runs the precovery search (/api/find) against the live JPL and IRSA services: records the
+# upstream answers into worker/test/fixtures/find/ (replayed offline by find.test.ts) and
+# checks it against the frames our pipeline detected JPL-identified objects in, writing
+# docs/find-validation.{json,md}. Commits the results to the branch it ran on.
+name: Find validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        description: Number of JPL-identified objects to validate
+        default: "20"
+  push:
+    branches: [claude/elegant-bardeen-n2qnvm]
+    paths: [worker/src/find/**, worker/test/find.live.test.ts, .github/workflows/find-validation.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: find-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Live search and validation
+        working-directory: worker
+        env:
+          FIND_LIVE: "1"
+          FIND_N_VALIDATE: ${{ inputs.n || '20' }}
+        run: npx vitest run test/find.live.test.ts --reporter=verbose
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/test/fixtures/find docs/find-validation.json docs/find-validation.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Find validation: record fixtures and match rate from the live services"
+          for i in 1 2 3; do git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0; sleep 5; done
+          exit 1

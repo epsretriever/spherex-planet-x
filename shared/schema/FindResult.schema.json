@@ -584,8 +584,11 @@
           "type": "string"
         },
         "observer": {
-          "const": "geocenter",
-          "default": "geocenter",
+          "description": "spherex: Horizons computed the position as seen from SPHEREx itself",
+          "enum": [
+            "spherex",
+            "geocenter"
+          ],
           "title": "Observer",
           "type": "string"
         }
@@ -597,7 +600,8 @@
         "dec_3sigma_arcsec",
         "vmag",
         "delta_au",
-        "method"
+        "method",
+        "observer"
       ],
       "title": "FindPrediction",
       "type": "object"

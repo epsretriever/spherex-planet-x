@@ -815,3 +815,6 @@ export interface InjectionStudyIndex extends Envelope {
   build_run_id?: string | null;
   studies: { study_id: string; generated_utc: string; field_ids: string[]; n_injected: number }[];
 }
+
+// Precovery search (GET /api/find): types in find/contract.ts.
+export type * from "./find/contract";
