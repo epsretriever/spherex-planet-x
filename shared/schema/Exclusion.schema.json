@@ -1,0 +1,838 @@
+{
+  "$defs": {
+    "BandInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "detector": {
+          "title": "Detector",
+          "type": "integer"
+        },
+        "wl_min_um": {
+          "title": "Wl Min Um",
+          "type": "number"
+        },
+        "wl_max_um": {
+          "title": "Wl Max Um",
+          "type": "number"
+        },
+        "wl_eff_um": {
+          "title": "Wl Eff Um",
+          "type": "number"
+        }
+      },
+      "required": [
+        "detector",
+        "wl_min_um",
+        "wl_max_um",
+        "wl_eff_um"
+      ],
+      "title": "BandInfo",
+      "type": "object"
+    },
+    "Completeness": {
+      "additionalProperties": false,
+      "description": "Recovery of SIMULATED linear-track objects (flat F_nu) pooled over the study's tiles.",
+      "properties": {
+        "study_id": {
+          "title": "Study Id",
+          "type": "string"
+        },
+        "simulated": {
+          "const": true,
+          "default": true,
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Ids",
+          "type": "array"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        },
+        "n_recovered": {
+          "title": "N Recovered",
+          "type": "integer"
+        },
+        "mag_bins_ab": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Mag Bins Ab",
+          "type": "array"
+        },
+        "rate_bins_arcsec_per_hr": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Rate Bins Arcsec Per Hr",
+          "type": "array"
+        },
+        "cells": {
+          "items": {
+            "$ref": "#/$defs/CompletenessCell"
+          },
+          "title": "Cells",
+          "type": "array"
+        },
+        "pooled_m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "50% magnitude pooled over the study's tiles, linear tracks at 3-100 arcsec/hr (the same definition as each tile's m50_ab)",
+          "title": "Pooled M50 Ab"
+        }
+      },
+      "required": [
+        "study_id",
+        "field_ids",
+        "n_injected",
+        "n_recovered",
+        "mag_bins_ab",
+        "rate_bins_arcsec_per_hr",
+        "cells",
+        "pooled_m50_ab"
+      ],
+      "title": "Completeness",
+      "type": "object"
+    },
+    "CompletenessCell": {
+      "additionalProperties": false,
+      "properties": {
+        "mag_ab": {
+          "title": "Mag Ab",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "title": "Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        },
+        "n_recovered": {
+          "title": "N Recovered",
+          "type": "integer"
+        },
+        "fraction": {
+          "title": "Fraction",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mag_ab",
+        "rate_arcsec_per_hr",
+        "n_injected",
+        "n_recovered",
+        "fraction"
+      ],
+      "title": "CompletenessCell",
+      "type": "object"
+    },
+    "ConsistencyRow": {
+      "additionalProperties": false,
+      "description": "The rate-based completeness model against the study's own distance tracks.",
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "mag_ab": {
+          "title": "Mag Ab",
+          "type": "number"
+        },
+        "measured_fraction": {
+          "description": "Parallax-track recovery measured at this distance",
+          "title": "Measured Fraction",
+          "type": "number"
+        },
+        "n_injected": {
+          "title": "N Injected",
+          "type": "integer"
+        },
+        "model_fraction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Linear-track grid at the median rate",
+          "title": "Model Fraction"
+        }
+      },
+      "required": [
+        "distance_au",
+        "mag_ab",
+        "measured_fraction",
+        "n_injected",
+        "model_fraction"
+      ],
+      "title": "ConsistencyRow",
+      "type": "object"
+    },
+    "ExclusionLinker": {
+      "additionalProperties": false,
+      "properties": {
+        "min_rate_arcsec_per_hr": {
+          "title": "Min Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "max_rate_arcsec_per_hr": {
+          "title": "Max Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "min_visits": {
+          "title": "Min Visits",
+          "type": "integer"
+        },
+        "detect_threshold_snr": {
+          "title": "Detect Threshold Snr",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min_rate_arcsec_per_hr",
+        "max_rate_arcsec_per_hr",
+        "min_visits",
+        "detect_threshold_snr"
+      ],
+      "title": "ExclusionLinker",
+      "type": "object"
+    },
+    "ExclusionSurvey": {
+      "additionalProperties": false,
+      "properties": {
+        "survey_generated_utc": {
+          "title": "Survey Generated Utc",
+          "type": "string"
+        },
+        "n_patches_searched": {
+          "description": "Distinct 0.3 deg patches searched successfully (empty or with moving objects)",
+          "title": "N Patches Searched",
+          "type": "integer"
+        },
+        "area_deg2_searched": {
+          "title": "Area Deg2 Searched",
+          "type": "number"
+        },
+        "sky_fraction_searched": {
+          "description": "area_deg2_searched / 41,253 deg2",
+          "title": "Sky Fraction Searched",
+          "type": "number"
+        },
+        "n_patches_measured": {
+          "description": "Searched patches whose completeness the injection study measured directly",
+          "title": "N Patches Measured",
+          "type": "integer"
+        },
+        "n_failed_searches": {
+          "description": "Tile searches that failed (not counted as searched)",
+          "title": "N Failed Searches",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "survey_generated_utc",
+        "n_patches_searched",
+        "area_deg2_searched",
+        "sky_fraction_searched",
+        "n_patches_measured",
+        "n_failed_searches"
+      ],
+      "title": "ExclusionSurvey",
+      "type": "object"
+    },
+    "MeasuredTile": {
+      "additionalProperties": false,
+      "properties": {
+        "tile_id": {
+          "title": "Tile Id",
+          "type": "string"
+        },
+        "ra_deg": {
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "m50_ab": {
+          "title": "M50 Ab",
+          "type": "number"
+        },
+        "delta_mag": {
+          "description": "Tile m50 minus pooled m50: shifts the pooled curve",
+          "title": "Delta Mag",
+          "type": "number"
+        },
+        "planet_nine_weight": {
+          "description": "Share of the open Planet Nine region in it",
+          "title": "Planet Nine Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tile_id",
+        "ra_deg",
+        "dec_deg",
+        "m50_ab",
+        "delta_mag",
+        "planet_nine_weight"
+      ],
+      "title": "MeasuredTile",
+      "type": "object"
+    },
+    "PlanetNineExclusion": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "n_population": {
+          "title": "N Population",
+          "type": "integer"
+        },
+        "n_open": {
+          "title": "N Open",
+          "type": "integer"
+        },
+        "region_fraction_in_searched": {
+          "description": "Share of the open region (5 deg cell density) lying inside searched patches",
+          "title": "Region Fraction In Searched",
+          "type": "number"
+        },
+        "population": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanetNinePopulationStats"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Member-level numbers, present when the population file was available"
+        }
+      },
+      "required": [
+        "citation",
+        "url",
+        "n_population",
+        "n_open",
+        "region_fraction_in_searched",
+        "population"
+      ],
+      "title": "PlanetNineExclusion",
+      "type": "object"
+    },
+    "PlanetNinePopulationStats": {
+      "additionalProperties": false,
+      "properties": {
+        "n_open": {
+          "title": "N Open",
+          "type": "integer"
+        },
+        "n_open_in_searched": {
+          "description": "Open members whose 2018 sky position falls inside a searched patch",
+          "title": "N Open In Searched",
+          "type": "integer"
+        },
+        "distance_au_p05": {
+          "title": "Distance Au P05",
+          "type": "number"
+        },
+        "distance_au_p50": {
+          "title": "Distance Au P50",
+          "type": "number"
+        },
+        "distance_au_p95": {
+          "title": "Distance Au P95",
+          "type": "number"
+        },
+        "distance_au_min": {
+          "title": "Distance Au Min",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr_max": {
+          "description": "Fastest sky motion among open members",
+          "title": "Rate Arcsec Per Hr Max",
+          "type": "number"
+        },
+        "n_faster_than_linker_minimum": {
+          "title": "N Faster Than Linker Minimum",
+          "type": "integer"
+        },
+        "band_mag_ab_p50": {
+          "description": "Median faintest-band AB magnitude (our model)",
+          "title": "Band Mag Ab P50",
+          "type": "number"
+        },
+        "v_mag_p50": {
+          "description": "Median V magnitude from the population file",
+          "title": "V Mag P50",
+          "type": "number"
+        },
+        "expected_recovered": {
+          "description": "Sum over open members in searched patches of the conservative completeness",
+          "title": "Expected Recovered",
+          "type": "number"
+        },
+        "fraction_excluded": {
+          "description": "expected_recovered / n_open",
+          "title": "Fraction Excluded",
+          "type": "number"
+        }
+      },
+      "required": [
+        "n_open",
+        "n_open_in_searched",
+        "distance_au_p05",
+        "distance_au_p50",
+        "distance_au_p95",
+        "distance_au_min",
+        "rate_arcsec_per_hr_max",
+        "n_faster_than_linker_minimum",
+        "band_mag_ab_p50",
+        "v_mag_p50",
+        "expected_recovered",
+        "fraction_excluded"
+      ],
+      "title": "PlanetNinePopulationStats",
+      "type": "object"
+    },
+    "RateAtDistance": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "median_rate_arcsec_per_hr": {
+          "title": "Median Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "n_injected": {
+          "description": "SIMULATED objects at this distance (real SPHEREx geometry)",
+          "title": "N Injected",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "distance_au",
+        "median_rate_arcsec_per_hr",
+        "n_injected"
+      ],
+      "title": "RateAtDistance",
+      "type": "object"
+    },
+    "ReachRow": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "rate_arcsec_per_hr": {
+          "title": "Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "best_fraction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Highest completeness at any magnitude the study measured (brightest bin)",
+          "title": "Best Fraction"
+        },
+        "m50_ab": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Flat-spectrum AB magnitude of 50% completeness",
+          "title": "M50 Ab"
+        },
+        "testable": {
+          "enum": [
+            "yes",
+            "partial",
+            "no"
+          ],
+          "title": "Testable",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "measured",
+            "below_linker_minimum",
+            "faster_than_study",
+            "slower_than_study",
+            "brighter_than_study",
+            "fainter_than_study",
+            "outside_distance_range"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "distance_au",
+        "rate_arcsec_per_hr",
+        "best_fraction",
+        "m50_ab",
+        "testable",
+        "reason"
+      ],
+      "title": "ReachRow",
+      "type": "object"
+    },
+    "ReachSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "d_max_50_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Largest distance where a bright enough object is found at least half the time (completeness interpolated between the study's rates)",
+          "title": "D Max 50 Au"
+        },
+        "d_max_any_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Farthest of the study's fixed distances at which any SIMULATED object was recovered",
+          "title": "D Max Any Au"
+        },
+        "d_linker_limit_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Distance where the sky motion falls to the linker's minimum rate: nothing beyond it can be found by the current pipeline, however bright",
+          "title": "D Linker Limit Au"
+        }
+      },
+      "required": [
+        "d_max_50_au",
+        "d_max_any_au",
+        "d_linker_limit_au"
+      ],
+      "title": "ReachSummary",
+      "type": "object"
+    },
+    "ReferencePoint": {
+      "additionalProperties": false,
+      "description": "Model outputs from the pipeline, so the website's port of the model can be checked.",
+      "properties": {
+        "diameter_km": {
+          "title": "Diameter Km",
+          "type": "number"
+        },
+        "geometric_albedo": {
+          "title": "Geometric Albedo",
+          "type": "number"
+        },
+        "t_int_k": {
+          "title": "T Int K",
+          "type": "number"
+        },
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "band_mags_ab": {
+          "description": "Total (reflected + thermal) AB per detector",
+          "items": {
+            "type": "number"
+          },
+          "title": "Band Mags Ab",
+          "type": "array"
+        },
+        "thermal_mags_ab": {
+          "description": "Thermal-only AB; null when > 99",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Thermal Mags Ab",
+          "type": "array"
+        },
+        "rate_arcsec_per_hr": {
+          "title": "Rate Arcsec Per Hr",
+          "type": "number"
+        },
+        "completeness_conservative": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completeness Conservative"
+        },
+        "completeness_optimistic": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completeness Optimistic"
+        }
+      },
+      "required": [
+        "diameter_km",
+        "geometric_albedo",
+        "t_int_k",
+        "distance_au",
+        "band_mags_ab",
+        "thermal_mags_ab",
+        "rate_arcsec_per_hr",
+        "completeness_conservative",
+        "completeness_optimistic"
+      ],
+      "title": "ReferencePoint",
+      "type": "object"
+    },
+    "SizeLimit": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_au": {
+          "title": "Distance Au",
+          "type": "number"
+        },
+        "geometric_albedo": {
+          "title": "Geometric Albedo",
+          "type": "number"
+        },
+        "t_int_k": {
+          "title": "T Int K",
+          "type": "number"
+        },
+        "min_diameter_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Smallest planet found at least 50% of the time (conservative band rule); null where no size is (too slow, or brighter than the study measured)",
+          "title": "Min Diameter Km"
+        },
+        "reason": {
+          "enum": [
+            "measured",
+            "below_linker_minimum",
+            "faster_than_study",
+            "slower_than_study",
+            "brighter_than_study",
+            "fainter_than_study",
+            "outside_distance_range"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "distance_au",
+        "geometric_albedo",
+        "t_int_k",
+        "min_diameter_km",
+        "reason"
+      ],
+      "title": "SizeLimit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.2",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "build_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Build Run Id"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "survey": {
+      "$ref": "#/$defs/ExclusionSurvey"
+    },
+    "linker": {
+      "$ref": "#/$defs/ExclusionLinker"
+    },
+    "completeness": {
+      "$ref": "#/$defs/Completeness"
+    },
+    "rate_by_distance": {
+      "items": {
+        "$ref": "#/$defs/RateAtDistance"
+      },
+      "title": "Rate By Distance",
+      "type": "array"
+    },
+    "consistency": {
+      "items": {
+        "$ref": "#/$defs/ConsistencyRow"
+      },
+      "title": "Consistency",
+      "type": "array"
+    },
+    "reach": {
+      "items": {
+        "$ref": "#/$defs/ReachRow"
+      },
+      "title": "Reach",
+      "type": "array"
+    },
+    "reach_summary": {
+      "$ref": "#/$defs/ReachSummary"
+    },
+    "size_limits": {
+      "items": {
+        "$ref": "#/$defs/SizeLimit"
+      },
+      "title": "Size Limits",
+      "type": "array"
+    },
+    "bands": {
+      "items": {
+        "$ref": "#/$defs/BandInfo"
+      },
+      "title": "Bands",
+      "type": "array"
+    },
+    "measured_tiles": {
+      "items": {
+        "$ref": "#/$defs/MeasuredTile"
+      },
+      "title": "Measured Tiles",
+      "type": "array"
+    },
+    "planet_nine": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanetNineExclusion"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reference_points": {
+      "items": {
+        "$ref": "#/$defs/ReferencePoint"
+      },
+      "title": "Reference Points",
+      "type": "array"
+    },
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "references": {
+      "items": {
+        "type": "string"
+      },
+      "title": "References",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "survey",
+    "linker",
+    "completeness",
+    "rate_by_distance",
+    "consistency",
+    "reach",
+    "reach_summary",
+    "size_limits",
+    "bands",
+    "measured_tiles",
+    "planet_nine",
+    "reference_points",
+    "assumptions",
+    "references"
+  ],
+  "title": "Exclusion",
+  "type": "object"
+}

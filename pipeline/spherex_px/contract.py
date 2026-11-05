@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .exclusion_schema import Exclusion
 from .schemas import (
     ALL_RESPONSE_MODELS,
     AiAnswer,
@@ -45,7 +46,7 @@ FIXTURE_MODELS = {
 def export_json_schema(out_dir: Path = SCHEMA_DIR) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     written = []
-    for name, model in ALL_RESPONSE_MODELS.items():
+    for name, model in {**ALL_RESPONSE_MODELS, "Exclusion": Exclusion}.items():
         path = out_dir / f"{name}.schema.json"
         path.write_text(json.dumps(model.model_json_schema(), indent=2) + "\n")
         written.append(path)

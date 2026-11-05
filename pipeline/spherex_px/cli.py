@@ -246,6 +246,33 @@ def _planet_nine(args: argparse.Namespace) -> int:
     return 0
 
 
+def _exclusion(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .exclusion import write
+
+    pop = None
+    if args.population:
+        from .planet_nine import load_population
+
+        pop = load_population(Path(args.population))
+    doc = write(Path(args.out) if args.out else DEFAULT_OUT, pop)
+    s, r = doc.survey, doc.reach_summary
+    p9 = doc.planet_nine
+    print(
+        f"{s.n_patches_searched} patches ({s.area_deg2_searched} deg2), {s.n_patches_measured} "
+        f"measured; >=50% complete to {r.d_max_50_au} AU, linker limit {r.d_linker_limit_au} AU; "
+        + (
+            f"Planet Nine region in searched patches {p9.region_fraction_in_searched:.4f}"
+            + (f", excluded {p9.population.fraction_excluded}" if p9 and p9.population else "")
+            if p9
+            else "no Planet Nine region"
+        )
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="spherex-px")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -345,6 +372,14 @@ def main(argv: list[str] | None = None) -> int:
     p9.add_argument("--describe", action="store_true", help="also log the record's contents")
     p9.add_argument("--out")
     p9.set_defaults(func=_planet_nine)
+    ex = sub.add_parser(
+        "exclusion", help="what the survey has ruled out for a hypothetical distant planet"
+    )
+    ex.add_argument(
+        "--population", help="Brown & Batygin reference_population.csv (member-level numbers)"
+    )
+    ex.add_argument("--out")
+    ex.set_defaults(func=_exclusion)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
