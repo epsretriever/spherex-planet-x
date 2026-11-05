@@ -57,6 +57,7 @@ The public app reads **precomputed showcase fields**. The "analyze any position"
 | `GET /api/validation/jpl-orbits` | summary | Our orbits versus JPL's for every identified object (see Objects). |
 | `GET /api/validation/orbits` | `OrbitValidation` | Static `data/validation/orbits.json` (see [Objects](#objects-objectsummary-objectdetail-objectprediction)). |
 | `GET /api/survey` | `Survey` | Static `data/survey.json`: survey tiles, their status and totals. The Worker adds `totals.n_known_objects`: distinct JPL designations among matched objects, so an asteroid seen in several tiles counts once. |
+| `GET /api/exclusion` | `Exclusion` | Static `data/survey/exclusion.json`: what the survey has ruled out for a hypothetical distant planet (see [Exclusion map](#exclusion-map-exclusion)). `404` until published. |
 | `GET /api/{candidates,objects}/{id}/writeup` | `AiWriteup` | Row 4 (Workers AI). |
 | `POST /api/ask` | `AskRequest` → `AiAnswer` | Row 4. |
 | `POST /api/search` | `SearchRequest` → `AiSearch` | Row 4. |
@@ -219,6 +220,25 @@ An object is one solar-system body: every detection linked to it, across visits 
 - `planet_nine {citation, url, epoch_utc, cell_deg, population, n_population, n_remaining, cells[] {ra_deg, dec_deg, fraction}} | absent`: the published Planet Nine search region, for the sky map. Source: Brown & Batygin (2021), AJ 162, 219, reference population v3 on CaltechDATA (record `8fjad-x7y61`), 100,000 synthetic Planet Nine orbits with sky positions at `epoch_utc` (2018-06-01; the planet would move well under a degree since). Only members the ZTF, DES and Pan-STARRS searches would not have detected are binned (the region still open: `n_remaining` of `n_population`); `fraction` is each RA/Dec cell's share of them, summing to 1, with empty cells omitted. Written by `spherex-px planet-nine` in the `Planet Nine region` Action (`.github/workflows/planet-nine.yml`) to `data/survey/planet_nine.json`; the Worker adds it to `/api/survey`.
 - Storage: after each run of the `Survey` Action (`.github/workflows/survey.yml`), `spherex-px survey-ledger` updates `data/survey/footprint.json` (every tile ever searched, with its latest result), `data/survey/segments.json` (per week segment: tiles planned, tiles searched, finished) and appends to `data/survey/ledger.json`; `spherex-px publish` folds them into `survey.json`. Runs are incremental: `spherex-px survey-plan next:N` picks the next N unfinished week segments and plans only tiles the footprint has no result for (failed ones are retried), and new tiles are added to the published data rather than replacing it.
 
+## Exclusion map (`Exclusion`)
+
+Added in v1.2 (additive). Written by `spherex-px exclusion` (`pipeline/spherex_px/exclusion.py`, models in `exclusion_schema.py`) to `data/survey/exclusion.json`; the `Exclusion map` Action (`.github/workflows/exclusion.yml`) rebuilds it after every `Survey`, `Injection study` and `Planet Nine region` run, with member-level Planet Nine numbers from Brown & Batygin's `reference_population.csv`. Every number comes from published data: the survey footprint, the newest injection study (SIMULATED objects) and the Planet Nine population.
+
+- `survey {survey_generated_utc, n_patches_searched, area_deg2_searched, sky_fraction_searched, n_patches_measured, n_failed_searches}`: distinct searched 0.3° patches (same rule as `survey.totals.area_deg2_searched`); `n_patches_measured` is how many have a completeness measured by the study itself. The others are assumed to behave like the pooled study.
+- `linker {min_rate_arcsec_per_hr, max_rate_arcsec_per_hr, min_visits, detect_threshold_snr}`: the pipeline's hard limits. Nothing slower than `min_rate_arcsec_per_hr` can form a track.
+- `completeness {study_id, simulated: true, field_ids, n_injected, n_recovered, mag_bins_ab, rate_bins_arcsec_per_hr, cells[] {mag_ab, rate_arcsec_per_hr, n_injected, n_recovered, fraction}, pooled_m50_ab}`: linear-track recovery (flat F_ν) pooled over the study's tiles; interpolated linearly in magnitude and log rate. Rules outside the grid: slower than the linker minimum is 0; faster than the fastest rate studied is not measured; brighter than the brightest bin uses that bin only if it is already ≥ 50%; fainter than the faintest bin uses it only if it is already < 50%.
+- `rate_by_distance[] {distance_au, median_rate_arcsec_per_hr, n_injected}`: sky rate of SIMULATED objects at fixed heliocentric distances in real SPHEREx geometry (the study's distance tracks), interpolated log-log.
+- `consistency[] {distance_au, mag_ab, measured_fraction, n_injected, model_fraction}`: the rate-based model against the study's own distance tracks.
+- `reach[] {distance_au, rate_arcsec_per_hr, best_fraction, m50_ab, testable, reason}` and `reach_summary {d_max_50_au, d_max_any_au, d_linker_limit_au}`: which distances the search can test. `testable` is `yes` (≥ 50% for a bright enough object), `partial` (> 0) or `no`; `reason` is one of `measured`, `below_linker_minimum`, `faster_than_study`, `slower_than_study`, `brighter_than_study`, `fainter_than_study`, `outside_distance_range`.
+- `size_limits[] {distance_au, geometric_albedo, t_int_k, min_diameter_km, reason}`: smallest planet found at least half the time (conservative rule below), null where no size is.
+- `bands[] {detector, wl_min_um, wl_max_um, wl_eff_um}`: SPHEREx's six detectors from the IRSA spectral-channel calibration.
+- `measured_tiles[] {tile_id, ra_deg, dec_deg, m50_ab, delta_mag, planet_nine_weight}`: tiles with their own m50; the pooled curve is shifted by `delta_mag` there.
+- `planet_nine {citation, url, n_population, n_open, region_fraction_in_searched, population} | null`: `region_fraction_in_searched` is the share of the open region (5° cell density, uniform within a cell) inside searched patches. `population {n_open, n_open_in_searched, distance_au_p05, distance_au_p50, distance_au_p95, distance_au_min, rate_arcsec_per_hr_max, n_faster_than_linker_minimum, band_mag_ab_p50, v_mag_p50, expected_recovered, fraction_excluded} | null` is present when the population file was available: members inside searched patches (2018 positions), their sky rates and modelled magnitudes, and the expected number the search would have recovered (sum of conservative completeness), over `n_open`.
+- `reference_points[]`: model outputs (`band_mags_ab` per detector, `thermal_mags_ab`, `rate_arcsec_per_hr`, `completeness_conservative`, `completeness_optimistic`) for fixed planets, so the website's port of the model is tested against the pipeline.
+- `assumptions[]`, `references[]`: the model's stated assumptions and its sources.
+
+Brightness model (`pipeline/spherex_px/science/brightness.py`): reflected sunlight `F_ν = F_ν,☉(λ, 1 AU) · p · (R / 1 AU)² / (r² Δ²)` with phase function 1 and a grey albedo (equivalent to `D = 1329 km / √p · 10^(−H/5)`), plus a blackbody at `T⁴ = T_eq⁴ + T_int⁴`, `T_eq = 278.3 K (1 − A)^¼ r^−½`; `Δ = √(r² − 1)` because SPHEREx looks about 90° from the Sun. The planet's spectrum is not flat, so the conservative completeness uses its faintest detector band (a lower bound) and the optimistic one its brightest (an upper bound).
+
 ## AI (`AiWriteup`, `AiAnswer`, `AiSearch`, `Digest`)
 
 Generated by Workers AI from the subject's JSON only (build-plan section 6), and cached in KV for 30 days by a SHA-256 hash of the model, prompt version and exact input. Model: `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (the `AI_MODEL` var in `wrangler.toml`; every AI response names the model it used). Code: `worker/src/ai/`.
@@ -259,6 +279,7 @@ Every output is checked before it is shown. It must parse as JSON in the expecte
 | `data/objects/{object_id}.json` | `ObjectDetail` |
 | `data/objects/{object_id}/prediction.json` | `ObjectPrediction` (once the object has an orbit) |
 | `data/survey.json` | `Survey` |
+| `data/survey/exclusion.json` | `Exclusion` |
 
 `fields.json`, `candidates.json`, `objects.json` and `survey.json` always carry the `pipeline_version` and `build_run_id` of the files they list. The Worker keys stored JPL results by `pipeline_version`, so publishing refuses to mix versions.
 

@@ -703,3 +703,87 @@ export interface AiSearch extends Versioned {
   model: string | null;
   cached: boolean;
 }
+
+// Exclusion map (`data/survey/exclusion.json`, GET /api/exclusion; pipeline/spherex_px/exclusion_schema.py)
+export type ExclusionTestable = "yes" | "partial" | "no";
+export type ExclusionReason =
+  | "measured"
+  | "below_linker_minimum"
+  | "faster_than_study"
+  | "slower_than_study"
+  | "brighter_than_study"
+  | "fainter_than_study"
+  | "outside_distance_range";
+
+export interface Exclusion extends Versioned {
+  build_run_id?: string | null;
+  generated_utc: string;
+  survey: {
+    survey_generated_utc: string;
+    n_patches_searched: number;
+    area_deg2_searched: number;
+    sky_fraction_searched: number;
+    n_patches_measured: number;
+    n_failed_searches: number;
+  };
+  linker: { min_rate_arcsec_per_hr: number; max_rate_arcsec_per_hr: number; min_visits: number; detect_threshold_snr: number };
+  completeness: {
+    study_id: string;
+    simulated: true;
+    field_ids: string[];
+    n_injected: number;
+    n_recovered: number;
+    mag_bins_ab: number[];
+    rate_bins_arcsec_per_hr: number[];
+    cells: { mag_ab: number; rate_arcsec_per_hr: number; n_injected: number; n_recovered: number; fraction: number }[];
+    pooled_m50_ab: number | null;
+  };
+  rate_by_distance: { distance_au: number; median_rate_arcsec_per_hr: number; n_injected: number }[];
+  consistency: { distance_au: number; mag_ab: number; measured_fraction: number; n_injected: number; model_fraction: number | null }[];
+  reach: {
+    distance_au: number;
+    rate_arcsec_per_hr: number;
+    best_fraction: number | null;
+    m50_ab: number | null;
+    testable: ExclusionTestable;
+    reason: ExclusionReason;
+  }[];
+  reach_summary: { d_max_50_au: number | null; d_max_any_au: number | null; d_linker_limit_au: number | null };
+  size_limits: { distance_au: number; geometric_albedo: number; t_int_k: number; min_diameter_km: number | null; reason: ExclusionReason }[];
+  bands: { detector: number; wl_min_um: number; wl_max_um: number; wl_eff_um: number }[];
+  measured_tiles: { tile_id: string; ra_deg: number; dec_deg: number; m50_ab: number; delta_mag: number; planet_nine_weight: number }[];
+  planet_nine: {
+    citation: string;
+    url: string;
+    n_population: number;
+    n_open: number;
+    region_fraction_in_searched: number;
+    population: {
+      n_open: number;
+      n_open_in_searched: number;
+      distance_au_p05: number;
+      distance_au_p50: number;
+      distance_au_p95: number;
+      distance_au_min: number;
+      rate_arcsec_per_hr_max: number;
+      n_faster_than_linker_minimum: number;
+      band_mag_ab_p50: number;
+      v_mag_p50: number;
+      expected_recovered: number;
+      fraction_excluded: number;
+    } | null;
+  } | null;
+  reference_points: {
+    diameter_km: number;
+    geometric_albedo: number;
+    t_int_k: number;
+    distance_au: number;
+    band_mags_ab: number[];
+    thermal_mags_ab: (number | null)[];
+    rate_arcsec_per_hr: number;
+    completeness_conservative: number | null;
+    completeness_optimistic: number | null;
+  }[];
+  assumptions: string[];
+  references: string[];
+}

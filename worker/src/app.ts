@@ -5,6 +5,7 @@ import { ApiError } from "./errors";
 import { askRoute, candidateWriteups, objectWriteups, searchRoute } from "./routes/ai";
 import { candidates } from "./routes/candidates";
 import { coverage } from "./routes/coverage";
+import { exclusion } from "./routes/exclusion";
 import { fields } from "./routes/fields";
 import { health } from "./routes/health";
 import { objects, survey } from "./routes/objects";
@@ -38,6 +39,7 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/runs", runs);
   app.route("/api/objects", objects);
   app.route("/api/survey", survey);
+  app.route("/api/exclusion", exclusion);
   app.route("/api/validation", validation);
   app.route("/api/candidates", candidateWriteups);
   app.route("/api/objects", objectWriteups);
