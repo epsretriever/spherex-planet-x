@@ -180,6 +180,50 @@
           },
           "title": "Also Seen As",
           "type": "array"
+        },
+        "size_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "sized",
+                "upper_limit",
+                "not_sizable"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "As ObjectDetail.thermal.status (null: not computed)",
+          "title": "Size Status"
+        },
+        "diameter_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Thermal diameter (ObjectDetail.thermal), when sized",
+          "title": "Diameter Km"
+        },
+        "diameter_upper_limit_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Largest possible diameter, when too cold or faint to size",
+          "title": "Diameter Upper Limit Km"
         }
       },
       "required": [

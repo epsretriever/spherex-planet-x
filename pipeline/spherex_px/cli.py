@@ -168,6 +168,22 @@ def _triage(args: argparse.Namespace) -> int:
     return 0
 
 
+def _thermal_inputs(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .thermal import fetch_jpl_inputs
+
+    out = Path(args.out) if args.out else DEFAULT_OUT
+    n, ok, bad = fetch_jpl_inputs(out, args.api, limit=args.limit, max_age_days=args.max_age_days)
+    line = f"Thermal inputs: {n} objects identified by JPL, {ok} pulled from JPL now, {bad} failed."
+    print(line)
+    if args.summary:
+        with open(args.summary, "a") as fh:
+            fh.write(line + "\n")
+    return 0
+
+
 def _injection_study(args: argparse.Namespace) -> int:
     from pathlib import Path
 
@@ -316,6 +332,21 @@ def main(argv: list[str] | None = None) -> int:
     tr.add_argument("--recheck", action="store_true", help="also re-check unmatched candidates")
     tr.add_argument("--summary", help="append a one-line summary to this file")
     tr.set_defaults(func=_triage)
+    th = sub.add_parser(
+        "thermal-inputs",
+        help="pull JPL SBDB (H, G, diameter, albedo, orbit) and Horizons geometry for objects "
+        "JPL identified, for thermal sizes (data/thermal/jpl-inputs.json)",
+    )
+    th.add_argument("--out")
+    th.add_argument(
+        "--api", help="live Worker whose JPL matches to include (e.g. the production URL)"
+    )
+    th.add_argument("--limit", type=int, default=300, help="most objects to pull in this run")
+    th.add_argument(
+        "--max-age-days", type=float, default=30.0, help="re-pull entries older than this"
+    )
+    th.add_argument("--summary", help="append a one-line summary to this file")
+    th.set_defaults(func=_thermal_inputs)
     sl = sub.add_parser(
         "survey-ledger", help="record a survey run: footprint of searched tiles and run ledger"
     )

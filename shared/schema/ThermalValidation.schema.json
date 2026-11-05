@@ -1,0 +1,365 @@
+{
+  "$defs": {
+    "ThermalValidationRow": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "designation": {
+          "title": "Designation",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "sized",
+            "upper_limit",
+            "not_sizable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "diameter_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Km"
+        },
+        "diameter_lo_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Lo Km"
+        },
+        "diameter_hi_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Hi Km"
+        },
+        "diameter_upper_limit_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Upper Limit Km"
+        },
+        "jpl_diameter_km": {
+          "title": "Jpl Diameter Km",
+          "type": "number"
+        },
+        "jpl_diameter_sigma_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Jpl Diameter Sigma Km"
+        },
+        "jpl_diameter_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Jpl Diameter Ref"
+        },
+        "ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Our diameter / JPL's (sized objects)",
+          "title": "Ratio"
+        },
+        "albedo": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Albedo"
+        },
+        "jpl_albedo": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Jpl Albedo"
+        },
+        "h_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "jpl_sbdb",
+                "spherex_reflectance"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "H Source"
+        },
+        "geometry_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "jpl_horizons",
+                "jpl_elements",
+                "orbit_clones"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Geometry Source"
+        }
+      },
+      "required": [
+        "object_id",
+        "designation",
+        "status",
+        "diameter_km",
+        "diameter_lo_km",
+        "diameter_hi_km",
+        "diameter_upper_limit_km",
+        "jpl_diameter_km",
+        "jpl_diameter_sigma_km",
+        "jpl_diameter_ref",
+        "ratio",
+        "albedo",
+        "jpl_albedo",
+        "h_source",
+        "geometry_source"
+      ],
+      "title": "ThermalValidationRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Our thermal sizes compared with the diameters in JPL's Small-Body Database.",
+  "properties": {
+    "schema_version": {
+      "default": "1.2",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "method": {
+      "title": "Method",
+      "type": "string"
+    },
+    "n_objects": {
+      "description": "Real objects in the published data",
+      "title": "N Objects",
+      "type": "integer"
+    },
+    "n_sized": {
+      "title": "N Sized",
+      "type": "integer"
+    },
+    "n_upper_limit": {
+      "title": "N Upper Limit",
+      "type": "integer"
+    },
+    "n_not_sizable": {
+      "title": "N Not Sizable",
+      "type": "integer"
+    },
+    "n_identified": {
+      "description": "Objects JPL identified (pipeline or Worker)",
+      "title": "N Identified",
+      "type": "integer"
+    },
+    "n_jpl_inputs": {
+      "description": "Identified objects whose JPL data was pulled",
+      "title": "N Jpl Inputs",
+      "type": "integer"
+    },
+    "n_with_jpl_diameter": {
+      "description": "Identified objects with an SBDB diameter",
+      "title": "N With Jpl Diameter",
+      "type": "integer"
+    },
+    "n_compared": {
+      "description": "Denominator: sized objects with an SBDB diameter",
+      "title": "N Compared",
+      "type": "integer"
+    },
+    "median_ratio": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Median of our D / JPL D over n_compared",
+      "title": "Median Ratio"
+    },
+    "ratio_p16": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Ratio P16"
+    },
+    "ratio_p84": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Ratio P84"
+    },
+    "scatter_pct": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Robust scatter of ln(ratio) (1.4826 x MAD), as a percentage",
+      "title": "Scatter Pct"
+    },
+    "within_1sigma": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Share whose JPL diameter lies inside our 16-84% range",
+      "title": "Within 1Sigma"
+    },
+    "albedo_median_ratio": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Albedo Median Ratio"
+    },
+    "n_upper_limit_compared": {
+      "description": "Not sized, with an SBDB diameter",
+      "title": "N Upper Limit Compared",
+      "type": "integer"
+    },
+    "upper_limit_consistent": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Share of those whose JPL diameter is below our upper limit",
+      "title": "Upper Limit Consistent"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/ThermalValidationRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    },
+    "note": {
+      "title": "Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "method",
+    "n_objects",
+    "n_sized",
+    "n_upper_limit",
+    "n_not_sizable",
+    "n_identified",
+    "n_jpl_inputs",
+    "n_with_jpl_diameter",
+    "n_compared",
+    "median_ratio",
+    "ratio_p16",
+    "ratio_p84",
+    "scatter_pct",
+    "within_1sigma",
+    "albedo_median_ratio",
+    "n_upper_limit_compared",
+    "upper_limit_consistent",
+    "rows",
+    "note"
+  ],
+  "title": "ThermalValidation",
+  "type": "object"
+}

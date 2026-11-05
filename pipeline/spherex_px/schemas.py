@@ -19,6 +19,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import SCHEMA_VERSION
+from .schemas_thermal import SizeStatus, ThermalFit, ThermalValidation
 
 
 class Model(BaseModel):
@@ -959,6 +960,15 @@ class ObjectSummary(Model):
         description="Objects with the same JPL designation (the same asteroid in other tiles), "
         "merged into this one by the Worker",
     )
+    size_status: SizeStatus | None = Field(
+        default=None, description="As ObjectDetail.thermal.status (null: not computed)"
+    )
+    diameter_km: float | None = Field(
+        default=None, description="Thermal diameter (ObjectDetail.thermal), when sized"
+    )
+    diameter_upper_limit_km: float | None = Field(
+        default=None, description="Largest possible diameter, when too cold or faint to size"
+    )
 
 
 class ObjectList(Envelope):
@@ -998,6 +1008,10 @@ class ObjectDetail(Envelope):
         default="full", description="As CandidateDetail.record_level"
     )
     disclaimer: str = CandidateDetail.model_fields["disclaimer"].default
+    thermal: ThermalFit | None = Field(
+        default=None,
+        description="Size and albedo from SPHEREx's 3-5 um heat (NEATM); see docs/api-contract.md",
+    )
 
 
 class ObjectPrediction(Envelope):
@@ -1326,6 +1340,7 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "ObjectPrediction": ObjectPrediction,
     "OrbitClones": OrbitClones,
     "OrbitValidation": OrbitValidation,
+    "ThermalValidation": ThermalValidation,
     "Survey": Survey,
     "AiWriteup": AiWriteup,
     "AskRequest": AskRequest,

@@ -126,6 +126,9 @@ def summary_of_object(o: S.ObjectDetail) -> S.ObjectSummary:
         known_object_checked=o.known_object.checked,
         known_object_matched=o.known_object.matched,
         known_object_designation=o.known_object.designation,
+        size_status=o.thermal.status if o.thermal else None,
+        diameter_km=o.thermal.diameter_km if o.thermal else None,
+        diameter_upper_limit_km=o.thermal.diameter_upper_limit_km if o.thermal else None,
     )
 
 
@@ -319,10 +322,14 @@ def write_objects_and_survey(
     real = [c for c in cands if c.classification != "injected"]
     orbits = fit_orbits(out_dir, real)
     stamp = datetime.fromisoformat(now.replace("Z", "+00:00")) if now else datetime.now(UTC)
+    from .thermal import attach_thermal, load_inputs, write_validation
+
+    thermal_inputs = load_inputs(out_dir)
     objects = []
     for c in real:
         orbit = orbits.get(c.candidate_id)
         o = object_from_candidate(c, run_id, orbit)
+        attach_thermal(out_dir, o, orbit, thermal_inputs)
         objects.append(o)
         write_json(obj_dir / f"{o.object_id}.json", o)
         if orbit:
@@ -341,6 +348,7 @@ def write_objects_and_survey(
             s.object_id,
         ),
     )
+    write_validation(out_dir, objects, thermal_inputs, version, now)
     write_json(
         out_dir / "objects.json",
         S.ObjectList(

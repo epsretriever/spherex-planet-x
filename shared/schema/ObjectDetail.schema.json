@@ -317,6 +317,111 @@
       "title": "JplOrbitComparison",
       "type": "object"
     },
+    "JplPhysical": {
+      "additionalProperties": false,
+      "description": "JPL Small-Body Database physical parameters, when JPL identified the object.",
+      "properties": {
+        "designation": {
+          "title": "Designation",
+          "type": "string"
+        },
+        "h": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "H"
+        },
+        "g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "G"
+        },
+        "diameter_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Km"
+        },
+        "diameter_sigma_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diameter Sigma Km"
+        },
+        "albedo": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Albedo"
+        },
+        "albedo_sigma": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Albedo Sigma"
+        },
+        "diameter_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "SBDB's reference for the diameter (e.g. NEOWISE)",
+          "title": "Diameter Ref"
+        },
+        "sbdb_url": {
+          "title": "Sbdb Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "designation",
+        "h",
+        "g",
+        "diameter_km",
+        "diameter_sigma_km",
+        "albedo",
+        "albedo_sigma",
+        "diameter_ref",
+        "sbdb_url"
+      ],
+      "title": "JplPhysical",
+      "type": "object"
+    },
     "KnownObject": {
       "additionalProperties": false,
       "properties": {
@@ -1364,6 +1469,455 @@
       },
       "title": "SpectrumUnits",
       "type": "object"
+    },
+    "ThermalFit": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "description": "sized: heat seen at >= min_sigma in >= min_bands channels; upper_limit: too cold or faint, only a largest possible size; not_sizable: data or orbit missing",
+          "enum": [
+            "sized",
+            "upper_limit",
+            "not_sizable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "status_plain": {
+          "title": "Status Plain",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "diameter_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Median of the Monte Carlo draws",
+          "title": "Diameter Km"
+        },
+        "diameter_lo_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "16th percentile",
+          "title": "Diameter Lo Km"
+        },
+        "diameter_hi_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "84th percentile",
+          "title": "Diameter Hi Km"
+        },
+        "diameter_upper_limit_km": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "3-sigma upper limit (84th percentile over the draws) when not sized",
+          "title": "Diameter Upper Limit Km"
+        },
+        "albedo": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Geometric albedo p_V, median of the draws",
+          "title": "Albedo"
+        },
+        "albedo_lo": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Albedo Lo"
+        },
+        "albedo_hi": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Albedo Hi"
+        },
+        "albedo_plain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Dark / medium / bright, in words",
+          "title": "Albedo Plain"
+        },
+        "h": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Absolute magnitude used",
+          "title": "H"
+        },
+        "h_sigma": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "H Sigma"
+        },
+        "h_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "jpl_sbdb",
+                "spherex_reflectance"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "H Source"
+        },
+        "g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Slope parameter used",
+          "title": "G"
+        },
+        "eta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "NEATM beaming parameter (centre of its prior)",
+          "title": "Eta"
+        },
+        "eta_sigma": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eta Sigma"
+        },
+        "eta_mode": {
+          "enum": [
+            "fixed",
+            "fitted"
+          ],
+          "title": "Eta Mode",
+          "type": "string"
+        },
+        "t_subsolar_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Hottest-point temperature of the model",
+          "title": "T Subsolar K"
+        },
+        "r_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Distance from the Sun at the model's detection",
+          "title": "R Au"
+        },
+        "delta_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Distance from SPHEREx at the model's detection",
+          "title": "Delta Au"
+        },
+        "alpha_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Phase angle at the model's detection",
+          "title": "Alpha Deg"
+        },
+        "geometry_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "jpl_horizons",
+                "jpl_elements",
+                "orbit_clones"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Geometry Source"
+        },
+        "n_thermal_points": {
+          "title": "N Thermal Points",
+          "type": "integer"
+        },
+        "n_significant_bands": {
+          "title": "N Significant Bands",
+          "type": "integer"
+        },
+        "min_sigma": {
+          "title": "Min Sigma",
+          "type": "number"
+        },
+        "min_bands": {
+          "title": "Min Bands",
+          "type": "integer"
+        },
+        "n_mc": {
+          "title": "N Mc",
+          "type": "integer"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/ThermalPoint"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ThermalModelCurve"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jpl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JplPhysical"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "caveats": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Caveats",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status",
+        "status_plain",
+        "method",
+        "diameter_km",
+        "diameter_lo_km",
+        "diameter_hi_km",
+        "diameter_upper_limit_km",
+        "albedo",
+        "albedo_lo",
+        "albedo_hi",
+        "albedo_plain",
+        "h",
+        "h_sigma",
+        "h_source",
+        "g",
+        "eta",
+        "eta_sigma",
+        "eta_mode",
+        "t_subsolar_k",
+        "r_au",
+        "delta_au",
+        "alpha_deg",
+        "geometry_source",
+        "n_thermal_points",
+        "n_significant_bands",
+        "min_sigma",
+        "min_bands",
+        "n_mc",
+        "points",
+        "model",
+        "caveats"
+      ],
+      "title": "ThermalFit",
+      "type": "object"
+    },
+    "ThermalModelCurve": {
+      "additionalProperties": false,
+      "description": "Best-fit model at one detection's geometry (for plotting over the spectrum).",
+      "properties": {
+        "time_utc": {
+          "description": "Detection whose geometry the curve uses",
+          "title": "Time Utc",
+          "type": "string"
+        },
+        "wavelength_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Wavelength Um",
+          "type": "array"
+        },
+        "reflected_ujy": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Reflected Ujy",
+          "type": "array"
+        },
+        "thermal_ujy": {
+          "description": "NEATM heat for the fitted size (or for the upper limit when not sized)",
+          "items": {
+            "type": "number"
+          },
+          "title": "Thermal Ujy",
+          "type": "array"
+        }
+      },
+      "required": [
+        "time_utc",
+        "wavelength_um",
+        "reflected_ujy",
+        "thermal_ujy"
+      ],
+      "title": "ThermalModelCurve",
+      "type": "object"
+    },
+    "ThermalPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "band_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Band Index"
+        },
+        "wavelength_um": {
+          "title": "Wavelength Um",
+          "type": "number"
+        },
+        "flux_ujy": {
+          "description": "Measured flux",
+          "title": "Flux Ujy",
+          "type": "number"
+        },
+        "reflected_ujy": {
+          "description": "Reflected sunlight extrapolated from 0.7-2.6 um",
+          "title": "Reflected Ujy",
+          "type": "number"
+        },
+        "excess_ujy": {
+          "description": "Measured minus reflected: the heat",
+          "title": "Excess Ujy",
+          "type": "number"
+        },
+        "excess_err_ujy": {
+          "description": "1-sigma error of the excess: flux error, 7% floor, reflectance fit and a 15% extrapolation systematic",
+          "title": "Excess Err Ujy",
+          "type": "number"
+        },
+        "sigma": {
+          "description": "excess_ujy / excess_err_ujy",
+          "title": "Sigma",
+          "type": "number"
+        }
+      },
+      "required": [
+        "band_index",
+        "wavelength_um",
+        "flux_ujy",
+        "reflected_ujy",
+        "excess_ujy",
+        "excess_err_ujy",
+        "sigma"
+      ],
+      "title": "ThermalPoint",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -1513,6 +2067,18 @@
       "default": "An unmatched candidate may be an imaging artifact, a measurement error, or an object missing from the catalogs we checked. This is not a discovery claim.",
       "title": "Disclaimer",
       "type": "string"
+    },
+    "thermal": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ThermalFit"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Size and albedo from SPHEREx's 3-5 um heat (NEATM); see docs/api-contract.md"
     }
   },
   "required": [
