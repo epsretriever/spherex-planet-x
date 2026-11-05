@@ -1,0 +1,721 @@
+{
+  "$defs": {
+    "CompositionGeometry": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "enum": [
+            "orbit_clones",
+            "same_night_only"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "reference_mjd": {
+          "title": "Reference Mjd",
+          "type": "number"
+        },
+        "helio_distance_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Helio Distance Au"
+        },
+        "observer_distance_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observer Distance Au"
+        },
+        "phase_angle_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Phase Angle Deg"
+        },
+        "max_correction_frac": {
+          "description": "Largest |factor - 1| applied to any point",
+          "title": "Max Correction Frac",
+          "type": "number"
+        },
+        "phase_function": {
+          "title": "Phase Function",
+          "type": "string"
+        },
+        "note_plain": {
+          "title": "Note Plain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "reference_mjd",
+        "helio_distance_au",
+        "observer_distance_au",
+        "phase_angle_deg",
+        "max_correction_frac",
+        "phase_function",
+        "note_plain"
+      ],
+      "title": "CompositionGeometry",
+      "type": "object"
+    },
+    "CompositionHydration": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "measured",
+            "not_covered",
+            "thermal",
+            "no_orbit"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "band_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Band Um",
+          "type": "array"
+        },
+        "continuum_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Continuum Um",
+          "type": "array"
+        },
+        "band_depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "1 - band / continuum",
+          "title": "Band Depth"
+        },
+        "band_depth_err": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Band Depth Err"
+        },
+        "snr": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Snr"
+        },
+        "n_band_points": {
+          "title": "N Band Points",
+          "type": "integer"
+        },
+        "n_continuum_points": {
+          "title": "N Continuum Points",
+          "type": "integer"
+        },
+        "continuum": {
+          "anyOf": [
+            {
+              "enum": [
+                "linear",
+                "flat"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Straight line fitted at 1.6-2.68 um, or flat from 2.3-2.68 um with fewer points",
+          "title": "Continuum"
+        },
+        "verdict": {
+          "enum": [
+            "band_seen",
+            "no_clear_band",
+            "not_measured"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "verdict_plain": {
+          "title": "Verdict Plain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "band_um",
+        "continuum_um",
+        "band_depth",
+        "band_depth_err",
+        "snr",
+        "n_band_points",
+        "n_continuum_points",
+        "continuum",
+        "verdict",
+        "verdict_plain"
+      ],
+      "title": "CompositionHydration",
+      "type": "object"
+    },
+    "CompositionNormalisation": {
+      "additionalProperties": false,
+      "properties": {
+        "window_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Window Um",
+          "type": "array"
+        },
+        "method": {
+          "enum": [
+            "points_in_window",
+            "template_fit",
+            "median",
+            "none"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "n_points": {
+          "title": "N Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "window_um",
+        "method",
+        "n_points"
+      ],
+      "title": "CompositionNormalisation",
+      "type": "object"
+    },
+    "CompositionPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "band_index": {
+          "anyOf": [
+            {
+              "maximum": 101,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Band Index"
+        },
+        "wavelength_um": {
+          "title": "Wavelength Um",
+          "type": "number"
+        },
+        "epoch_id": {
+          "title": "Epoch Id",
+          "type": "string"
+        },
+        "mjd": {
+          "title": "Mjd",
+          "type": "number"
+        },
+        "flux_ujy": {
+          "title": "Flux Ujy",
+          "type": "number"
+        },
+        "flux_err_ujy": {
+          "title": "Flux Err Ujy",
+          "type": "number"
+        },
+        "geometry_factor": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Flux multiplied by this to bring it to the reference distances and phase",
+          "title": "Geometry Factor"
+        },
+        "reflectance": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Relative reflectance (flux / solar flux), 1 over 1.0-1.2 um; null if excluded",
+          "title": "Reflectance"
+        },
+        "reflectance_err": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "1-sigma: flux error, geometry error and the systematic floor in quadrature",
+          "title": "Reflectance Err"
+        },
+        "thermal_fraction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Estimated thermal share of the light (dark surface, closest distance); null below 2 um or without an orbit",
+          "title": "Thermal Fraction"
+        },
+        "use": {
+          "enum": [
+            "taxonomy",
+            "hydration",
+            "continuum",
+            "none"
+          ],
+          "title": "Use",
+          "type": "string"
+        },
+        "excluded_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Excluded Reason"
+        }
+      },
+      "required": [
+        "band_index",
+        "wavelength_um",
+        "epoch_id",
+        "mjd",
+        "flux_ujy",
+        "flux_err_ujy",
+        "geometry_factor",
+        "reflectance",
+        "reflectance_err",
+        "thermal_fraction",
+        "use",
+        "excluded_reason"
+      ],
+      "title": "CompositionPoint",
+      "type": "object"
+    },
+    "CompositionReference": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "citation",
+        "url"
+      ],
+      "title": "CompositionReference",
+      "type": "object"
+    },
+    "CompositionTaxonomy": {
+      "additionalProperties": false,
+      "properties": {
+        "best": {
+          "$ref": "#/$defs/TaxonomyMatch"
+        },
+        "runner_up": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaxonomyMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Best class from a different complex"
+        },
+        "top": {
+          "items": {
+            "$ref": "#/$defs/TaxonomyMatch"
+          },
+          "title": "Top",
+          "type": "array"
+        },
+        "complex_probability": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Complex Probability",
+          "type": "object"
+        },
+        "best_complex": {
+          "title": "Best Complex",
+          "type": "string"
+        },
+        "best_complex_plain": {
+          "title": "Best Complex Plain",
+          "type": "string"
+        },
+        "runner_up_complex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Runner Up Complex"
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "confidence_plain": {
+          "title": "Confidence Plain",
+          "type": "string"
+        },
+        "n_bands": {
+          "title": "N Bands",
+          "type": "integer"
+        },
+        "wavelength_span_um": {
+          "title": "Wavelength Span Um",
+          "type": "number"
+        },
+        "reduced_chi2": {
+          "title": "Reduced Chi2",
+          "type": "number"
+        },
+        "slope_per_um": {
+          "description": "d(reflectance)/d(lambda), normalised reflectance",
+          "title": "Slope Per Um",
+          "type": "number"
+        },
+        "slope_err_per_um": {
+          "title": "Slope Err Per Um",
+          "type": "number"
+        },
+        "slope_range_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Slope Range Um",
+          "type": "array"
+        },
+        "systematic_floor_frac": {
+          "title": "Systematic Floor Frac",
+          "type": "number"
+        },
+        "template": {
+          "$ref": "#/$defs/CompositionTemplate",
+          "description": "Best class's mean, scaled to the fit"
+        }
+      },
+      "required": [
+        "best",
+        "runner_up",
+        "top",
+        "complex_probability",
+        "best_complex",
+        "best_complex_plain",
+        "runner_up_complex",
+        "confidence",
+        "confidence_plain",
+        "n_bands",
+        "wavelength_span_um",
+        "reduced_chi2",
+        "slope_per_um",
+        "slope_err_per_um",
+        "slope_range_um",
+        "systematic_floor_frac",
+        "template"
+      ],
+      "title": "CompositionTaxonomy",
+      "type": "object"
+    },
+    "CompositionTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        },
+        "wavelength_um": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Wavelength Um",
+          "type": "array"
+        },
+        "reflectance": {
+          "description": "Normalised like the object's points",
+          "items": {
+            "type": "number"
+          },
+          "title": "Reflectance",
+          "type": "array"
+        },
+        "sigma": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Sigma",
+          "type": "array"
+        }
+      },
+      "required": [
+        "class_name",
+        "wavelength_um",
+        "reflectance",
+        "sigma"
+      ],
+      "title": "CompositionTemplate",
+      "type": "object"
+    },
+    "CompositionThermal": {
+      "additionalProperties": false,
+      "properties": {
+        "helio_distance_min_au": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Clones' 5th-percentile distance from the Sun, used for the thermal check",
+          "title": "Helio Distance Min Au"
+        },
+        "flagged": {
+          "description": "Some 2.5-5 um points are partly thermal, not reflected",
+          "title": "Flagged",
+          "type": "boolean"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "note_plain": {
+          "title": "Note Plain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "helio_distance_min_au",
+        "flagged",
+        "model",
+        "note_plain"
+      ],
+      "title": "CompositionThermal",
+      "type": "object"
+    },
+    "TaxonomyMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "class_name": {
+          "description": "Bus-DeMeo class (DeMeo et al. 2009)",
+          "title": "Class Name",
+          "type": "string"
+        },
+        "complex": {
+          "description": "S, C, X or an end-member class",
+          "title": "Complex",
+          "type": "string"
+        },
+        "chi2": {
+          "title": "Chi2",
+          "type": "number"
+        },
+        "dof": {
+          "title": "Dof",
+          "type": "integer"
+        },
+        "probability": {
+          "description": "Relative likelihood, equal prior per class",
+          "title": "Probability",
+          "type": "number"
+        }
+      },
+      "required": [
+        "class_name",
+        "complex",
+        "chi2",
+        "dof",
+        "probability"
+      ],
+      "title": "TaxonomyMatch",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Indicative composition from the object's SPHEREx colors (never definitive).",
+  "properties": {
+    "schema_version": {
+      "default": "1.2",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "object_id": {
+      "title": "Object Id",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "simulated": {
+      "description": "True for injected (SIMULATED) objects",
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "indicative_only": {
+      "const": true,
+      "default": true,
+      "title": "Indicative Only",
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "classified",
+        "insufficient_data"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "result_plain": {
+      "title": "Result Plain",
+      "type": "string"
+    },
+    "geometry": {
+      "$ref": "#/$defs/CompositionGeometry"
+    },
+    "normalisation": {
+      "$ref": "#/$defs/CompositionNormalisation"
+    },
+    "points": {
+      "items": {
+        "$ref": "#/$defs/CompositionPoint"
+      },
+      "title": "Points",
+      "type": "array"
+    },
+    "taxonomy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CompositionTaxonomy"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hydration": {
+      "$ref": "#/$defs/CompositionHydration"
+    },
+    "thermal": {
+      "$ref": "#/$defs/CompositionThermal"
+    },
+    "caveats": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Caveats",
+      "type": "array"
+    },
+    "references": {
+      "items": {
+        "$ref": "#/$defs/CompositionReference"
+      },
+      "title": "References",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "object_id",
+    "generated_utc",
+    "simulated",
+    "status",
+    "result_plain",
+    "geometry",
+    "normalisation",
+    "points",
+    "taxonomy",
+    "hydration",
+    "thermal",
+    "caveats",
+    "references"
+  ],
+  "title": "ObjectComposition",
+  "type": "object"
+}
