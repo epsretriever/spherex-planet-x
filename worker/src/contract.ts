@@ -174,6 +174,9 @@ export interface KnownObject {
   nearest: { designation: string; separation_arcsec: number } | null;
   observer: string | null;
   query_utc: string | null;
+  /** SPHEREx visits sent to JPL SBIdent, and how many it answered (null in older checks). */
+  visits_queried?: number | null;
+  visits_answered?: number | null;
   /**
    * static: not checked yet; pipeline: checked against JPL by the survey pipeline's triage step
    * (final when matched); pending: the Worker started a lookup; live/cached: from the Worker.
@@ -190,6 +193,36 @@ export interface JplLinks {
 
 /** full: stamps and our orbit products kept. minimal: a known object; JPL has its orbit. */
 export type RecordLevel = "full" | "minimal";
+
+export type ReportingStatus = "ready" | "incomplete" | "not_ready";
+
+/** GET /api/reporting: objects that are candidates for reporting. Nothing is submitted automatically. */
+export interface ReportingQueue extends Envelope {
+  generated_utc: string;
+  label_plain: string;
+  counts: { ready: number; incomplete: number; not_ready: number; not_evaluated: number };
+  objects: ObjectSummary[];
+  ades_urls: Record<string, string>;
+  submission: { automatic: false; station_code_configured: boolean; how_plain: string };
+}
+
+export interface ReportingCriterion {
+  id: string;
+  label: string;
+  passed: boolean | null;
+  value: number | boolean | string | null;
+  threshold: number | boolean | string | null;
+  source: "pipeline" | "jpl";
+}
+
+export interface Reporting {
+  status: ReportingStatus;
+  label_plain: string;
+  summary_plain: string;
+  measurements_passed: boolean;
+  criteria: ReportingCriterion[];
+  definition: string;
+}
 
 export interface Scores {
   motion_consistency: number;
@@ -237,6 +270,7 @@ export interface CandidateDetail extends Envelope {
   motion: Motion;
   known_object: KnownObject;
   scores: Scores;
+  reporting?: Reporting | null;
   vetting: VettingCheck[];
   error_sources: ErrorSource[];
   explanation: Explanation | null;
@@ -267,6 +301,8 @@ export interface CandidateSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  reporting_status?: ReportingStatus | null;
+  reporting_measurements_passed?: boolean | null;
 }
 
 export interface CandidateList extends Envelope, Page {
@@ -454,6 +490,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  reporting_status?: ReportingStatus | null;
+  reporting_measurements_passed?: boolean | null;
   /** Pipeline commit that built this object's candidate; stored JPL results are keyed by it. */
   pipeline_version?: string | null;
   /** Other objects matched to the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker. */
@@ -485,6 +523,7 @@ export interface ObjectDetail extends Envelope {
   orbit: OrbitalElements | null;
   known_object: KnownObject;
   scores: Scores;
+  reporting?: Reporting | null;
   explanation: Explanation | null;
   spectrum: unknown;
   history: { utc: string; run_id: string; change: string }[];
