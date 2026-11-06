@@ -199,3 +199,19 @@ def test_plan_skips_tiles_already_searched(tmp_path, monkeypatch):
     assert [t.field_id for t in got] == [f"sv-x-{i}" for i in range(1, 5)]
     meta = json.loads(survey.plan_meta_path(out).read_text())
     assert meta == {"qr2/2025W23_1C": {"planned": 5, "already_searched": 1}}
+
+
+def test_survey_build_writes_report_when_shard_keeps_nothing(tmp_path, monkeypatch):
+    """A shard with no kept tiles must still write its report (the out dir may not exist)."""
+    import json
+
+    import spherex_px.survey as survey
+    from spherex_px import cli
+
+    monkeypatch.setattr(survey, "build_share", lambda *a, **k: [])
+    out = tmp_path / "shard-out"
+    plan_file = tmp_path / "plan.json"
+    plan_file.write_text("[]")
+    rc = cli.main(["survey-build", "--plan", str(plan_file), "--shard", "2", "--of", "4", "--out", str(out)])
+    assert rc == 0
+    assert json.loads((out / "survey-shard-2.json").read_text()) == []
