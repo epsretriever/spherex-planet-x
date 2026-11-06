@@ -16,6 +16,7 @@ import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
+import { applyReporting, summaryStatus } from "../reporting";
 import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
 import { reviewPriority } from "./candidates";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
@@ -58,6 +59,7 @@ export async function enrichedObjects(env: Env, deps: Deps): Promise<{ list: Obj
       known_object_checked: k.checked,
       known_object_matched: k.matched,
       known_object_designation: k.designation,
+      reporting_status: summaryStatus(s.reporting_measurements_passed, k) ?? s.reporting_status ?? null,
     };
   });
   return { list, objects: out };
@@ -178,6 +180,7 @@ export async function loadObject(
   next.label_plain = labelPlain(next);
   next.summary_plain = summaryPlain(next);
   next.explanation = buildExplanation(next, now);
+  if (obj.reporting !== undefined) next.reporting = applyReporting(obj.reporting, known);
   if (matched && known.designation) {
     const key = designationKey(known.designation);
     const { objects: all } = await enrichedObjects(env, deps);

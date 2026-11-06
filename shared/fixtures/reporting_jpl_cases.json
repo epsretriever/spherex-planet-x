@@ -1,0 +1,225 @@
+{
+  "description": "JPL reporting criteria (jpl_every_visit, jpl_no_match, jpl_nothing_nearby) for each catalog check, with measurements passed. pipeline/spherex_px/reporting.py and worker/src/reporting.ts must both agree.",
+  "cases": [
+    {
+      "name": "clean check, every visit answered",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": 4,
+        "visits_answered": 4,
+        "enrichment": "static"
+      },
+      "passed": [
+        true,
+        true,
+        true
+      ],
+      "status": "ready"
+    },
+    {
+      "name": "one visit unanswered",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": 4,
+        "visits_answered": 3,
+        "enrichment": "static"
+      },
+      "passed": [
+        false,
+        true,
+        true
+      ],
+      "status": "not_ready"
+    },
+    {
+      "name": "check predating visit counts",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": null,
+        "visits_answered": null,
+        "enrichment": "static"
+      },
+      "passed": [
+        null,
+        true,
+        true
+      ],
+      "status": "incomplete"
+    },
+    {
+      "name": "matched",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": true,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": "5193 Tanakawataru (1992 ET)",
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": 4,
+        "visits_answered": 4,
+        "enrichment": "static"
+      },
+      "passed": [
+        true,
+        false,
+        false
+      ],
+      "status": "not_ready"
+    },
+    {
+      "name": "known object 40 arcsec away",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": {
+          "designation": "2001 AB",
+          "separation_arcsec": 40.0
+        },
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": 4,
+        "visits_answered": 4,
+        "enrichment": "static"
+      },
+      "passed": [
+        true,
+        true,
+        false
+      ],
+      "status": "not_ready"
+    },
+    {
+      "name": "known object 300 arcsec away",
+      "known_object": {
+        "checked": true,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": {
+          "designation": "2001 AB",
+          "separation_arcsec": 300.0
+        },
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": 4,
+        "visits_answered": 4,
+        "enrichment": "static"
+      },
+      "passed": [
+        true,
+        true,
+        true
+      ],
+      "status": "ready"
+    },
+    {
+      "name": "not checked",
+      "known_object": {
+        "checked": false,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": null,
+        "visits_queried": null,
+        "visits_answered": null,
+        "enrichment": "static"
+      },
+      "passed": [
+        null,
+        null,
+        null
+      ],
+      "status": "incomplete"
+    },
+    {
+      "name": "lookup pending",
+      "known_object": {
+        "checked": false,
+        "not_checked_reason": null,
+        "matched": false,
+        "catalogs_checked": [
+          "JPL SBIdent"
+        ],
+        "search_radius_arcsec": 15.0,
+        "designation": null,
+        "predicted_vmag": null,
+        "per_epoch": [],
+        "nearest": null,
+        "observer": null,
+        "query_utc": "2026-11-01T00:00:00Z",
+        "visits_queried": null,
+        "visits_answered": null,
+        "enrichment": "pending"
+      },
+      "passed": [
+        null,
+        null,
+        null
+      ],
+      "status": "incomplete"
+    }
+  ]
+}
