@@ -115,10 +115,17 @@ objects.get("/", async (c) => {
   const paging = pageParams((n) => c.req.query(n));
   const dedupe = c.req.query("dedupe") !== "false";
   const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
-  const items = dedupe ? mergeByDesignation(all) : all;
-  // Unexplained first, then weak detections, then known objects; best score first within each.
-  items.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
-  const page = paginate(items, paging);
+  const sort = c.req.query("sort") ?? "score";
+  if (sort !== "score" && sort !== "anomaly") throw badRequest("sort must be 'score' or 'anomaly'");
+  const rows = dedupe ? mergeByDesignation(all) : all;
+  if (sort === "anomaly") {
+    // Most unusual first; objects without a ranking keep the review order after them.
+    rows.sort((a, b) => (a.anomaly_rank ?? Infinity) - (b.anomaly_rank ?? Infinity) || reviewPriority(a) - reviewPriority(b));
+  } else {
+    // Unexplained first, then weak detections, then known objects; best score first within each.
+    rows.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
+  }
+  const page = paginate(rows, paging);
   c.header("Cache-Control", "public, max-age=60");
   return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, objects: page.items });
 });

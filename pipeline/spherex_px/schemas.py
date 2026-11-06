@@ -954,6 +954,9 @@ class ObjectSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    anomaly_score: float | None = None
+    anomaly_rank: int | None = None
+    anomaly_reason: str | None = None
     also_seen_as: list[str] = Field(
         default=[],
         description="Objects with the same JPL designation (the same asteroid in other tiles), "
@@ -970,6 +973,29 @@ class ObjectList(Envelope):
     limit: int | None = Field(default=None, description="Page size requested; null = everything")
     next_offset: int | None = Field(
         default=None, description="Offset of the next page; null on the last"
+    )
+
+
+class AnomalyFeature(Model):
+    name: str
+    label: str
+    value: float | None
+    median: float = Field(description="Median over the ranked objects")
+    z: float | None = Field(description="(value - median) / robust spread")
+
+
+class Anomaly(Model):
+    score: float = Field(ge=0, le=1, description="1 = least like the other objects")
+    rank: int = Field(description="1 = most unusual")
+    n_ranked: int
+    reason_plain: str
+    features: list[AnomalyFeature]
+    method: Literal["isolation_forest_v1"] = "isolation_forest_v1"
+    definition: str = (
+        "Isolation Forest over motion rate, motion across the ecliptic, ecliptic latitude, "
+        "distance from the Sun and infrared colour of every published object with a motion fit "
+        "over 3 or more detections (not two-detection pairs or likely artifacts). It ranks how "
+        "unlike the others an object is; unusual does not mean new or unexplained."
     )
 
 
@@ -990,6 +1016,7 @@ class ObjectDetail(Envelope):
     orbit: OrbitalElements | None
     known_object: KnownObject
     scores: Scores
+    anomaly: Anomaly | None = Field(default=None, description="null below 10 objects")
     explanation: Explanation | None
     spectrum: Spectrum | None
     history: list[ObjectHistoryEntry]

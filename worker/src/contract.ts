@@ -432,6 +432,16 @@ export interface ObjectDetection extends Detection {
   candidate_id: string;
 }
 
+export interface Anomaly {
+  score: number;
+  rank: number;
+  n_ranked: number;
+  reason_plain: string;
+  features: { name: string; label: string; value: number | null; median: number; z: number | null }[];
+  method: "isolation_forest_v1";
+  definition: string;
+}
+
 export interface ObjectSummary {
   object_id: string;
   classification: Classification;
@@ -454,6 +464,10 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** Anomaly ranking (see ObjectDetail.anomaly); null with fewer than 10 ranked objects or for pairs/artifacts. */
+  anomaly_score?: number | null;
+  anomaly_rank?: number | null;
+  anomaly_reason?: string | null;
   /** Pipeline commit that built this object's candidate; stored JPL results are keyed by it. */
   pipeline_version?: string | null;
   /** Other objects matched to the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker. */
@@ -485,6 +499,7 @@ export interface ObjectDetail extends Envelope {
   orbit: OrbitalElements | null;
   known_object: KnownObject;
   scores: Scores;
+  anomaly?: Anomaly | null;
   explanation: Explanation | null;
   spectrum: unknown;
   history: { utc: string; run_id: string; change: string }[];
