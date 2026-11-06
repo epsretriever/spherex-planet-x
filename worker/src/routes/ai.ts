@@ -1,15 +1,16 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
-import type { AiSubjectKind, AskRequest, FieldList, SearchRequest } from "../contract";
+import type { AiSubjectKind, AskRequest, FieldList, SearchRequest, Survey } from "../contract";
 import { ensureSchema } from "../db";
 import type { Deps, Env } from "../env";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, requireStaticJson } from "../static-data";
 import { DEFAULT_MODEL, rateLimit, sha256 } from "../ai/core";
+import { digest } from "../ai/digest";
 import type { Subject } from "../ai/facts";
 import { type AiContext, ask, search, templateWriteup, writeup } from "../ai/features";
 import { loadCandidate } from "./candidates";
-import { loadObject } from "./objects";
+import { designationKey, enrichedObjects, loadObject } from "./objects";
 
 /** Per-visitor limits, in calls per hour (fixed windows in D1). */
 export const ASK_PER_SESSION_PER_HOUR = 20;
@@ -112,4 +113,20 @@ searchRoute.post("/", async (c) => {
   const fields = await requireStaticJson<FieldList>(c.env, "fields.json", "field list");
   c.header("Cache-Control", "no-store");
   return c.json(await search(ctx, query, fields.fields.map((f) => f.field_id), fields.pipeline_version));
+});
+
+export const digestRoute = new Hono<AppEnv>();
+
+digestRoute.get("/", async (c) => {
+  const deps = c.get("deps");
+  const survey = await requireStaticJson<Survey>(c.env, "survey.json", "survey");
+  // Known asteroids counted as on /api/survey: one per JPL designation.
+  const known = await enrichedObjects(c.env, deps)
+    .then(({ objects }) =>
+      new Set(objects.filter((o) => o.known_object_matched && o.known_object_designation).map((o) => designationKey(o.known_object_designation!))).size,
+    )
+    .catch(() => null);
+  const out = await digest(await context(c.env, deps), survey, known);
+  c.header("Cache-Control", out.source === "ai" ? "public, max-age=3600" : "public, max-age=600");
+  return c.json(out);
 });
