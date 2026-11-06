@@ -13,6 +13,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "wrangler.toml"
+      - "scripts/**"
       - ".github/workflows/frontend-quality.yml"
   push:
     branches: [main]
@@ -39,6 +40,9 @@ jobs:
 
       - name: Build (same command as Cloudflare)
         run: npm run build
+
+      - name: Build script tests
+        run: node --test scripts/asset-count.test.mjs
 
       - name: Install Chromium for Playwright
         working-directory: frontend
