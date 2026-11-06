@@ -1,6 +1,6 @@
 # Build plan v2: discovery engine, AI, and product polish
 
-Live site: https://spherex-planet-x.bodhishanbhag.workers.dev · Repo: `main` is the source of truth.
+Live site: https://spherex-planet-x.vercel.app (API: https://spherex-planet-x.bodhishanbhag.workers.dev; deployed Worker builds leave out the sky images, see scripts/asset-count.mjs) · Repo: `main` is the source of truth.
 
 This plan takes the deployed first version to a finished product. It has three parts:
 
