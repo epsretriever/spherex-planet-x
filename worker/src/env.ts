@@ -11,6 +11,10 @@ export interface Env {
   AI_MODEL?: string;
   /** Salt for hashing visitor session ids and IP addresses before they are stored. */
   HASH_SALT?: string;
+  /** Cloudflare Turnstile secret; sky requests are refused without it. */
+  TURNSTILE_SECRET?: string;
+  /** Bearer token for the Sky requests Action (/api/requests/queue and /status). */
+  REQUESTS_ADMIN_TOKEN?: string;
 }
 
 /** Minimal cache interface (caches.default in production, an in-memory fake in tests). */
