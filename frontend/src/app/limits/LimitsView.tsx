@@ -6,11 +6,13 @@ import { candidateHref } from "@/components/CandidateCard";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { M50Chart } from "@/components/M50Chart";
+import { CompositionValidationPanel } from "@/components/composition/CompositionValidationPanel";
 import { Panel } from "@/components/report/Panel";
 import { RecoveryGrid } from "@/components/RecoveryGrid";
 import { findInjectionStudyId, getInjectionStudy } from "@/lib/api";
 import { fmt, formatUtcDateTime } from "@/lib/format";
 import { useData } from "@/lib/useData";
+import { WhenVisible } from "@/components/WhenVisible";
 import {
   ASTEROID_RATES,
   BRIGHT_MAX_AB,
@@ -177,6 +179,10 @@ function Study({ s }: { s: LimitsStudy }) {
       )}
 
       {s.planet_context && s.planet_context.rows.length > 0 && <PlanetContext s={s} context={s.planet_context} />}
+
+      <WhenVisible minHeight={420}>
+        <CompositionValidationPanel />
+      </WhenVisible>
 
       <Panel id="method" title="How the test works" kicker="Method">
         <p className={styles.criteria}>

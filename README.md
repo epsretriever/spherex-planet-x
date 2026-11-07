@@ -134,6 +134,10 @@ Each object page shows:
 
 The method is tested on simulated asteroids observed at real SPHEREx times and positions (`spherex-px orbit-validation`, served at `/api/validation/orbits`). For orbits JPL already knows, the Worker compares ours with JPL Horizons (`/api/validation/jpl-orbits`).
 
+## What is it made of?
+
+SPHEREx sees each sighting through a different part of its filters, so a moving asteroid builds up a coarse 0.75–5 µm spectrum. `pipeline/spherex_px/science/composition.py` corrects each point for the object's changing distance and phase angle (from its orbit clones), divides by the Sun's spectrum (ASTM E490-00a) and compares the reflectance with the Bus-DeMeo asteroid class means (DeMeo et al. 2009). It also measures the 2.7–3.1 µm hydration band where thermal emission is negligible. Each object page shows the result as indicative only, with its confidence and caveats. `.github/workflows/composition.yml` fetches JPL's published types for identified objects and reports the agreement (`/api/validation/composition`, shown on the Limits page).
+
 ## Survey
 
 Beyond the three showcase fields, `.github/workflows/survey.yml` searches SPHEREx week segments tile by tile along the ecliptic. It runs on GitHub's machines (they read the images straight from the public `nasa-irsa-spherex` S3 bucket) in 15 parallel shards, keeps every 0.3° tile where the pipeline found a moving object that passed vetting, and commits the result to `main`. Cloudflare then redeploys, and the Worker's cron checks each new candidate against JPL. It runs weekly, on every pipeline change, and on demand (Actions → Survey → Run workflow, where you can list more segments).

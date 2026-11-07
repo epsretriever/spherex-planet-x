@@ -1309,6 +1309,193 @@ class VettingStats(Envelope):
     models: list[ModelVersion]
 
 
+# ---------------------------------------------------------------------------
+# Composition: "What is it made of?" (pipeline/spherex_px/composition.py)
+# ---------------------------------------------------------------------------
+
+
+class CompositionReference(Model):
+    label: str
+    citation: str
+    url: str
+
+
+class CompositionPoint(Model):
+    band_index: int | None = Field(ge=0, le=101)
+    wavelength_um: float
+    epoch_id: str
+    mjd: float
+    flux_ujy: float
+    flux_err_ujy: float
+    geometry_factor: float | None = Field(
+        description="Flux multiplied by this to bring it to the reference distances and phase"
+    )
+    reflectance: float | None = Field(
+        description="Relative reflectance (flux / solar flux), 1 over 1.0-1.2 um; null if excluded"
+    )
+    reflectance_err: float | None = Field(
+        description="1-sigma: flux error, geometry error and the systematic floor in quadrature"
+    )
+    thermal_fraction: float | None = Field(
+        description="Estimated thermal share of the light (dark surface, closest distance); "
+        "null below 2 um or without an orbit"
+    )
+    use: Literal["taxonomy", "hydration", "continuum", "none"]
+    excluded_reason: str | None
+
+
+class CompositionGeometry(Model):
+    method: Literal["orbit_clones", "same_night_only"]
+    reference_mjd: float
+    helio_distance_au: float | None
+    observer_distance_au: float | None
+    phase_angle_deg: float | None
+    max_correction_frac: float = Field(description="Largest |factor - 1| applied to any point")
+    phase_function: str
+    note_plain: str
+
+
+class CompositionNormalisation(Model):
+    window_um: list[float]
+    method: Literal["points_in_window", "template_fit", "median", "none"]
+    n_points: int
+
+
+class TaxonomyMatch(Model):
+    class_name: str = Field(description="Bus-DeMeo class (DeMeo et al. 2009)")
+    complex: str = Field(description="S, C, X or an end-member class")
+    chi2: float
+    dof: int
+    probability: float = Field(description="Relative likelihood, equal prior per class")
+
+
+class CompositionTemplate(Model):
+    class_name: str
+    wavelength_um: list[float]
+    reflectance: list[float] = Field(description="Normalised like the object's points")
+    sigma: list[float]
+
+
+class CompositionTaxonomy(Model):
+    best: TaxonomyMatch
+    runner_up: TaxonomyMatch | None = Field(description="Best class from a different complex")
+    top: list[TaxonomyMatch]
+    complex_probability: dict[str, float]
+    best_complex: str
+    best_complex_plain: str
+    runner_up_complex: str | None
+    confidence: Literal["high", "medium", "low"]
+    confidence_plain: str
+    n_bands: int
+    wavelength_span_um: float
+    reduced_chi2: float
+    slope_per_um: float = Field(description="d(reflectance)/d(lambda), normalised reflectance")
+    slope_err_per_um: float
+    slope_range_um: list[float]
+    systematic_floor_frac: float
+    template: CompositionTemplate = Field(description="Best class's mean, scaled to the fit")
+
+
+class CompositionHydration(Model):
+    status: Literal["measured", "not_covered", "thermal", "no_orbit"]
+    band_um: list[float]
+    continuum_um: list[float]
+    band_depth: float | None = Field(description="1 - band / continuum")
+    band_depth_err: float | None
+    snr: float | None
+    n_band_points: int
+    n_continuum_points: int
+    continuum: Literal["linear", "flat"] | None = Field(
+        description="Straight line fitted at 1.6-2.68 um, or flat from 2.3-2.68 um with fewer points"
+    )
+    verdict: Literal["band_seen", "no_clear_band", "not_measured"]
+    verdict_plain: str
+
+
+class CompositionThermal(Model):
+    helio_distance_min_au: float | None = Field(
+        description="Clones' 5th-percentile distance from the Sun, used for the thermal check"
+    )
+    flagged: bool = Field(description="Some 2.5-5 um points are partly thermal, not reflected")
+    model: str
+    note_plain: str
+
+
+class ObjectComposition(Envelope):
+    """Indicative composition from the object's SPHEREx colors (never definitive)."""
+
+    object_id: str
+    generated_utc: str
+    simulated: bool = Field(description="True for injected (SIMULATED) objects")
+    indicative_only: Literal[True] = True
+    status: Literal["classified", "insufficient_data"]
+    result_plain: str
+    geometry: CompositionGeometry
+    normalisation: CompositionNormalisation
+    points: list[CompositionPoint]
+    taxonomy: CompositionTaxonomy | None
+    hydration: CompositionHydration
+    thermal: CompositionThermal
+    caveats: list[str]
+    references: list[CompositionReference]
+
+
+class CompositionTruthRow(Model):
+    object_id: str
+    designation: str
+    spec_B: str | None = Field(description="SMASSII (Bus & Binzel 2002) class from JPL SBDB")
+    spec_T: str | None = Field(description="Tholen (1984) class from JPL SBDB")
+    sbdb_url: str
+
+
+class CompositionValidationRow(CompositionTruthRow):
+    truth_class: str | None
+    truth_system: Literal["SMASS", "Tholen"] | None
+    truth_complex: str | None
+    our_status: str | None
+    our_class: str | None
+    our_complex: str | None
+    our_confidence: str | None
+    complex_agrees: bool | None
+    broad_agrees: bool | None
+
+
+class CompositionAgreement(Model):
+    n: int
+    complex_agreement: float | None
+    broad_agreement: float | None
+
+
+class SimulatedRecoveryRow(Model):
+    confidence: Literal["high", "medium", "low", "all"]
+    n: int
+    complex_recovered: float | None
+
+
+class CompositionValidation(Envelope):
+    """How often our class agrees with published taxonomies, and with simulated spectra."""
+
+    generated_utc: str
+    truth_source: str
+    truth_query_utc: str | None
+    n_objects: int
+    n_classified: int
+    n_identified: int = Field(description="Objects JPL identified (from the live Worker)")
+    n_with_taxonomy: int = Field(description="Identified objects with spec_B or spec_T in SBDB")
+    n_compared: int = Field(description="Of those, objects we also classified")
+    overall: CompositionAgreement
+    by_confidence: dict[str, CompositionAgreement]
+    baseline_always_s: float | None = Field(
+        description="Agreement if every object were called S-complex, for comparison"
+    )
+    rows: list[CompositionValidationRow]
+    simulated_recovery: list[SimulatedRecoveryRow] = Field(
+        description="SIMULATED: class means sampled at each object's real bands and errors"
+    )
+    simulated_seed: int
+    method_plain: str
+
+
 ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "FieldList": FieldList,
     "FieldDetail": FieldDetail,
@@ -1339,4 +1526,6 @@ ALL_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
     "VoteCreate": VoteCreate,
     "VoteResult": VoteResult,
     "VettingStats": VettingStats,
+    "ObjectComposition": ObjectComposition,
+    "CompositionValidation": CompositionValidation,
 }
