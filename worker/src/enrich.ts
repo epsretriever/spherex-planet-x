@@ -132,6 +132,8 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
           `JPL SBIdent did not answer for ${failures.length} of ${sample.length} visits (${String(f.upstreamStatus)}).`,
         ),
         query_utc: now,
+        visits_queried: sample.length,
+        visits_answered: answered.length,
         enrichment: "live",
       },
     };
@@ -157,6 +159,8 @@ export async function enrichKnownObject(deps: Deps, cand: CandidateDetail): Prom
     not_checked_reason: null,
     search_radius_arcsec: MATCH_RADIUS_ARCSEC,
     query_utc: now,
+    visits_queried: sample.length,
+    visits_answered: answered.length,
     enrichment: allCached ? ("cached" as const) : ("live" as const),
   };
   if (ranked.length === 0) {

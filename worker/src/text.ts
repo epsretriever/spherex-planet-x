@@ -4,6 +4,7 @@
  * Every number in an explanation must come from one of its grounded_fields; checkNumbers()
  * verifies that and the generator falls back to a minimal sentence if it ever fails.
  */
+import { applyReporting } from "./reporting";
 import type { CandidateDetail, Classification, ErrorSource, Explanation, KnownObject } from "./contract";
 
 export const LABELS: Record<Classification, string> = {
@@ -268,5 +269,6 @@ export function applyKnownObject(c: CandidateDetail, known: KnownObject, matched
   next.label_plain = labelPlain(next);
   next.summary_plain = summaryPlain(next);
   next.explanation = buildExplanation(next, nowUtc);
+  if (c.reporting !== undefined) next.reporting = applyReporting(c.reporting, known);
   return next;
 }

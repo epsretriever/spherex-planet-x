@@ -6,6 +6,7 @@ import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
 import { ID_RE, orbitOfCandidate, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
+import { summaryStatus } from "../reporting";
 import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
 import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
 
@@ -150,5 +151,6 @@ export function applyToSummary(s: CandidateSummary, e: Enrichment): CandidateSum
     known_object_checked: e.known_object.checked,
     known_object_matched: e.known_object.matched,
     known_object_designation: e.known_object.designation,
+    reporting_status: summaryStatus(s.reporting_measurements_passed, e.known_object) ?? s.reporting_status ?? null,
   };
 }
