@@ -468,7 +468,9 @@ def fit_orbit(
     # Quoted errors that underestimate the scatter are inflated so the best fit has
     # reduced chi-square 1; the acceptance window is applied on the same scale.
     scale = max(min(chi2_best, float(chi2.min())) / dof, 1.0)
-    keep = chi2 / scale <= min(chi2_best, float(chi2.min())) / scale + DELTA_CHI2
+    # The window is relative to the best ranging orbit, so it is never empty (least squares
+    # can find a lower minimum than any sample, e.g. outside the bound orbits ranging keeps).
+    keep = chi2 / scale <= float(chi2.min()) / scale + DELTA_CHI2
     rb, vb = sol.x[:3], sol.x[3:] / 100
     el_best = elements(rb, vb)[0]
     status, cov_el = "preliminary", None

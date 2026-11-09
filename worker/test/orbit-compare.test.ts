@@ -162,4 +162,13 @@ describe("our orbit versus JPL's", () => {
     expect(await json(await get("/api/validation/orbits"))).toEqual(doc);
     expect((await get("/api/validation/secrets")).status).toBe(404);
   });
+
+  it("serves the linking validation, and 404 before it has been run", async () => {
+    const doc = { schema_version: "1.1", n_tracks: 15, n_eligible: 6, rows: [] };
+    const { get } = makeClient({ files: { "/data/validation/linking.json": doc } });
+    const r = await get("/api/validation/linking");
+    expect(await json(r)).toEqual(doc);
+    expect(r.headers.get("cache-control")).toContain("max-age");
+    expect((await makeClient().get("/api/validation/linking")).status).toBe(404);
+  });
 });
