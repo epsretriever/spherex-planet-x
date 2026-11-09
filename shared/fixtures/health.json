@@ -1,50 +1,50 @@
 {
-  "schema_version": "1.1",
-  "pipeline_version": "0.1.0+git.14f8a81",
-  "build_run_id": "local-20261029T214350Z-14f8a81",
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.1872091",
+  "build_run_id": "gh-41990953577-1",
   "status": "degraded",
-  "checked_utc": "2026-10-30T02:52:33.222Z",
-  "fields_loaded": 3,
-  "candidates_loaded": 2,
+  "checked_utc": "2026-11-09T16:20:08.189Z",
+  "fields_loaded": 239,
+  "candidates_loaded": 268,
   "upstream": [
     {
       "name": "IRSA TAP",
       "url": "https://irsa.ipac.caltech.edu/TAP/sync",
-      "probed_utc": "2026-10-30T02:52:32.899Z",
+      "probed_utc": "2026-11-09T16:19:53.182Z",
       "cached": false,
-      "reachable": false,
-      "http_status": null,
-      "latency_ms": 4,
-      "detail": "unreachable"
+      "reachable": true,
+      "http_status": 200,
+      "latency_ms": 258,
+      "detail": null
     },
     {
       "name": "JPL SBIdent",
       "url": "https://ssd-api.jpl.nasa.gov/sb_ident.api",
-      "probed_utc": "2026-10-30T02:52:32.900Z",
+      "probed_utc": "2026-11-09T16:19:53.183Z",
       "cached": false,
       "reachable": false,
       "http_status": null,
-      "latency_ms": 14,
-      "detail": "unreachable"
+      "latency_ms": 15000,
+      "detail": "timeout"
     },
     {
       "name": "JPL Horizons",
       "url": "https://ssd.jpl.nasa.gov/api/horizons.api",
-      "probed_utc": "2026-10-30T02:52:32.900Z",
+      "probed_utc": "2026-11-09T16:19:53.183Z",
       "cached": false,
-      "reachable": false,
-      "http_status": null,
-      "latency_ms": 3,
-      "detail": "unreachable"
+      "reachable": true,
+      "http_status": 200,
+      "latency_ms": 224,
+      "detail": null
     },
     {
       "name": "SPHEREx S3 (nasa-irsa-spherex)",
       "url": "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com",
-      "probed_utc": "2026-10-30T02:52:32.900Z",
+      "probed_utc": "2026-11-09T16:19:53.183Z",
       "cached": false,
       "reachable": true,
       "http_status": 200,
-      "latency_ms": 318,
+      "latency_ms": 118,
       "detail": null
     }
   ]

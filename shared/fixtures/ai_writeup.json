@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.5d0061b",
+  "subject_kind": "candidate",
+  "subject_id": "sv-2025w212c-l3402-s013-c01",
+  "verdict": "The object is a known asteroid that matches 760 Massinga (A913 QD) and moves about 22 arcseconds per hour across 31 images over 2 days.",
+  "paragraphs": [
+    "The object was seen moving about 22 arcseconds per hour across 31 images over 2.0 days. It was detected in 31 exposures during 5 separate visits.",
+    "The object matches the known asteroid 760 Massinga (A913 QD) in JPL's catalog, with a predicted visual magnitude of 14.5. The closest approach was 0.08 arcseconds.",
+    "The measurement has a medium quality level, with a motion fit RMS of 2.49 arcseconds and a signal-to-noise ratio of at least 42.31. However, there could still be errors or alternative explanations, but the object's motion is consistent across 5 visits and its flux varies by a factor of 3.3 across different wavelengths."
+  ],
+  "grounded_fields": [
+    "motion.rate_arcsec_per_hr",
+    "summary_plain",
+    "known_object.designation",
+    "known_object.predicted_vmag",
+    "known_object.per_epoch[0].separation_arcsec",
+    "scores.quality_level",
+    "vetting[2].value",
+    "vetting[1].value",
+    "detections[0].wavelength_um_center",
+    "detections[30].wavelength_um_center",
+    "vetting[9].value"
+  ],
+  "numeric_check": "passed",
+  "source": "ai",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "label_plain": "AI-written from the measurements below",
+  "cached": false,
+  "generated_utc": "2026-11-09T16:19:36.275Z"
+}

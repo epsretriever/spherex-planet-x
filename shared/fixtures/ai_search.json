@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.1872091",
+  "query": "slow unexplained objects, most reliable first",
+  "filter": {
+    "classification": [
+      "unmatched"
+    ],
+    "rate_min_arcsec_per_hr": null,
+    "rate_max_arcsec_per_hr": 5,
+    "distance_class": [],
+    "field_id": [],
+    "min_score": null,
+    "include_injected": false,
+    "sort": "score"
+  },
+  "explanation_plain": "Showing unexplained objects, moving at most 5 arcseconds per hour, most reliable first.",
+  "valid": true,
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "cached": false
+}

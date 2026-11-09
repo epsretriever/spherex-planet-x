@@ -1,13 +1,13 @@
 {
-  "recorded_utc": "2026-10-30T02:52:32.250Z",
-  "base": "http://127.0.0.1:8787",
+  "recorded_utc": "2026-11-09T16:19:30.484Z",
+  "base": "https://spherex-planet-x.bodhishanbhag.workers.dev",
   "files": {
     "fields.json": {
       "path": "/api/fields",
       "status": 200
     },
     "field_detail.json": {
-      "path": "/api/fields/aquarius-b",
+      "path": "/api/fields/sv-2026w292a-l0246-n029",
       "status": 200
     },
     "candidates.json": {
@@ -15,15 +15,36 @@
       "status": 200
     },
     "candidate_detail.json": {
-      "path": "/api/candidates/aquarius-b-c01",
+      "path": "/api/candidates/sv-2025w212c-l3402-s013-c01",
       "status": 200
+    },
+    "ai_writeup.json": {
+      "path": "/api/candidates/sv-2025w212c-l3402-s013-c01/writeup",
+      "status": 200
+    },
+    "ai_answer.json": {
+      "path": "/api/ask",
+      "status": 200,
+      "request": {
+        "subject_kind": "candidate",
+        "subject_id": "sv-2025w212c-l3402-s013-c01",
+        "question": "How fast is it moving, and does it match a known asteroid?",
+        "session_id": "fixture-recorder"
+      }
+    },
+    "ai_search.json": {
+      "path": "/api/search",
+      "status": 200,
+      "request": {
+        "query": "slow unexplained objects, most reliable first"
+      }
     },
     "objects.json": {
       "path": "/api/objects",
       "status": 200
     },
     "object_detail.json": {
-      "path": "/api/objects/obj-aquarius-b-c01",
+      "path": "/api/objects/obj-sv-2025w412b-l1137-s007-c02",
       "status": 200
     },
     "survey.json": {
@@ -32,6 +53,10 @@
     },
     "health.json": {
       "path": "/api/health",
+      "status": 200
+    },
+    "injection_study.json": {
+      "path": "/api/injection/aquarius-2025w23",
       "status": 200
     }
   }
