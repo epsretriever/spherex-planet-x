@@ -3,7 +3,7 @@ import { pageMeta } from "@/lib/meta";
 import { objectHref } from "@/lib/routes";
 import { notFound } from "next/navigation";
 import { PrefetchData } from "@/components/PrefetchData";
-import { buildNames, toNameInput } from "@/lib/names";
+import { buildNames } from "@/lib/names";
 import { NO_PAGES, staticCandidate, staticNameSeed, staticObject, staticObjects } from "@/lib/staticData";
 import { ObjectView } from "../object/ObjectView";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const o = staticObject(id);
   if (!o) return {};
   const seed = staticNameSeed();
-  const name = buildNames(seed.candidates.map(toNameInput), seed.fields).get(o.candidate_ids[0] ?? "")?.title ?? id;
+  const name = buildNames(seed.candidates, seed.fields).get(o.candidate_ids[0] ?? "")?.title ?? id;
   return pageMeta(name, o.summary_plain, objectHref(id));
 }
 
