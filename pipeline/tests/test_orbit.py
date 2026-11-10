@@ -126,3 +126,25 @@ def test_distance_class_needs_most_clones_to_agree():
     )  # spread over classes
     assert clone_class(at([1.5] * 100)) == S.DistanceClass.unknown  # in the gap between classes
     assert clone_class(at([45.0] * 70 + [20.0] * 30)) == S.DistanceClass.tno
+
+
+
+def test_fit_orbit_survives_all_nan_chi2(monkeypatch):
+    """Regression: the survey merge crashed with 'argmin of an empty sequence' when no
+    ranging orbit passed the acceptance window (NaN chi-square)."""
+    import numpy as np
+
+    from spherex_px.science import orbit as O
+
+    n = 8
+    r = np.tile([2.5, 0.0, 0.0], (n, 1))
+    v = np.tile([0.0, 0.0108, 0.0], (n, 1))
+    monkeypatch.setattr(O, "ranging", lambda o, n_samples, rng: (r, v, np.zeros(n), np.full(n, np.nan)))
+    obs = O.Observations(
+        mjd_tdb=np.array([60000.0, 60000.1, 60000.2]),
+        ra_deg=np.array([10.0, 10.001, 10.002]),
+        dec_deg=np.zeros(3),
+        sigma_arcsec=np.ones(3),
+        obs=np.tile([1.0, 0.0, 0.0], (3, 1)),
+    )
+    assert O.fit_orbit(obs) is None
