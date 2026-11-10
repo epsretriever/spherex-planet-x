@@ -25,7 +25,7 @@ const PIPELINE: { where: string; note: string; steps: { title: string; body: str
       { title: "Clean and align", body: "Subtract the zodiacal-light model and background, mask the pixels SPHEREx flags as unreliable, and put every image on one grid." },
       { title: "Detect", body: "Measure every source above signal-to-noise 4.5 in every exposure." },
       { title: "Remove the fixed sky", body: "Drop sources that stay put across visits: stars and galaxies." },
-      { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits confirm a track; two make an unconfirmed pair." },
+      { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits make a track; two make an unconfirmed pair." },
       { title: "Vet and score", body: "Artifact checks (flagged pixels, shape, edges, static sources, brightness across wavelengths) and a rule-based score." },
       { title: "JPL triage", body: "Ask JPL SBIdent which known bodies were near each visit, as seen from SPHEREx, then refine with Horizons. Within 15″ at every visit is a match." },
       { title: "Orbit and publish", body: "Fit a preliminary orbit and prediction for what JPL can't explain, then commit the JSON to the repository." },
@@ -50,7 +50,7 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
     name: "SPHEREx Level 2 images (NASA / JPL-Caltech / IPAC)",
     use: "Every image and measurement on this site.",
     href: "https://irsa.ipac.caltech.edu/Missions/spherex.html",
-    cite: "Mission: Doré et al. 2014, “Cosmology with the SPHEREx All-Sky Spectral Survey”, arXiv:1412.4872.",
+    cite: "Mission: Doré et al. 2014, “Cosmology with the SPHEREx All-Sky Spectral Survey”, arXiv:1412.4872; Bock et al. 2025, “The SPHEREx Satellite Mission”, arXiv:2511.02985.",
   },
   {
     name: "NASA/IPAC Infrared Science Archive (IRSA)",
@@ -284,8 +284,8 @@ export default function AboutPage() {
       <section aria-labelledby="team">
         <h2 id="team">Team and code</h2>
         <ul>
-          <li>Armaan: frontend, UI/UX, sky viewer, candidate dashboard</li>
-          <li>Bodhi: NASA data research, image analysis, scientific validation</li>
+          <li>Armaan: frontend, UI/UX, sky viewer, object reports</li>
+          <li>Bodhi: NASA data research, image analysis, scientific validation, backend and AI</li>
         </ul>
         <p>
           Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;. Everything is open source (MIT):{" "}
