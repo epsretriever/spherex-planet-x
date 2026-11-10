@@ -53,20 +53,19 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 
 | Layer | Tools |
 |---|---|
-| Frontend | React / Next.js |
-| Backend | Cloudflare Worker (TypeScript, Hono) |
-| Pipeline | Python offline builder |
+| Frontend | React / Next.js (static export) |
+| Backend | Cloudflare Worker (TypeScript, Hono), D1, KV |
+| Pipeline | Python, run in GitHub Actions; reads SPHEREx Level 2 images from NASA's public S3 bucket |
 | Science | Astropy, Photutils, NumPy, SciPy |
-| AI / ML | scikit-learn or PyTorch |
+| AI | Workers AI (Llama 3.3 70B) for write-ups, "Ask about this object" and natural-language search, every number checked against the measurements; rule-based anomaly ranking ("Most unusual") |
 | Data | SPHEREx images from NASA/IPAC IRSA, JPL small-body data |
 
 ## Team
 
 | Name | Role |
 |---|---|
-| Armaan | Frontend, UI/UX, sky viewer, candidate dashboard |
-| Bodhi | NASA data research, image analysis, scientific validation |
-| TBD | AI/ML, candidate ranking, backend, integration |
+| Armaan | Frontend, UI/UX, sky viewer, object reports |
+| Bodhi | NASA data research, image analysis, scientific validation, backend and AI |
 
 ## Repository layout
 
