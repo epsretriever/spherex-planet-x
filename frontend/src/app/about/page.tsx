@@ -236,6 +236,21 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section aria-labelledby="ai-use">
+        <h2 id="ai-use">How we use AI</h2>
+        <p>
+          The plain-language write-ups, &ldquo;ask about this object&rdquo; and the natural-language search are written by
+          Meta&apos;s Llama 3.3 70B model running on Cloudflare Workers AI. The model only sees an object&apos;s measured
+          values. Before a write-up is shown, the site checks that every number in it appears in the measurements and
+          that it never calls an object new or discovered; if a check fails, a fixed template is shown instead.
+        </p>
+        <p>
+          Detection, linking, orbit fits and the JPL catalog checks are ordinary code, not AI. We also used AI coding
+          assistants (Anthropic&apos;s Claude) to help write and review the code. The team chose the methods and checked
+          the scientific results, including the validation runs on the Limits page.
+        </p>
+      </section>
+
       <section aria-labelledby="glossary">
         <h2 id="glossary">Glossary</h2>
         <dl className={styles.glossary}>

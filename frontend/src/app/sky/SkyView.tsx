@@ -101,7 +101,7 @@ export function SkyView({
     <div className={styles.stack}>
       <dl className={styles.stats}>
         <div>
-          <dt>Tiles searched</dt>
+          <dt>Patches of sky searched</dt>
           <dd className="mono">{(t.n_searched ?? t.n_processed).toLocaleString("en-US")}</dd>
           <dd className={styles.statNote}>{t.n_processed.toLocaleString("en-US")} with moving objects</dd>
         </div>
@@ -250,8 +250,9 @@ export function SkyView({
       <CoverageChart days={growth} />
 
       <section className={styles.section} aria-labelledby="tiles-title">
-        <h2 id="tiles-title">Tiles searched</h2>
+        <h2 id="tiles-title">Patches of sky searched</h2>
         <p className={styles.intro}>
+          Each patch is one {survey.tile_size_deg}° × {survey.tile_size_deg}° tile of the map. The home page counts the same patches.
           The depth (m₅₀) is the magnitude at which we find half of the simulated objects we plant there; it stays blank until that test has
           run on the tile.
         </p>
