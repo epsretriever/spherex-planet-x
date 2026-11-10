@@ -57,7 +57,7 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 | Backend | Cloudflare Worker (TypeScript, Hono), D1, KV |
 | Pipeline | Python, run in GitHub Actions; reads SPHEREx Level 2 images from NASA's public S3 bucket |
 | Science | Astropy, Photutils, NumPy, SciPy |
-| AI | Workers AI (Llama 3.3 70B) for write-ups, "Ask about this object" and natural-language search, every number checked against the measurements; rule-based anomaly ranking ("Most unusual") |
+| AI | Workers AI (Llama 3.3 70B) for write-ups, "Ask about this object" and natural-language search, every number checked against the measurements; Isolation Forest anomaly ranking ("Most unusual", scikit-learn) with a plain-language reason |
 | Data | SPHEREx images from NASA/IPAC IRSA, JPL small-body data |
 
 ## Team
