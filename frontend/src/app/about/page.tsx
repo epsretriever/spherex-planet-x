@@ -11,7 +11,7 @@ import styles from "./page.module.css";
 
 export const metadata: Metadata = pageMeta(
   "About and methods",
-  "How the SPHEREx Planet X Explorer finds moving objects in NASA SPHEREx images: the pipeline, data sources, honest limitations and the team.",
+  "How Driftnet finds moving objects in NASA SPHEREx images: the pipeline, data sources, honest limitations and the team.",
   "/about/",
 );
 

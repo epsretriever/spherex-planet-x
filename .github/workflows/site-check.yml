@@ -7,7 +7,7 @@ on:
     inputs:
       site:
         description: Site to check
-        default: https://spherex-planet-x.vercel.app
+        default: https://driftnet-sky.vercel.app
       worker:
         description: Worker to check
         default: https://spherex-planet-x.bodhishanbhag.workers.dev
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+      SITE: ${{ inputs.site || 'https://driftnet-sky.vercel.app' }}
       WORKER: ${{ inputs.worker || 'https://spherex-planet-x.bodhishanbhag.workers.dev' }}
     steps:
       - name: Injection API

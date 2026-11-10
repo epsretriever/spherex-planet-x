@@ -7,7 +7,7 @@ on:
     inputs:
       site:
         description: Site to check
-        default: https://spherex-planet-x.vercel.app
+        default: https://driftnet-sky.vercel.app
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Host redirects keep the query
         env:
-          SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+          SITE: ${{ inputs.site || 'https://driftnet-sky.vercel.app' }}
         run: |
           set -euo pipefail
           for p in "/detective/?class=unmatched&sort=newest" "/leads/" "/explore/" "/detective/aquarius-a-c01/" "/detective/candidate/?id=aquarius-a-c01"; do
@@ -40,7 +40,7 @@ jobs:
         working-directory: frontend
         env:
           CI: "1"
-          REAL_BASE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+          REAL_BASE: ${{ inputs.site || 'https://driftnet-sky.vercel.app' }}
         run: npx playwright test -c playwright.real.config.ts --project=phone-360 --project=desktop-1280
       - name: Upload screenshots
         if: always()

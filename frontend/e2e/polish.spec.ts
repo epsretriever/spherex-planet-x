@@ -11,10 +11,10 @@ test("unknown paths get the 404 page", async ({ page }) => {
 
 test("favicon and share metadata are present", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle("SPHEREx Planet X Explorer");
+  await expect(page).toHaveTitle("Driftnet");
   await expect(page.locator('link[rel="icon"][href*="icon.svg"]')).toHaveCount(1);
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
-  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "SPHEREx Planet X Explorer");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Driftnet");
   const og = await page.request.get("/og.png");
   expect(og.ok()).toBe(true);
 });

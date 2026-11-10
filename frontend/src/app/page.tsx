@@ -93,7 +93,7 @@ export default function LandingPage() {
             <span className={styles.glow}>in the infrared sky.</span>
           </h1>
           <p className={styles.lede}>
-            SPHEREx Planet X Explorer searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
+            Driftnet searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
             observations: asteroids, comets and distant bodies in the outer solar system. Every one is tracked, checked against
             JPL&apos;s catalog of known objects, and published with the evidence for and against it.
           </p>
