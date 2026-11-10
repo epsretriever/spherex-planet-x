@@ -69,8 +69,20 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
     cite: "Giorgini et al. 1996, “JPL's On-Line Solar System Data Service”, BAAS 28, 1158.",
   },
   {
+    name: "Bus-DeMeo asteroid taxonomy (class mean spectra)",
+    use: "The asteroid types each object's SPHEREx colors are compared with in “What is it made of?”.",
+    href: "https://doi.org/10.1016/j.icarus.2009.02.005",
+    cite: "DeMeo, Binzel, Slivan & Bus 2009, “An extension of the Bus asteroid taxonomy into the near-infrared”, Icarus 202, 160.",
+  },
+  {
+    name: "ASTM E490-00a solar spectrum",
+    use: "Dividing an object's fluxes by the Sun's spectrum to get its reflectance.",
+    href: "https://doi.org/10.1520/E0490",
+    cite: "ASTM International, Standard Solar Constant and Zero Air Mass Solar Spectral Irradiance Tables (2014).",
+  },
+  {
     name: "JPL Small-Body Database (SBDB)",
-    use: "Orbit pages for every identified object (we link to JPL rather than recompute its orbits).",
+    use: "Orbit pages for every identified object (we link to JPL rather than recompute its orbits), and published asteroid types (spec_B, spec_T) to check our composition answers.",
     href: "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html",
   },
 ];
@@ -123,6 +135,12 @@ function Limitations() {
       <li>
         <strong>Unexplained is not new.</strong> JPL&apos;s check looks within 15″ of predicted positions; an object with a poorly known
         orbit, or a very recent discovery, can be missed. Our orbits usually come from about a day of data, so their predictions are very uncertain.
+      </li>
+      <li>
+        <strong>&ldquo;What is it made of?&rdquo; is indicative only.</strong> A SPHEREx track usually covers a narrow range of wavelengths over
+        about a day, while the asteroid rotates, so most composition answers are low confidence. Points above about 3 µm are often the
+        object&apos;s own heat rather than reflected sunlight, and are left out for near-Sun objects.{" "}
+        <Link href="/limits/#composition">How often it is right →</Link>
       </li>
       <li>
         <strong>The scores are rankings, not probabilities.</strong> No object here has been confirmed by another telescope.

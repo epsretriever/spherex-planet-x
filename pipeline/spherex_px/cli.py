@@ -347,6 +347,9 @@ def main(argv: list[str] | None = None) -> int:
     p9.add_argument("--describe", action="store_true", help="also log the record's contents")
     p9.add_argument("--out")
     p9.set_defaults(func=_planet_nine)
+    from .composition import add_cli as add_composition_cli
+
+    add_composition_cli(sub)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
