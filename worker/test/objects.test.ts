@@ -172,3 +172,14 @@ describe("JPL results stay consistent across endpoints", () => {
     expect(b.calls).toHaveLength(0);
   });
 });
+
+describe("most unusual first", () => {
+  it("sorts by anomaly rank and rejects unknown sorts", async () => {
+    const row = (id: string, rank: number | null) => ({ ...objList.objects[0]!, object_id: id, anomaly_rank: rank, known_object_matched: false });
+    const files = { "/data/objects.json": { ...objList, objects: [row("obj-a", 3), row("obj-b", null), row("obj-c", 1)] } };
+    const { get } = makeClient({ files });
+    const r = (await json(await get("/api/objects?sort=anomaly"))) as ObjectList;
+    expect(r.objects.map((o) => o.object_id)).toEqual(["obj-c", "obj-a", "obj-b"]);
+    expect((await get("/api/objects?sort=weird")).status).toBe(400);
+  });
+});

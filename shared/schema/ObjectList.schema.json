@@ -172,6 +172,42 @@
           ],
           "title": "Known Object Designation"
         },
+        "anomaly_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anomaly Score"
+        },
+        "anomaly_rank": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anomaly Rank"
+        },
+        "anomaly_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Anomaly Reason"
+        },
         "also_seen_as": {
           "default": [],
           "description": "Objects with the same JPL designation (the same asteroid in other tiles), merged into this one by the Worker",
