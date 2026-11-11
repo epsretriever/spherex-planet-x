@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { getCandidates, getFields } from "./api";
-import type { CandidateDetail, CandidateSummary, FieldSummary } from "./contract";
-import { buildNames, fallbackName, toNameInput, type ObjectName } from "./names";
+import type { CandidateDetail } from "./contract";
+import { buildNames, fallbackName, toNameInput, type NameSeed, type ObjectName } from "./names";
 import { useData } from "./useData";
 
 /**
@@ -11,10 +11,7 @@ import { useData } from "./useData";
  * letters don't depend on the current filter. Returns null until both lists have loaded; callers
  * fall back to `nameFor`'s generic title meanwhile.
  */
-export interface NameSeed {
-  candidates: CandidateSummary[];
-  fields: FieldSummary[];
-}
+export type { NameSeed };
 
 export function useObjectNames(seed?: NameSeed) {
   const state = useData("object-names", async (signal) => {
@@ -24,7 +21,7 @@ export function useObjectNames(seed?: NameSeed) {
   // Until the live lists arrive, use the lists the page was built with (if any).
   const names = useMemo(() => {
     if (state.status === "ok") return buildNames(state.data.cands.map(toNameInput), state.data.fields);
-    if (seed && seed.candidates.length) return buildNames(seed.candidates.map(toNameInput), seed.fields);
+    if (seed && seed.candidates.length) return buildNames(seed.candidates, seed.fields);
     return null;
   }, [state, seed]);
   return useMemo(

@@ -78,7 +78,7 @@ export function adesPsv(objectId: string, cand: CandidateDetail): string {
     `! mpcCode ${STATION_PLACEHOLDER}`,
     "! name SPHEREx (NASA), space-based",
     "# submitter",
-    "! name SPHEREx Planet X Explorer (spherex-planet-x.vercel.app)",
+    "! name Driftnet (driftnet-sky.vercel.app)",
     "# telescope",
     "! design Reflector",
     "! aperture 0.2",
@@ -150,7 +150,7 @@ export function ephemerisCsv(objectId: string, pred: ObjectPrediction & { note_p
   const start = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
   const rows = pred.points.filter((p) => Date.parse(p.time_utc) >= start).slice(0, nights + 1);
   const head = [
-    `# APPROXIMATE EPHEMERIS for ${objectId} (unexplained SPHEREx moving object), from SPHEREx Planet X Explorer.`,
+    `# APPROXIMATE EPHEMERIS for ${objectId} (unexplained SPHEREx moving object), from Driftnet.`,
     `# Built from a preliminary orbit fitted to the measured SPHEREx positions (orbit epoch MJD ${pred.orbit_epoch_mjd}); observer: ${pred.observer}.`,
     "# The uncertainty columns are the 1-sigma ellipse (semi-major, semi-minor, position angle east of north); search at least the 3-sigma region.",
     ...(pred.note_plain ? [`# ${pred.note_plain}`] : []),

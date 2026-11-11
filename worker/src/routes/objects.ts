@@ -12,6 +12,7 @@ import type {
   PlanetNineRegion,
   Survey,
 } from "../contract";
+import { adesXml, observationsOf } from "../ades";
 import { notCheckedKnownObject } from "../enrich";
 import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
@@ -115,10 +116,17 @@ objects.get("/", async (c) => {
   const paging = pageParams((n) => c.req.query(n));
   const dedupe = c.req.query("dedupe") !== "false";
   const { list, objects: all } = await enrichedObjects(c.env, c.get("deps"));
-  const items = dedupe ? mergeByDesignation(all) : all;
-  // Unexplained first, then weak detections, then known objects; best score first within each.
-  items.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
-  const page = paginate(items, paging);
+  const sort = c.req.query("sort") ?? "score";
+  if (sort !== "score" && sort !== "anomaly") throw badRequest("sort must be 'score' or 'anomaly'");
+  const rows = dedupe ? mergeByDesignation(all) : all;
+  if (sort === "anomaly") {
+    // Most unusual first; objects without a ranking keep the review order after them.
+    rows.sort((a, b) => (a.anomaly_rank ?? Infinity) - (b.anomaly_rank ?? Infinity) || reviewPriority(a) - reviewPriority(b));
+  } else {
+    // Unexplained first, then weak detections, then known objects; best score first within each.
+    rows.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
+  }
+  const page = paginate(rows, paging);
   c.header("Cache-Control", "public, max-age=60");
   return c.json({ ...list, total: page.total, offset: page.offset, limit: page.limit, next_offset: page.next_offset, objects: page.items });
 });
@@ -201,10 +209,34 @@ objects.get("/:objectId/prediction", async (c) => {
   return c.json({ ...pred, days, points: pred.points.filter((p) => p.mjd <= start + days) });
 });
 
+/**
+ * The object's real astrometry as ADES 2022 XML: a draft for a person to review. Nothing is ever
+ * submitted from here, and simulated (injected) objects have no export.
+ */
 objects.get("/:objectId/ades.xml", async (c) => {
   const id = c.req.param("objectId");
   if (!ID_RE.test(id)) throw badRequest("invalid object_id");
-  throw new ApiError(404, `ADES export for '${id}' is not available yet`);
+  const deps = c.get("deps");
+  const { detail, pending } = await loadObject(c.env, deps, id);
+  if (detail.classification === "injected") {
+    throw new ApiError(404, `object '${id}' is a simulated (injected) source: it has no astrometry export`);
+  }
+  if (observationsOf(detail.detections).length === 0) throw new ApiError(404, `object '${id}' has no detections to export`);
+  const xml = adesXml(detail, {
+    stationCode: c.env.MPC_STATION_CODE,
+    submitter: c.env.ADES_SUBMITTER,
+    generatedUtc: deps.now().toISOString(),
+  });
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Disposition": `inline; filename="${id}.ades.xml"`,
+      // The JPL result (and so the comment lines) can change while a lookup is pending.
+      "Cache-Control": pending ? "no-store" : "public, max-age=300",
+      "X-ADES-Status": c.env.MPC_STATION_CODE ? "draft" : "draft; station code not configured",
+      "X-Robots-Tag": "noindex",
+    },
+  });
 });
 
 export const survey = new Hono<AppEnv>();

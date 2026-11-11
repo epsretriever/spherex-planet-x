@@ -4,14 +4,28 @@ import styles from "./Orbit.module.css";
 const S = 400;
 
 /** The orbit seen from above the ecliptic (north up): used when WebGL isn't available. */
-export function OrbitTopDown({ object, clones, planets, epochMjd, objectLabel }: { object: Elements; clones: Elements[]; planets: Planet[]; epochMjd: number; objectLabel: string }) {
-  const reach = Math.max(object.a_au * (1 + object.e), ...planets.map((p) => p.a * (1 + p.e)), 1.5) * 1.08;
+export function OrbitTopDown({
+  object,
+  clones,
+  planets,
+  epochMjd,
+  objectLabel,
+  others = [],
+}: {
+  object: Elements;
+  clones: Elements[];
+  planets: Planet[];
+  epochMjd: number;
+  objectLabel: string;
+  others?: { elements: Elements; label: string }[];
+}) {
+  const reach = Math.max(object.a_au * (1 + object.e), ...others.map((o) => o.elements.a_au * (1 + o.elements.e)), ...planets.map((p) => p.a * (1 + p.e)), 1.5) * 1.08;
   const k = S / 2 / reach;
   const xy = ([x, y]: Vec3) => [S / 2 + x * k, S / 2 - y * k] as const;
   const path = (pts: Vec3[]) => pts.map((p, i) => `${i ? "L" : "M"}${xy(p)[0].toFixed(1)} ${xy(p)[1].toFixed(1)}`).join("") + "Z";
   const obj = xy(positionAt(object));
   return (
-    <svg viewBox={`0 0 ${S} ${S}`} className={styles.topDown} role="img" aria-label={`Top-down view of the orbit of ${objectLabel} among the planets`}>
+    <svg viewBox={`0 0 ${S} ${S}`} className={styles.topDown} role="img" aria-label={`Top-down view of the ${others.length ? `orbits of ${[objectLabel, ...others.map((o) => o.label)].join(" and ")}` : `orbit of ${objectLabel}`} among the planets`}>
       <circle cx={S / 2} cy={S / 2} r={5} className={styles.sun} />
       {planets.map((p) => {
         const el = planetElements(p, epochMjd);
@@ -32,6 +46,18 @@ export function OrbitTopDown({ object, clones, planets, epochMjd, objectLabel }:
       {clones.map((c, i) => {
         const [x, y] = xy(positionAt(c));
         return <circle key={`p${i}`} cx={x} cy={y} r={1.6} className={styles.clone} />;
+      })}
+      {others.map((o) => {
+        const [x, y] = xy(positionAt(o.elements));
+        return (
+          <g key={o.label}>
+            <path d={path(orbitPoints(o.elements, 200))} className={styles.secondOrbit} />
+            <circle cx={x} cy={y} r={5} className={styles.second} />
+            <text x={x > S * 0.6 ? x - 8 : x + 8} y={y + 16} textAnchor={x > S * 0.6 ? "end" : "start"} className={styles.svgTag} data-kind="second">
+              {o.label}
+            </text>
+          </g>
+        );
       })}
       <path d={path(orbitPoints(object, 200))} className={styles.objectOrbit} />
       <circle cx={obj[0]} cy={obj[1]} r={5} className={styles.object} />

@@ -7,7 +7,7 @@ on:
     inputs:
       site:
         description: Site to read
-        default: https://spherex-planet-x.vercel.app
+        default: https://driftnet-sky.vercel.app
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      SITE: ${{ inputs.site || 'https://spherex-planet-x.vercel.app' }}
+      SITE: ${{ inputs.site || 'https://driftnet-sky.vercel.app' }}
       WORKER: https://spherex-planet-x.bodhishanbhag.workers.dev
     steps:
       - name: Survey and objects

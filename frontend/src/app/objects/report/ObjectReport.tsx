@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FollowUpDownloads } from "@/components/followup/FollowUpDownloads";
+import { ObjectActions } from "@/components/object/ObjectActions";
 import { DistancePanel } from "@/components/object/DistancePanel";
 import objectStyles from "@/components/object/Object.module.css";
 import { VisitsPanel } from "@/components/object/VisitsPanel";
@@ -18,6 +19,7 @@ import { Deferred } from "@/components/Deferred";
 import { Seen, WhenVisible } from "@/components/WhenVisible";
 import { ReportSkeleton, ViewerSkeleton } from "@/components/Skeletons";
 import { AskPanel } from "@/components/report/AskPanel";
+import { CompositionPanel } from "@/components/report/CompositionPanel";
 import { ErrorSourcesPanel } from "@/components/report/ErrorSourcesPanel";
 import { ExplanationPanel } from "@/components/report/ExplanationPanel";
 import { FieldContext } from "@/components/report/FieldContext";
@@ -163,6 +165,7 @@ const SECTIONS = [
   ["quality", "Quality"],
   ["unusual", "Unusual"],
   ["spectrum", "Spectrum"],
+  ["composition", "Made of"],
   ["injection", "Simulated"],
   ["provenance", "Provenance"],
   ["history", "History"],
@@ -193,14 +196,17 @@ function Report({ c, o, name, nameFor }: { c: CandidateDetail; o: ObjectDetail |
       source: d.stamp?.source ?? d.source,
     });
   };
+  // The ranking is published on the object; older data carried it on the sighting.
+  const anomaly = o?.anomaly ?? c.anomaly ?? null;
   const present = new Set<string>(["evidence", "explanation", "measurements", "motion", "known", "errors", "quality", "provenance"]);
   if (c.spectrum?.points.length) present.add("spectrum");
   if (c.injection) present.add("injection");
   if (c.neo_likelihood) present.add("neo");
-  if (c.anomaly) present.add("unusual");
+  if (anomaly) present.add("unusual");
   // Ask appears once the write-up answered, which shows the AI endpoints are live.
   if (aiReady) present.add("ask");
   if (o) for (const s of ["visits", "orbit", "distance", "history"]) present.add(s);
+  if (o && c.spectrum?.points.length) present.add("composition");
   const visits = o ? groupVisits(o.detections) : null;
   const dist = o ? (DISTANCE_CLASSES[o.distance_class] ?? DISTANCE_CLASSES.unknown) : null;
   const unidentified = c.classification !== "known_object" && c.classification !== "injected";
@@ -272,6 +278,7 @@ function Report({ c, o, name, nameFor }: { c: CandidateDetail; o: ObjectDetail |
             {c.disclaimer || DISCLAIMER}
           </p>
         )}
+        {o && <ObjectActions objectId={o.object_id} title={name.title} simulated={c.classification === "injected"} />}
         {unidentified && o && <FollowUpDownloads objectId={o.object_id} candidateId={c.candidate_id} />}
       </header>
 
@@ -306,10 +313,15 @@ function Report({ c, o, name, nameFor }: { c: CandidateDetail; o: ObjectDetail |
         {c.neo_likelihood && <NeoPanel neo={c.neo_likelihood} />}
         <ErrorSourcesPanel errorSources={c.error_sources} vetting={c.vetting} />
         <ScoresPanel scores={c.scores} />
-        {c.anomaly && <UnusualPanel anomaly={c.anomaly} />}
+        {anomaly && <UnusualPanel anomaly={anomaly} />}
         {c.spectrum && c.spectrum.points.length > 0 && (
           <WhenVisible minHeight={400}>
             <SpectrumPanel spectrum={c.spectrum} />
+          </WhenVisible>
+        )}
+        {o && c.spectrum && c.spectrum.points.length > 0 && (
+          <WhenVisible minHeight={560}>
+            <CompositionPanel objectId={o.object_id} />
           </WhenVisible>
         )}
         {c.injection && <InjectionPanel injection={c.injection} />}

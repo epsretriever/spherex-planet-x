@@ -78,3 +78,20 @@ export function toNameInput(c: CandidateSummary): NameInput {
     known_object_designation: c.known_object_designation,
   };
 }
+
+/**
+ * The smallest lists `buildNames` needs, for pages that pass them to the browser. Object and
+ * field pages embed this in their HTML, so sending whole candidate summaries made every page
+ * grow with each survey (about 860 KB per object page by November 2026).
+ */
+export interface NameSeed {
+  candidates: NameInput[];
+  fields: Pick<FieldSummary, "field_id" | "center">[];
+}
+
+export function toNameSeed(candidates: CandidateSummary[], fields: Pick<FieldSummary, "field_id" | "center">[]): NameSeed {
+  return {
+    candidates: candidates.map(toNameInput),
+    fields: fields.map((f) => ({ field_id: f.field_id, center: { ra_deg: f.center.ra_deg, dec_deg: f.center.dec_deg } })),
+  };
+}

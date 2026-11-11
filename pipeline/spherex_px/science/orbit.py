@@ -469,6 +469,15 @@ def fit_orbit(
     # reduced chi-square 1; the acceptance window is applied on the same scale.
     scale = max(min(chi2_best, float(chi2.min())) / dof, 1.0)
     keep = chi2 / scale <= min(chi2_best, float(chi2.min())) / scale + DELTA_CHI2
+    if not keep.any():
+        # NaN chi2 everywhere (degenerate ranging draws): keep the best finite sample so the
+        # short-arc fallback below always has at least one orbit to choose from.
+        finite = np.isfinite(chi2)
+        keep = np.zeros_like(finite)
+        if finite.any():
+            keep[int(np.nanargmin(np.where(finite, chi2, np.nan)))] = True
+        else:
+            return None
     rb, vb = sol.x[:3], sol.x[3:] / 100
     el_best = elements(rb, vb)[0]
     status, cov_el = "preliminary", None

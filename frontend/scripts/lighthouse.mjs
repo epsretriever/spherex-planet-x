@@ -2,7 +2,7 @@
 //
 // Starts (or reuses) `wrangler dev --env offline` (no Workers AI, which needs credentials) from the repository root, runs Lighthouse with its default
 // mobile settings (CPU slowdown calibrated to this machine, see below) on Home, an Explore field
-// an evidence report, the sky map and the object list (median of LH_RUNS runs,
+// an evidence report, the sky map, the object list and the comparison page (median of LH_RUNS runs,
 // default 5: single runs on shared CI machines swing by ten points), writes HTML and JSON reports to
 // lighthouse-reports/, and exits non-zero if performance, accessibility or best practices
 // scores below 90 on any of them. Build first: `npm run build` at the repository root.
@@ -58,6 +58,7 @@ const pages = [
   ["sky", "/sky/"],
   ["objects", "/objects/"],
   ["leads", "/objects/?view=leads"],
+  ["compare", "/objects/compare/"],
 ];
 
 const chrome = await chromeLauncher.launch({

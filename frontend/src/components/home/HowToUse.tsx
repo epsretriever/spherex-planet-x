@@ -21,7 +21,7 @@ const STEPS = [
   },
   {
     title: "See what's still unexplained",
-    body: "The objects JPL can't explain, ranked, and where in the sky we haven't looked yet.",
+    body: "The objects JPL hasn't identified yet, ranked, and where in the sky we haven't looked yet.",
     href: "/objects/?view=leads",
     cta: "Unexplained leads",
   },

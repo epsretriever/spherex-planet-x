@@ -11,7 +11,7 @@ import styles from "./page.module.css";
 
 export const metadata: Metadata = pageMeta(
   "About and methods",
-  "How the SPHEREx Planet X Explorer finds moving objects in NASA SPHEREx images: the pipeline, data sources, honest limitations and the team.",
+  "How Driftnet finds moving objects in NASA SPHEREx images: the pipeline, data sources, honest limitations and the team.",
   "/about/",
 );
 
@@ -25,7 +25,7 @@ const PIPELINE: { where: string; note: string; steps: { title: string; body: str
       { title: "Clean and align", body: "Subtract the zodiacal-light model and background, mask the pixels SPHEREx flags as unreliable, and put every image on one grid." },
       { title: "Detect", body: "Measure every source above signal-to-noise 4.5 in every exposure." },
       { title: "Remove the fixed sky", body: "Drop sources that stay put across visits: stars and galaxies." },
-      { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits confirm a track; two make an unconfirmed pair." },
+      { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits make a track; two make an unconfirmed pair." },
       { title: "Vet and score", body: "Artifact checks (flagged pixels, shape, edges, static sources, brightness across wavelengths) and a rule-based score." },
       { title: "JPL triage", body: "Ask JPL SBIdent which known bodies were near each visit, as seen from SPHEREx, then refine with Horizons. Within 15″ at every visit is a match." },
       { title: "Orbit and publish", body: "Fit a preliminary orbit and prediction for what JPL can't explain, then commit the JSON to the repository." },
@@ -50,7 +50,7 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
     name: "SPHEREx Level 2 images (NASA / JPL-Caltech / IPAC)",
     use: "Every image and measurement on this site.",
     href: "https://irsa.ipac.caltech.edu/Missions/spherex.html",
-    cite: "Mission: Doré et al. 2014, “Cosmology with the SPHEREx All-Sky Spectral Survey”, arXiv:1412.4872.",
+    cite: "Mission: Doré et al. 2014, “Cosmology with the SPHEREx All-Sky Spectral Survey”, arXiv:1412.4872; Bock et al. 2025, “The SPHEREx Satellite Mission”, arXiv:2511.02985.",
   },
   {
     name: "NASA/IPAC Infrared Science Archive (IRSA)",
@@ -69,8 +69,20 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
     cite: "Giorgini et al. 1996, “JPL's On-Line Solar System Data Service”, BAAS 28, 1158.",
   },
   {
+    name: "Bus-DeMeo asteroid taxonomy (class mean spectra)",
+    use: "The asteroid types each object's SPHEREx colors are compared with in “What is it made of?”.",
+    href: "https://doi.org/10.1016/j.icarus.2009.02.005",
+    cite: "DeMeo, Binzel, Slivan & Bus 2009, “An extension of the Bus asteroid taxonomy into the near-infrared”, Icarus 202, 160.",
+  },
+  {
+    name: "ASTM E490-00a solar spectrum",
+    use: "Dividing an object's fluxes by the Sun's spectrum to get its reflectance.",
+    href: "https://doi.org/10.1520/E0490",
+    cite: "ASTM International, Standard Solar Constant and Zero Air Mass Solar Spectral Irradiance Tables (2014).",
+  },
+  {
     name: "JPL Small-Body Database (SBDB)",
-    use: "Orbit pages for every identified object (we link to JPL rather than recompute its orbits).",
+    use: "Orbit pages for every identified object (we link to JPL rather than recompute its orbits), and published asteroid types (spec_B, spec_T) to check our composition answers.",
     href: "https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html",
   },
 ];
@@ -123,6 +135,12 @@ function Limitations() {
       <li>
         <strong>Unexplained is not new.</strong> JPL&apos;s check looks within 15″ of predicted positions; an object with a poorly known
         orbit, or a very recent discovery, can be missed. Our orbits usually come from about a day of data, so their predictions are very uncertain.
+      </li>
+      <li>
+        <strong>&ldquo;What is it made of?&rdquo; is indicative only.</strong> A SPHEREx track usually covers a narrow range of wavelengths over
+        about a day, while the asteroid rotates, so most composition answers are low confidence. Points above about 3 µm are often the
+        object&apos;s own heat rather than reflected sunlight, and are left out for near-Sun objects.{" "}
+        <Link href="/limits/#composition">How often it is right →</Link>
       </li>
       <li>
         <strong>The scores are rankings, not probabilities.</strong> No object here has been confirmed by another telescope.
@@ -236,6 +254,21 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section aria-labelledby="ai-use">
+        <h2 id="ai-use">How we use AI</h2>
+        <p>
+          The plain-language write-ups, &ldquo;ask about this object&rdquo; and the natural-language search are written by
+          Meta&apos;s Llama 3.3 70B model running on Cloudflare Workers AI. The model only sees an object&apos;s measured
+          values. Before a write-up is shown, the site checks that every number in it appears in the measurements and
+          that it never calls an object new or discovered; if a check fails, a fixed template is shown instead.
+        </p>
+        <p>
+          Detection, linking, orbit fits and the JPL catalog checks are ordinary code, not AI. We also used AI coding
+          assistants (Anthropic&apos;s Claude) to help write and review the code. The team chose the methods and checked
+          the scientific results, including the validation runs on the Limits page.
+        </p>
+      </section>
+
       <section aria-labelledby="glossary">
         <h2 id="glossary">Glossary</h2>
         <dl className={styles.glossary}>
@@ -251,8 +284,8 @@ export default function AboutPage() {
       <section aria-labelledby="team">
         <h2 id="team">Team and code</h2>
         <ul>
-          <li>Armaan: frontend, UI/UX, sky viewer, candidate dashboard</li>
-          <li>Bodhi: NASA data research, image analysis, scientific validation</li>
+          <li>Armaan: frontend, UI/UX, sky viewer, object reports</li>
+          <li>Bodhi: NASA data research, image analysis, scientific validation, backend and AI</li>
         </ul>
         <p>
           Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;. Everything is open source (MIT):{" "}

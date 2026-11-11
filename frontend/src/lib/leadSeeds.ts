@@ -1,12 +1,12 @@
 import { buildLead, isUnidentified, type Lead } from "./leads";
-import { buildNames, toNameInput } from "./names";
+import { buildNames } from "./names";
 import { staticCandidate, staticField, staticNameSeed, staticObjects, staticPrediction } from "./staticData";
 
 /** Every published object JPL hasn't named, as the pipeline published it (the live list decides which are shown). */
 export function buildSeeds(): Lead[] {
   const objects = staticObjects()?.objects ?? [];
   const seed = staticNameSeed();
-  const names = buildNames(seed.candidates.map(toNameInput), seed.fields);
+  const names = buildNames(seed.candidates, seed.fields);
   const out: Lead[] = [];
   for (const o of objects) {
     if (!isUnidentified(o.classification)) continue;

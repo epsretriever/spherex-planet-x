@@ -125,12 +125,11 @@ describe("objects", () => {
     expect(body.objects[0].summary_plain).toContain("matches the known asteroid");
   });
 
-  it("has no prediction or ADES export before an orbit exists", async () => {
+  it("has no prediction before an orbit exists", async () => {
     const { get } = makeClient({ files });
     const p = await get(`/api/objects/${obj.object_id}/prediction`);
     expect(p.status).toBe(404);
     expect((await json(p)).detail).toContain("no orbit yet");
-    expect((await get(`/api/objects/${obj.object_id}/ades.xml`)).status).toBe(404);
     expect((await get("/api/objects/obj-missing")).status).toBe(404);
   });
 
@@ -170,5 +169,16 @@ describe("JPL results stay consistent across endpoints", () => {
     const f = await json(await b.get("/api/fields/test-field"));
     expect(f.movers[0]).toMatchObject({ classification: "known_object", label_plain: "Known asteroid" });
     expect(b.calls).toHaveLength(0);
+  });
+});
+
+describe("most unusual first", () => {
+  it("sorts by anomaly rank and rejects unknown sorts", async () => {
+    const row = (id: string, rank: number | null) => ({ ...objList.objects[0]!, object_id: id, anomaly_rank: rank, known_object_matched: false });
+    const files = { "/data/objects.json": { ...objList, objects: [row("obj-a", 3), row("obj-b", null), row("obj-c", 1)] } };
+    const { get } = makeClient({ files });
+    const r = (await json(await get("/api/objects?sort=anomaly"))) as ObjectList;
+    expect(r.objects.map((o) => o.object_id)).toEqual(["obj-c", "obj-a", "obj-b"]);
+    expect((await get("/api/objects?sort=weird")).status).toBe(400);
   });
 });

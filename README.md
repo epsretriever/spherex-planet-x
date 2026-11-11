@@ -1,19 +1,23 @@
-# SPHEREx Planet X Explorer
+# Driftnet
+
+*Find what moves in real NASA SPHEREx infrared images, from asteroids to the search for Planet X.*
 
 NASA Space Apps Challenge 2026 · Challenge: Planet X and SPHEREx
 
 A public web tool that lets anyone explore how the infrared sky changes over time using real data from NASA's SPHEREx mission.
 
-**Try it live: https://spherex-planet-x.vercel.app**
+**Try it live: https://driftnet-sky.vercel.app**
 
 Old links (`/explore/`, `/detective/…`, `/leads/`) redirect to their new homes, query strings included.
 
 | Page | What you can do |
 |---|---|
-| [Objects](https://spherex-planet-x.vercel.app/objects/) | Every moving object in one list: search, filters and AI search; tabs for **Unexplained leads** (ranked, with follow-up files), **Known (JPL)** and **Patches of sky** to blink. Each object has one report page. |
-| [Sky map](https://spherex-planet-x.vercel.app/sky/) | Where we have searched, how to read the map, and the Planet Nine search region |
-| [Limits](https://spherex-planet-x.vercel.app/limits/) | How faint and how slow an object the pipeline can find, measured with simulated objects |
-| [About](https://spherex-planet-x.vercel.app/about/) | Pipeline diagram, data sources and citations, honest limitations, team |
+| [Objects](https://driftnet-sky.vercel.app/objects/) | Every moving object in one list: search, filters and AI search; tabs for **Unexplained leads** (ranked, with follow-up files), **Known (JPL)** and **Patches of sky** to blink. Each object has one report page with its images, orbit in 3D, spectrum and JPL check; each patch shows its movers' tracks in 3D (sky × time). |
+| [Compare](https://driftnet-sky.vercel.app/objects/compare/) | Any two objects side by side, with both orbits in one 3D view. The pair is in the address, so a comparison is a link you can share. |
+| [Sky map](https://driftnet-sky.vercel.app/sky/) | Where we have searched, as a flat all-sky map or a 3D globe, with the Planet Nine search region; and every tracked object placed in the solar system in 3D |
+| [Limits](https://driftnet-sky.vercel.app/limits/) | How faint and how slow an object the pipeline can find, measured with simulated objects |
+| [About](https://driftnet-sky.vercel.app/about/) | Pipeline diagram, data sources and citations, honest limitations, team |
+| `/api/objects/{id}/ades.xml` | An object's measured positions in the Minor Planet Center's ADES format: a draft for a person to review. The site never submits anything, and simulated objects have no export. |
 | [`/api/health`](https://spherex-planet-x.bodhishanbhag.workers.dev/api/health) | Live status of the NASA IRSA, JPL SBIdent, JPL Horizons and SPHEREx archive connections |
 
 ## How it works
@@ -30,7 +34,8 @@ Old links (`/explore/`, `/detective/…`, `/leads/`) redirect to their new homes
    serves /api/*  and the website (frontend/out)       JPL SBIdent and JPL Horizons
         │                                               (known-asteroid check, cached 24 h)
         ▼
- Website (frontend/, Next.js static export)
+ Website (frontend/, Next.js static export)  ──  served by Vercel at driftnet-sky.vercel.app,
+                                                 which proxies /api/* to the Worker
 ```
 
 Pixel processing is too heavy to run inside a Worker, so it happens ahead of time in `pipeline/`. Everything that depends on today's catalogs, like whether a moving dot is a known asteroid, is checked live by the Worker on each request.
@@ -53,20 +58,19 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 
 | Layer | Tools |
 |---|---|
-| Frontend | React / Next.js |
-| Backend | Cloudflare Worker (TypeScript, Hono) |
-| Pipeline | Python offline builder |
+| Frontend | React / Next.js (static export) on Vercel; three.js for the 3D figures, loaded only when one is on screen |
+| Backend | Cloudflare Worker (TypeScript, Hono), D1, KV |
+| Pipeline | Python, run in GitHub Actions; reads SPHEREx Level 2 images from NASA's public S3 bucket |
 | Science | Astropy, Photutils, NumPy, SciPy |
-| AI / ML | scikit-learn or PyTorch |
+| AI | Workers AI (Llama 3.3 70B) for write-ups, "Ask about this object" and natural-language search, every number checked against the measurements; Isolation Forest anomaly ranking ("Most unusual", scikit-learn) with a plain-language reason |
 | Data | SPHEREx images from NASA/IPAC IRSA, JPL small-body data |
 
 ## Team
 
 | Name | Role |
 |---|---|
-| Armaan | Frontend, UI/UX, sky viewer, candidate dashboard |
-| Bodhi | NASA data research, image analysis, scientific validation |
-| TBD | AI/ML, candidate ranking, backend, integration |
+| Armaan | Frontend, UI/UX, sky viewer, object reports |
+| Bodhi | NASA data research, image analysis, scientific validation, backend and AI |
 
 ## Repository layout
 
@@ -74,7 +78,7 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 |---|---|
 | `worker/` | Cloudflare Worker (Hono): `/api/*`, live IRSA and JPL queries |
 | `pipeline/` | Python package `spherex_px`: offline SPHEREx data access, detection, linking, scoring; writes `frontend/public/data/` |
-| `frontend/` | Next.js website (static export served by the Worker) |
+| `frontend/` | Next.js website (static export; deployed by Vercel, and served by the Worker too) |
 | `frontend/public/data/` | Real showcase data built by the pipeline |
 | `scripts/build.mjs` | Root build used by Cloudflare: builds the site, type-checks the Worker |
 | `wrangler.toml` | Cloudflare Worker configuration |
@@ -98,7 +102,9 @@ npm test           # Worker tests (vitest)
 npm test --workspace frontend   # frontend unit tests
 ```
 
-Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`, and posts a preview link on every pull request. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
+Deployment: both hosts deploy from `main` and post a preview on every pull request. Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`; the Worker is named `spherex-planet-x` (see `wrangler.toml`) and serves `/api/*` plus the static site. Vercel (project `driftnet`, root directory `frontend/`) builds the same static export and serves the public site, proxying `/api/*` to the Worker (`frontend/vercel.json`). The deployed Worker leaves the sky images out to stay under Cloudflare's asset limit, so use the Vercel site for pages.
+
+Checks on every pull request (`.github/workflows/frontend-quality.yml`): the build, lint, type-check and unit tests, Playwright screenshots of every page on real data at 360, 768 and 1280 px, and Lighthouse (performance, accessibility, best practices ≥ 90).
 
 ### Pipeline (static data)
 
@@ -133,6 +139,10 @@ Each object page shows:
 - a 60-day prediction whose note says plainly how far it can be trusted.
 
 The method is tested on simulated asteroids observed at real SPHEREx times and positions (`spherex-px orbit-validation`, served at `/api/validation/orbits`). For orbits JPL already knows, the Worker compares ours with JPL Horizons (`/api/validation/jpl-orbits`).
+
+## What is it made of?
+
+SPHEREx sees each sighting through a different part of its filters, so a moving asteroid builds up a coarse 0.75–5 µm spectrum. `pipeline/spherex_px/science/composition.py` corrects each point for the object's changing distance and phase angle (from its orbit clones), divides by the Sun's spectrum (ASTM E490-00a) and compares the reflectance with the Bus-DeMeo asteroid class means (DeMeo et al. 2009). It also measures the 2.7–3.1 µm hydration band where thermal emission is negligible. Each object page shows the result as indicative only, with its confidence and caveats. `.github/workflows/composition.yml` fetches JPL's published types for identified objects and reports the agreement (`/api/validation/composition`, shown on the Limits page).
 
 ## Survey
 

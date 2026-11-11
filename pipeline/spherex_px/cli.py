@@ -114,6 +114,8 @@ def _survey_build(args: argparse.Namespace) -> int:
     out = Path(args.out) if args.out else DEFAULT_OUT
     deadline = args.deadline_min * 60 if args.deadline_min else None
     results = build_share(Path(args.plan), args.shard, args.of, out, deadline_s=deadline)
+    # A shard that keeps no tiles writes nothing else, so out may not exist yet.
+    out.mkdir(parents=True, exist_ok=True)
     report = out / f"survey-shard-{args.shard}.json"
     report.write_text(json.dumps([asdict(r) for r in results], indent=1) + "\n")
     kept = sum(r.status == "kept" for r in results)
@@ -345,6 +347,9 @@ def main(argv: list[str] | None = None) -> int:
     p9.add_argument("--describe", action="store_true", help="also log the record's contents")
     p9.add_argument("--out")
     p9.set_defaults(func=_planet_nine)
+    from .composition import add_cli as add_composition_cli
+
+    add_composition_cli(sub)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

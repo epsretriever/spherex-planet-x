@@ -47,6 +47,9 @@ binding = "AI"
 
 [vars]
 AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+# Optional, for the ADES astrometry export (worker/src/ades.ts): MPC_STATION_CODE (an MPC
+# observatory code; files say "XXX, not valid for submission" until it is set) and ADES_SUBMITTER.
+# The Worker never submits anything; the export is a draft for a person to review.
 
 # Local development without Cloudflare credentials: every binding except Workers AI, which is
 # remote-only (the AI features then return their template text). `npm run dev:offline`.
