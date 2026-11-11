@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
 import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import type { GrowthDay } from "@/lib/staticData";
+import type { SkyGlobeProps } from "@/components/three/SkyGlobe";
+import figStyles from "@/components/three/Figure3D.module.css";
+import { SystemPanel } from "@/components/three/SystemPanel";
 import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
@@ -52,6 +55,19 @@ export function SkyView({
   const [showAll, setShowAll] = useState(false);
   const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
   const [raUnits, setRaUnits] = useState<RaUnits>("deg");
+  // The 3D globe (three.js) is fetched only when the reader asks for it.
+  const [view, setView] = useState<"flat" | "globe">("flat");
+  const [Globe, setGlobe] = useState<ComponentType<SkyGlobeProps> | null>(null);
+  const [globeNote, setGlobeNote] = useState<string | null>(null);
+  const noGlobe = () => {
+    setView("flat");
+    setGlobeNote("The 3D globe needs WebGL, which this browser or device doesn't offer. The flat map shows the same patches.");
+  };
+  const showGlobe = () => {
+    setView("globe");
+    setGlobeNote(null);
+    if (!Globe) import("@/components/three/SkyGlobe").then((m) => setGlobe(() => m.default), noGlobe);
+  };
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
   useEffect(() => {
@@ -134,7 +150,18 @@ export function SkyView({
           </p>
         </div>
         <div className={styles.controls}>
-        {anyDepth && (
+          <fieldset className={styles.colorBy}>
+            <legend>View</legend>
+            <label>
+              <input type="radio" name="sky-view" value="flat" checked={view === "flat"} onChange={() => setView("flat")} />
+              Flat map
+            </label>
+            <label>
+              <input type="radio" name="sky-view" value="globe" checked={view === "globe"} onChange={showGlobe} />
+              3D globe
+            </label>
+          </fieldset>
+        {view === "flat" && anyDepth && (
           <fieldset className={styles.colorBy}>
             <legend>Colour tiles by</legend>
             {(["objects", "depth"] as const).map((v) => (
@@ -145,6 +172,7 @@ export function SkyView({
             ))}
           </fieldset>
         )}
+          {view === "flat" && (
           <fieldset className={styles.colorBy}>
             <legend>Right ascension in</legend>
             {(["deg", "hours"] as const).map((v) => (
@@ -154,7 +182,27 @@ export function SkyView({
               </label>
             ))}
           </fieldset>
+          )}
         </div>
+        {globeNote && (
+          <p className={styles.axes} role="status">
+            {globeNote}
+          </p>
+        )}
+        {view === "globe" ? (
+          <>
+            {Globe ? (
+              <Globe tiles={tiles} emptyCells={empty?.positions} planetNine={p9} tileName={(t) => name(t) ?? t.tile_id} onFail={noGlobe} />
+            ) : (
+              <div className={`skeleton ${figStyles.scene} ${figStyles.tall}`} role="status" aria-label="Loading the 3D globe" />
+            )}
+            <p className={styles.axes}>
+              <span>The same sky wrapped back onto a globe, seen from outside: drag to turn it, pinch or scroll to zoom.</span>
+              <span>From outside, east and west are mirrored compared with the flat map.</span>
+            </p>
+          </>
+        ) : (
+          <>
         <SkyMap tiles={tiles} planetNine={p9} tileName={name} emptyCells={empty?.positions} colorBy={anyDepth ? colorBy : "objects"} raUnits={raUnits} />
         <p className={styles.axes}>
           <span>↑ North (declination +90°) · ↓ South (−90°)</span>
@@ -162,6 +210,8 @@ export function SkyView({
             ← Right ascension increases to the left ({raUnits === "deg" ? "0° to 360°" : "0h to 24h"}), as the sky looks from Earth
           </span>
         </p>
+          </>
+        )}
         <figcaption className={styles.legend}>
           <ul>
             <li>
@@ -248,6 +298,8 @@ export function SkyView({
       </figure>
 
       <CoverageChart days={growth} />
+
+      <SystemPanel />
 
       <section className={styles.section} aria-labelledby="tiles-title">
         <h2 id="tiles-title">Patches of sky searched</h2>
