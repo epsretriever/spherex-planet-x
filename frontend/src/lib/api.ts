@@ -11,6 +11,7 @@ import {
   type CompositionValidation,
   type FieldDetail,
   type FieldList,
+  type GuideAnswer,
   type InjectionStudy,
   type InjectionStudyIndex,
   type ObjectDetail,
@@ -18,7 +19,9 @@ import {
   type ObjectList,
   type ObjectPrediction,
   type Survey,
+  type Transcript,
   type Versioned,
+  type WriteupSpeech,
 } from "./contract";
 
 /**
@@ -309,12 +312,60 @@ async function postJson<T>(url: string, payload: unknown, signal?: AbortSignal):
 const noAi = () => new DataError("not_found", "AI features need the live API.", 404);
 
 /** The AI analyst write-up for a candidate or object. */
-export async function getWriteup(kind: AiSubjectKind, id: string, signal?: AbortSignal): Promise<AiWriteup> {
+export async function getWriteup(kind: AiSubjectKind, id: string, signal?: AbortSignal, lang = "en"): Promise<AiWriteup> {
   if (USE_FIXTURES) throw noAi();
-  const body = await getJson<AiWriteup>(`/api/${kind === "object" ? "objects" : "candidates"}/${enc(id)}/writeup`, signal);
+  const q = lang !== "en" ? `?lang=${enc(lang)}` : "";
+  const body = await getJson<AiWriteup>(`/api/${kind === "object" ? "objects" : "candidates"}/${enc(id)}/writeup${q}`, signal);
   expectArray(body, "paragraphs", "Write-up");
   if (body.subject_id !== id) throw new DataError("invalid", `Write-up is for ${body.subject_id}, not ${id}.`);
   return checkVersion({ ...body, grounded_fields: body.grounded_fields ?? [] }, "writeup");
+}
+
+/** The write-up read aloud (MeloTTS on Workers AI), one MP3 data URL per paragraph. */
+export async function getWriteupSpeech(kind: AiSubjectKind, id: string, lang: string, signal?: AbortSignal): Promise<WriteupSpeech> {
+  if (USE_FIXTURES) throw noAi();
+  const q = lang !== "en" ? `?lang=${enc(lang)}` : "";
+  const body = await getJson<WriteupSpeech>(`/api/${kind === "object" ? "objects" : "candidates"}/${enc(id)}/writeup/speech${q}`, signal);
+  expectArray(body, "clips", "Read-aloud");
+  return body;
+}
+
+/** Turns a short recorded question into text (Whisper on Workers AI). */
+export async function transcribeAudio(audio: Blob, signal?: AbortSignal): Promise<Transcript> {
+  if (USE_FIXTURES) throw noAi();
+  let res: Response;
+  try {
+    res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": audio.type.split(";")[0] || "audio/webm" },
+      body: audio,
+      signal,
+    });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") throw err;
+    throw new DataError("unavailable", "Could not reach /api/transcribe.");
+  }
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const b = (await res.json()) as { detail?: unknown };
+      if (typeof b?.detail === "string") detail = b.detail;
+    } catch {
+      // keep the status only
+    }
+    throw new DataError(res.status === 404 ? "not_found" : "unavailable", `/api/transcribe returned ${res.status}.`, res.status, detail);
+  }
+  const body = (await res.json()) as Transcript;
+  if (typeof body?.text !== "string") throw new DataError("invalid", "Transcript has no text.");
+  return body;
+}
+
+/** Asks the site-wide guide a question about the project. */
+export async function askGuide(question: string, sessionId: string, signal?: AbortSignal): Promise<GuideAnswer> {
+  if (USE_FIXTURES) throw noAi();
+  const body = await postJson<GuideAnswer>("/api/guide", { question, session_id: sessionId }, signal);
+  if (typeof body?.answer !== "string") throw new DataError("invalid", "Guide answer is missing its text.");
+  return { ...body, links: Array.isArray(body.links) ? body.links : [] };
 }
 
 /** Asks a question about one report. Answers come only from that report's data. */

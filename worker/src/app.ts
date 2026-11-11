@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type Deps, type Env, defaultDeps } from "./env";
 import { ApiError } from "./errors";
-import { askRoute, candidateWriteups, objectWriteups, searchRoute } from "./routes/ai";
+import { askRoute, candidateWriteups, guideRoute, objectWriteups, searchRoute, transcribeRoute } from "./routes/ai";
 import { candidates } from "./routes/candidates";
 import { composition } from "./routes/composition";
 import { coverage } from "./routes/coverage";
@@ -54,11 +54,13 @@ export function createApp(makeDeps: (env?: Env, ctx?: Pick<ExecutionContext, "wa
   app.route("/api/objects", objectWriteups);
   app.route("/api/ask", askRoute);
   app.route("/api/search", searchRoute);
+  app.route("/api/guide", guideRoute);
+  app.route("/api/transcribe", transcribeRoute);
 
   app.notFound((c) => {
     if (!READ_METHODS.has(c.req.method) && c.req.method !== "POST") {
       c.header("Allow", "GET, HEAD, POST, OPTIONS");
-      return c.json(new ApiError(405, `${c.req.method} is not supported: this API is read-only apart from POST /api/ask and POST /api/search`).toJSON(), 405);
+      return c.json(new ApiError(405, `${c.req.method} is not supported: this API is read-only apart from POST /api/ask, /api/search, /api/guide and /api/transcribe`).toJSON(), 405);
     }
     return c.json(new ApiError(404, `no API route for ${c.req.path}`).toJSON(), 404);
   });

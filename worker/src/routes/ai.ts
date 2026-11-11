@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
-import type { AiSubjectKind, AskRequest, FieldList, SearchRequest } from "../contract";
+import type { AiSubjectKind, AiWriteup, AskRequest, FieldList, ObjectList, SearchRequest, Survey } from "../contract";
 import { ensureSchema } from "../db";
 import type { Deps, Env } from "../env";
 import { ApiError, badRequest } from "../errors";
-import { ID_RE, requireStaticJson } from "../static-data";
-import { DEFAULT_MODEL, rateLimit, sha256 } from "../ai/core";
+import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
+import { DEFAULT_MODEL, cacheGet, cachePut, rateLimit, sha256 } from "../ai/core";
+import { type GuideTotals, guide } from "../ai/guide";
+import { LANGUAGES, MAX_AUDIO_BYTES, SPEECH_LANGUAGES, speak, transcribe, translateWriteup } from "../ai/media";
 import type { Subject } from "../ai/facts";
 import { type AiContext, ask, search, templateWriteup, writeup } from "../ai/features";
 import { loadCandidate } from "./candidates";
@@ -15,6 +17,21 @@ import { loadObject } from "./objects";
 export const ASK_PER_SESSION_PER_HOUR = 20;
 export const ASK_PER_IP_PER_HOUR = 60;
 export const SEARCH_PER_IP_PER_HOUR = 60;
+export const SPEECH_PER_IP_PER_HOUR = 30;
+export const TRANSCRIBE_PER_IP_PER_HOUR = 30;
+export const GUIDE_PER_SESSION_PER_HOUR = 20;
+export const GUIDE_PER_IP_PER_HOUR = 60;
+
+function retryAfter(now: Date) {
+  return String(3600 - (Math.floor(now.getTime() / 1000) % 3600));
+}
+
+/** The write-up language asked for with ?lang=, or "en". Unknown codes are a 400. */
+function langParam(raw: string | undefined): string {
+  if (raw === undefined || raw === "") return "en";
+  if (!LANGUAGES[raw]) throw badRequest(`lang must be one of ${Object.keys(LANGUAGES).join(", ")}`);
+  return raw;
+}
 
 async function context(env: Env, deps: Deps): Promise<AiContext> {
   let db = env.DB;
@@ -56,9 +73,37 @@ function writeupRoute(kind: AiSubjectKind) {
       c.header("Cache-Control", "no-store");
       return c.json(templateWriteup(kind, id, detail as Subject, deps.now().toISOString()));
     }
-    const out = await writeup(await context(c.env, deps), kind, id, detail as Subject);
-    c.header("Cache-Control", out.source === "ai" ? "public, max-age=3600" : "no-store");
+    const lang = langParam(c.req.query("lang"));
+    const ctx = await context(c.env, deps);
+    const english = await writeup(ctx, kind, id, detail as Subject);
+    const out = lang === "en" ? english : await translateWriteup(ctx, english, lang);
+    const translated = lang === "en" || (out as { lang?: string }).lang === lang;
+    c.header("Cache-Control", english.source === "ai" && translated ? "public, max-age=3600" : "no-store");
     return c.json(out);
+  });
+  // Read-aloud: MP3 clips of the write-up (in ?lang= when it has a checked translation).
+  app.get("/:id/writeup/speech", async (c) => {
+    const deps = c.get("deps");
+    const id = c.req.param("id");
+    const lang = langParam(c.req.query("lang"));
+    if (!SPEECH_LANGUAGES.has(lang)) throw badRequest(`read-aloud is available in ${[...SPEECH_LANGUAGES].join(", ")}`);
+    const { detail, pending } = await loadSubject(c.env, deps, kind, id);
+    if (pending) throw new ApiError(409, "JPL's catalog is still being checked for this object. Try again in a minute.");
+    const ctx = await context(c.env, deps);
+    const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
+    if (!(await rateLimit(ctx.db, await visitorKey(c.env, "speech-ip", ip), SPEECH_PER_IP_PER_HOUR, 3600, deps.now()))) {
+      c.header("Retry-After", retryAfter(deps.now()));
+      throw new ApiError(429, "Too many read-aloud requests this hour. Please try again later.");
+    }
+    const english: AiWriteup = await writeup(ctx, kind, id, detail as Subject);
+    const text = lang === "en" ? english : await translateWriteup(ctx, english, lang);
+    if ((text as { lang?: string }).lang !== undefined && (text as { lang?: string }).lang !== lang) {
+      throw new ApiError(503, "The translation isn't available right now, so it can't be read aloud.");
+    }
+    const speech = await speak(ctx, [text.verdict, ...text.paragraphs], lang);
+    if (!speech) throw new ApiError(503, "Read-aloud isn't available right now.");
+    c.header("Cache-Control", "public, max-age=86400");
+    return c.json({ subject_kind: kind, subject_id: id, ...speech });
   });
   return app;
 }
@@ -112,4 +157,96 @@ searchRoute.post("/", async (c) => {
   const fields = await requireStaticJson<FieldList>(c.env, "fields.json", "field list");
   c.header("Cache-Control", "no-store");
   return c.json(await search(ctx, query, fields.fields.map((f) => f.field_id), fields.pipeline_version));
+});
+
+// --------------------------------------------------------------------------- voice input
+
+export const transcribeRoute = new Hono<AppEnv>();
+
+/** POST a short recording (audio/webm, audio/ogg, audio/mp4, audio/mpeg or audio/wav); returns its text. */
+transcribeRoute.post("/", async (c) => {
+  const type = (c.req.header("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
+  if (!/^audio\/(webm|ogg|mp4|mpeg|wav|x-wav|aac|x-m4a)$/.test(type)) throw badRequest("body must be an audio recording");
+  const len = Number(c.req.header("content-length") ?? "0");
+  if (len > MAX_AUDIO_BYTES) throw new ApiError(413, "Recording is too long. Keep questions under about 30 seconds.");
+  const bytes = new Uint8Array(await c.req.arrayBuffer());
+  if (bytes.length === 0) throw badRequest("recording is empty");
+  if (bytes.length > MAX_AUDIO_BYTES) throw new ApiError(413, "Recording is too long. Keep questions under about 30 seconds.");
+  const deps = c.get("deps");
+  const ctx = await context(c.env, deps);
+  const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
+  if (!(await rateLimit(ctx.db, await visitorKey(c.env, "stt-ip", ip), TRANSCRIBE_PER_IP_PER_HOUR, 3600, deps.now()))) {
+    c.header("Retry-After", retryAfter(deps.now()));
+    throw new ApiError(429, "Too many voice questions this hour. Please type your question instead.");
+  }
+  const lang = c.req.query("lang");
+  const out = await transcribe(ctx, bytes, lang && LANGUAGES[lang] ? lang : undefined);
+  if (!out) throw new ApiError(422, "Couldn't make out any words. Try again closer to the microphone, or type your question.");
+  c.header("Cache-Control", "no-store");
+  return c.json(out);
+});
+
+// --------------------------------------------------------------------------- site guide
+
+const TOTALS_KEY = "guide:totals:v1";
+const TOTALS_TTL_S = 3600;
+
+/** Survey totals the guide may quote, cached for an hour so the big JSON files are read rarely. */
+export async function guideTotals(env: Env, deps: Deps): Promise<GuideTotals> {
+  const hit = await cacheGet<GuideTotals>(deps, TOTALS_KEY);
+  if (hit) return hit;
+  const [survey, objects] = await Promise.all([
+    readStaticJson<Survey>(env, "survey.json").catch(() => null),
+    readStaticJson<ObjectList>(env, "objects.json").catch(() => null),
+  ]);
+  const t = survey?.totals;
+  const totals: GuideTotals = {
+    survey_updated_utc: survey?.generated_utc ?? null,
+    patches_searched: t?.n_searched ?? null,
+    patches_with_data_processed: t?.n_processed ?? null,
+    patches_empty: t?.n_empty ?? null,
+    patches_failed: t?.n_failed ?? null,
+    sky_area_searched_deg2: t?.area_deg2_searched ?? null,
+    sky_percent_searched: t?.sky_fraction_searched != null ? Math.round(t.sky_fraction_searched * 10000) / 100 : null,
+    images_read: t?.n_epochs ?? null,
+    objects_tracked: t?.n_objects ?? null,
+    last_run_finished_utc: survey?.last_run?.finished_utc ?? null,
+    last_run_patches: survey?.last_run?.n_tiles_processed ?? null,
+    last_run_new_objects: survey?.last_run?.n_new_objects ?? null,
+  };
+  for (const o of objects?.objects ?? []) {
+    const k = `objects_${o.classification}`;
+    totals[k] = ((totals[k] as number | undefined) ?? 0) + 1;
+    if (o.distance_class) {
+      const d = `objects_distance_${o.distance_class}`;
+      totals[d] = ((totals[d] as number | undefined) ?? 0) + 1;
+    }
+  }
+  if (deps.kv) await deps.kv.put(TOTALS_KEY, JSON.stringify(totals), { expirationTtl: TOTALS_TTL_S }).catch(() => undefined);
+  return totals;
+}
+
+export const guideRoute = new Hono<AppEnv>();
+
+guideRoute.post("/", async (c) => {
+  const body = await readBody<{ question?: unknown; session_id?: unknown }>(c.req.raw);
+  const question = typeof body.question === "string" ? body.question.trim() : "";
+  if (question.length < 1 || question.length > 500) throw badRequest("question must be 1 to 500 characters");
+  const session = typeof body.session_id === "string" ? body.session_id : "";
+  if (!/^[A-Za-z0-9_-]{8,64}$/.test(session)) throw badRequest("session_id must be 8 to 64 letters, digits, '-' or '_'");
+  const deps = c.get("deps");
+  const ctx = await context(c.env, deps);
+  const now = deps.now();
+  const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
+  const [okSession, okIp] = await Promise.all([
+    rateLimit(ctx.db, await visitorKey(c.env, "guide-s", session), GUIDE_PER_SESSION_PER_HOUR, 3600, now),
+    rateLimit(ctx.db, await visitorKey(c.env, "guide-ip", ip), GUIDE_PER_IP_PER_HOUR, 3600, now),
+  ]);
+  if (!okSession || !okIp) {
+    c.header("Retry-After", retryAfter(now));
+    throw new ApiError(429, "Too many questions this hour. Please try again later.");
+  }
+  const totals = await guideTotals(c.env, deps);
+  c.header("Cache-Control", "no-store");
+  return c.json(await guide(ctx, question, totals));
 });

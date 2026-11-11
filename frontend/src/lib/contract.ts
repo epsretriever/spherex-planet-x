@@ -668,6 +668,40 @@ export interface AiWriteup extends Versioned {
   label_plain: string;
   cached: boolean;
   generated_utc: string;
+  /** Language of verdict and paragraphs when a translation was asked for (?lang=). */
+  lang?: string;
+  /** Present when a translation was asked for; "passed" means every number survived translation. */
+  translation?: { model: string; from: "en"; numeric_check: "passed" | "failed" | "not_run"; cached: boolean };
+}
+
+/** GET /api/{objects|candidates}/{id}/writeup/speech: the write-up read aloud, one MP3 per paragraph. */
+export interface WriteupSpeech {
+  subject_kind: AiSubjectKind;
+  subject_id: string;
+  lang: string;
+  model: string;
+  clips: string[];
+  cached: boolean;
+}
+
+/** POST /api/transcribe: a recorded question as text. */
+export interface Transcript {
+  text: string;
+  model: string;
+  language: string | null;
+}
+
+/** POST /api/guide: the site-wide guide's answer. */
+export interface GuideAnswer {
+  question: string;
+  answer: string;
+  links: { href: string; label: string }[];
+  answered_from_data: boolean;
+  numeric_check: "passed" | "failed" | "not_run";
+  source: "ai" | "fallback";
+  model: string | null;
+  cached: boolean;
+  generated_utc: string;
 }
 
 export interface AskRequest {

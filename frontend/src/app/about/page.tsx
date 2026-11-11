@@ -263,6 +263,13 @@ export default function AboutPage() {
           that it never calls an object new or discovered; if a check fails, a fixed template is shown instead.
         </p>
         <p>
+          The same model answers the &ldquo;Ask Driftnet&rdquo; guide on every page, using only this site&apos;s published notes and
+          survey totals, with the same number check. Write-ups can be machine-translated into nine languages by Meta&apos;s m2m100
+          (a translation is shown only if every number in it matches the English) and read aloud by MeloTTS, and questions can
+          be spoken and turned into text by OpenAI&apos;s Whisper, all on Workers AI. Each feature has a daily cap and falls back to
+          plain text or the browser&apos;s own voice when it isn&apos;t available.
+        </p>
+        <p>
           Detection, linking, orbit fits and the JPL catalog checks are ordinary code, not AI. We also used AI coding
           assistants (Anthropic&apos;s Claude) to help write and review the code. The team chose the methods and checked
           the scientific results, including the validation runs on the Limits page.
