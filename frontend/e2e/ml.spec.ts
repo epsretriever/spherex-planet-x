@@ -32,7 +32,7 @@ test("report explains why an object is unusual and gives orbit odds", async ({ p
   const unusual = page.getByRole("region", { name: "How unusual is it?" });
   await unusual.scrollIntoViewIfNeeded();
   await expect(unusual.getByText(/^Synthetic reason: moving 7× slower/)).toBeVisible();
-  await expect(unusual.getByRole("row", { name: /Speed\s*4\.20 ″\/hr\s*30\.1 ″\/hr/ })).toBeVisible();
+  await expect(unusual.getByRole("row", { name: /Speed \(log10 of ″\/hr\)\s*0\.62\s*1\.48/ })).toBeVisible();
   await expect(unusual.getByRole("row", { name: /Colour across bands\s*—/ })).toBeVisible();
 
   const neo = page.getByRole("region", { name: "Could it come near Earth?" });

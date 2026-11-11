@@ -227,11 +227,11 @@ export interface Detection extends WavelengthFields {
   /** Null when the record is minimal (a known object). */
   stamp: ImageRef | null;
   source: Source;
-  /** PROPOSED (row 7): the CNN's P(real) for this stamp. */
+  /** Not published yet: a real-or-bogus model's P(real) for this stamp. */
   real_bogus?: number | null;
   /** SPHEREx's geocentric ICRF position in km at the exposure, from the FITS headers. */
   spacecraft_geocentric_km?: [number, number, number] | null;
-  /** PROPOSED (row 7): occlusion saliency map for this stamp ("the model looked here"). */
+  /** Not published yet: occlusion saliency map for this stamp ("the model looked here"). */
   saliency?: ImageRef | null;
 }
 
@@ -296,22 +296,31 @@ export interface Scores {
   quality_level: QualityLevel;
   method?: "rule_based_v1";
   definition?: string;
-  /** PROPOSED (row 7): the real-or-bogus CNN's P(real), 0–1, alongside the rule-based score. */
+  /** Not published yet: a real-or-bogus model's P(real), 0–1, alongside the rule-based score. */
   real_bogus?: number | null;
   real_bogus_model?: string | null;
 }
 
-/** PROPOSED (row 7): anomaly ranking (Isolation Forest over object features). */
+/**
+ * Anomaly ranking (docs/api-contract.md, Objects): an Isolation Forest over five measured
+ * features of every object with a motion fit. Relative to our own objects: unusual never means
+ * unexplained.
+ */
 export interface Anomaly {
-  /** 0–1, higher is more unusual. */
+  /** 0–1, 1 is the least like the others. */
   score: number;
-  /** 1 is the most unusual published object. */
+  /** 1 is the most unusual ranked object. */
   rank: number;
+  /** How many objects were ranked. */
+  n_ranked: number;
   reason_plain: string;
-  features: { name: string; value: number | null; typical: number | null; unit: string; label_plain: string }[];
+  /** Each feature's value for this object, the median over the ranked objects, and its robust z-score. */
+  features: { name: string; label: string; value: number | null; median: number; z: number | null }[];
+  method?: string;
+  definition?: string;
 }
 
-/** PROPOSED (row 7): Digest2-style orbit-class probabilities from motion and parallax. */
+/** Not published yet (docs/api-contract.md): Digest2-style orbit-class probabilities from motion and parallax. */
 export interface NeoLikelihood {
   neo: number;
   main_belt: number;
@@ -320,7 +329,7 @@ export interface NeoLikelihood {
   validated_on: { n: number; accuracy: number } | null;
 }
 
-/** PROPOSED (row 7) summary fields, shared by candidate and object summaries. */
+/** Ranking summary fields, shared by candidate and object summaries (null until published). */
 export interface MlSummary {
   real_bogus?: number | null;
   anomaly_score?: number | null;
@@ -586,7 +595,7 @@ export interface SurveyTile {
 }
 
 /**
- * PROPOSED (not yet in docs/api-contract.md): the published Planet Nine search region, binned
+ * The published Planet Nine search region (docs/api-contract.md, Survey), binned
  * from Brown & Batygin's reference population by the pipeline. Optional and additive; the map
  * draws nothing without it or without its citation.
  */
