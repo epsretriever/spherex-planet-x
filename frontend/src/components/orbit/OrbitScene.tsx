@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { orbitPoints, planetElements, positionAt, type Elements, type Planet, type Vec3 } from "@/lib/orbit";
+import { hasWebGL } from "../three/stage";
 import styles from "./Orbit.module.css";
 
 export interface SceneProps {
@@ -52,6 +53,10 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
     const el = host.current;
     const labelLayer = labels.current;
     if (!el || !labelLayer) return;
+    if (!hasWebGL()) {
+      failed.current();
+      return;
+    }
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });

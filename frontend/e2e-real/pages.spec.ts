@@ -182,6 +182,62 @@ test("objects list and an object page", async ({ page, browser }, info) => {
   if (top.orbit_status === "none") await expect(orbit.getByText(/^No orbit yet\./)).toBeVisible();
 });
 
+test("sky map: 3D globe and the solar-system view, or their flat fallbacks", async ({ page }) => {
+  const errors = trackConsole(page);
+  await page.goto("/sky/", { waitUntil: "networkidle" });
+  await page.getByLabel("3D globe").check();
+  // With WebGL the globe is drawn; without it the page says so and goes back to the flat map.
+  await expect(page.locator("figure canvas").or(page.getByText(/The 3D globe needs WebGL/))).toBeVisible({ timeout: 20_000 });
+  const system = page.locator("section", { has: page.getByRole("heading", { name: "The same objects, out in the solar system" }) });
+  await system.scrollIntoViewIfNeeded();
+  await expect(system.locator("canvas").or(system.getByRole("img", { name: /Top-down view of the solar system/ }))).toBeVisible({ timeout: 20_000 });
+  expect((await widestOverflow(page)).worst).toBeLessThanOrEqual(1);
+  expect(errors, "console errors").toEqual([]);
+});
+
+test("a patch with a mover shows its track through time", async ({ page }) => {
+  const errors = trackConsole(page);
+  await page.goto(`/explore/${ids.field}/`, { waitUntil: "networkidle" });
+  const tracks = page.locator("section", { has: page.getByRole("heading", { name: "The same patch, with time as the third dimension" }) });
+  await tracks.scrollIntoViewIfNeeded();
+  await expect(tracks.locator("canvas").or(tracks.getByRole("img", { name: /Paths of \d+ moving/ }))).toBeVisible({ timeout: 20_000 });
+  expect((await widestOverflow(page)).worst).toBeLessThanOrEqual(1);
+  expect(errors, "console errors").toEqual([]);
+});
+
+test("compare two objects from a shareable link", async ({ page, browser }, info) => {
+  const list = await getJson(browser, "/api/objects?limit=2");
+  const [a, b] = list.objects.map((o: { object_id: string }) => o.object_id);
+  await checkPage(page, info, `/objects/compare/?a=${a}&b=${b}`, "compare");
+  const table = page.getByRole("table");
+  await expect(table.getByRole("row", { name: /Sightings/ })).toBeVisible();
+  await expect(table.getByRole("row", { name: /Distance from the Sun/ })).toBeVisible();
+  // Swapping keeps the pair in the address, so the link always matches the page.
+  await page.getByRole("button", { name: "Swap the two objects" }).click();
+  await expect(page).toHaveURL(new RegExp(`a=${b}&b=${a}`));
+  // An object's report offers the comparison and the ADES export.
+  await page.goto(`/objects/${a}/`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("link", { name: "Compare with another object" })).toHaveAttribute("href", new RegExp(`/objects/compare/\\?a=${a}`));
+  await expect(page.getByRole("link", { name: "Astrometry (ADES XML)" })).toHaveAttribute("href", `/api/objects/${a}/ades.xml`);
+});
+
+test("ADES export, robots.txt and sitemap.xml are served", async ({ browser, page }) => {
+  const list = await getJson(browser, "/api/objects?limit=1");
+  const id = list.objects[0].object_id;
+  const res = await page.request.get(`/api/objects/${id}/ades.xml`, { headers: { "accept-encoding": "gzip, br" } });
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("xml");
+  const xml = await res.text();
+  expect(xml).toContain('<ades version="2022">');
+  expect(xml).toContain("not submitted");
+  expect((await page.request.get("/api/objects/obj-missing/ades.xml")).status()).toBe(404);
+  const robots = await (await page.request.get("/robots.txt", { headers: { "accept-encoding": "gzip, br" } })).text();
+  expect(robots).toMatch(/Sitemap: https?:\/\/\S+\/sitemap\.xml/);
+  const sitemap = await (await page.request.get("/sitemap.xml", { headers: { "accept-encoding": "gzip, br" } })).text();
+  expect(sitemap).toContain("/objects/compare/");
+  expect(sitemap).toContain(`/objects/${id}/`);
+});
+
 test("about", async ({ page }, info) => {
   await checkPage(page, info, "/about/", "about");
 });

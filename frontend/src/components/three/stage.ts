@@ -11,6 +11,16 @@ export function cssColor(name: string, fallback: string): THREE.Color {
   }
 }
 
+/** Whether this browser can start WebGL, asked quietly (three.js logs an error when it can't). */
+export function hasWebGL(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") ?? c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
 export interface StageOptions {
   /** Rough radius of the content, in scene units: sets the camera range and zoom limits. */
   reach: number;
@@ -56,6 +66,7 @@ export interface Stage {
  * start; the caller then shows its flat fallback.
  */
 export function createStage(host: HTMLElement, labelLayer: HTMLElement, opts: StageOptions): Stage | null {
+  if (!hasWebGL()) return null;
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
