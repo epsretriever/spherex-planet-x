@@ -10,17 +10,33 @@ import { OrbitTopDown } from "@/components/orbit/OrbitTopDown";
 import orbitStyles from "@/components/orbit/Orbit.module.css";
 import { Figure3D } from "@/components/three/Figure3D";
 import { WhenVisible } from "@/components/WhenVisible";
-import { assetUrl, getObject, getObjects } from "@/lib/api";
+import { DataError, assetUrl, getObject, getObjects } from "@/lib/api";
 import { compareRows, differingRows } from "@/lib/compare";
-import type { ObjectDetail, ObjectSummary } from "@/lib/contract";
+import type { CompareOption } from "@/lib/compareOptions";
+import type { ObjectDetail } from "@/lib/contract";
 import { PLANETS, isDrawable } from "@/lib/orbit";
 import { compareHref, objectHref } from "@/lib/routes";
 import { useData, type DataState } from "@/lib/useData";
-import { useObjectNames } from "@/lib/useObjectNames";
 import styles from "./Compare.module.css";
 
 const ID_RE = /^[a-z0-9][a-z0-9._-]{0,95}$/;
 const valid = (id: string | null) => (id && ID_RE.test(id) ? id : null);
+/** One collator for the whole sort: String.localeCompare with options builds a new one per comparison. */
+const COLLATOR = new Intl.Collator("en", { numeric: true });
+
+async function getOptions(signal: AbortSignal): Promise<CompareOption[]> {
+  let res: Response;
+  try {
+    res = await fetch("/objects/compare/options.json", { signal });
+  } catch (err) {
+    if ((err as Error).name === "AbortError") throw err;
+    throw new DataError("unavailable", "Could not load the list of objects.");
+  }
+  if (!res.ok) throw new DataError(res.status === 404 ? "not_found" : "unavailable", `The list of objects returned ${res.status}.`, res.status);
+  const body = (await res.json()) as { options?: CompareOption[] };
+  if (!Array.isArray(body.options)) throw new DataError("invalid", "The list of objects is empty.");
+  return body.options;
+}
 
 /** Two objects side by side. The pair lives in the address (?a=…&b=…), so any comparison is a link. */
 export function CompareView() {
@@ -35,26 +51,41 @@ export function CompareView() {
     if (`${window.location.pathname}${window.location.search}` !== next) window.history.replaceState(null, "", next);
   }, [a, b]);
 
-  const list = useData("objects", (signal) => getObjects(signal));
-  const { nameFor } = useObjectNames();
-  const titleOf = (o: Pick<ObjectSummary, "candidate_ids" | "classification" | "object_id"> & { designation?: string | null }) =>
-    o.candidate_ids[0] ? nameFor({ candidate_id: o.candidate_ids[0], classification: o.classification, designation: o.designation }).title : o.object_id;
+  // The pickers fill from a small list written at build time. The live object list (which knows
+  // today's JPL designations) is fetched only once the reader reaches for a picker.
+  const list = useData("compare-options", getOptions);
+  const [wantLive, setWantLive] = useState(false);
+  const live = useData(wantLive ? "objects" : null, (signal) => getObjects(signal));
   const options = useMemo(() => {
-    if (list.status !== "ok") return [];
-    return list.data.objects
-      .map((o) => ({ id: o.object_id, title: titleOf({ ...o, designation: o.known_object_designation }), simulated: o.classification === "injected" }))
-      .sort((x, y) => x.title.localeCompare(y.title, "en", { numeric: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list, nameFor]);
+    const byId = new Map((list.status === "ok" ? list.data : []).map((o) => [o.id, o]));
+    if (live.status === "ok") {
+      for (const o of live.data.objects) {
+        const built = byId.get(o.object_id);
+        const title = o.known_object_matched && o.known_object_designation ? o.known_object_designation : (built?.title ?? o.object_id);
+        byId.set(o.object_id, { id: o.object_id, title, simulated: o.classification === "injected" });
+      }
+    }
+    return [...byId.values()].sort((x, y) => COLLATOR.compare(x.title, y.title));
+  }, [list, live]);
+  const builtTitle = useMemo(() => new Map(options.map((o) => [o.id, o.title])), [options]);
 
   const first = useData(a ? `object:${a}` : null, (signal) => getObject(a!, signal));
   const second = useData(b ? `object:${b}` : null, (signal) => getObject(b!, signal));
   const both = first.status === "ok" && second.status === "ok" ? [first.data, second.data] : null;
-  const nameOf = (o: ObjectDetail) => titleOf({ ...o, designation: o.known_object.designation });
+  // A report's own JPL designation is the freshest name; otherwise the name the site was built with.
+  const nameOf = (o: ObjectDetail) =>
+    o.classification === "known_object" && o.known_object.designation ? o.known_object.designation : (builtTitle.get(o.object_id) ?? o.object_id);
 
   return (
     <div className={styles.stack}>
-      <form className={`card ${styles.pickers}`} onSubmit={(e) => e.preventDefault()} aria-label="Objects to compare">
+      <form
+        className={`card ${styles.pickers}`}
+        onSubmit={(e) => e.preventDefault()}
+        onPointerEnter={() => setWantLive(true)}
+        onFocusCapture={() => setWantLive(true)}
+        onTouchStart={() => setWantLive(true)}
+        aria-label="Objects to compare"
+      >
         <Picker label="First object" value={a} onChange={setA} options={options} other={b} loading={list.status === "loading"} />
         <button
           type="button"
