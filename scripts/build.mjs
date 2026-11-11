@@ -45,7 +45,7 @@ if (hasBuildScript(frontend)) {
   if (!existsSync(join(out, "index.html"))) {
     writeFileSync(
       join(out, "index.html"),
-      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPHEREx Planet X</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;background:#0b0e14;color:#e8ecf4"><h1>SPHEREx Planet X</h1><p>API: <a style="color:#6cb4ff" href="/api/health">/api/health</a> · <a style="color:#6cb4ff" href="/api/fields">/api/fields</a></p></body></html>\n`,
+      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Driftnet</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;background:#0b0e14;color:#e8ecf4"><h1>Driftnet</h1><p>API: <a style="color:#6cb4ff" href="/api/health">/api/health</a> · <a style="color:#6cb4ff" href="/api/fields">/api/fields</a></p></body></html>\n`,
     );
   }
 }

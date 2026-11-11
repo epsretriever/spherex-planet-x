@@ -1,6 +1,8 @@
 # Build plan v2: discovery engine, AI, and product polish
 
-Live site: https://spherex-planet-x.vercel.app (API: https://spherex-planet-x.bodhishanbhag.workers.dev; deployed Worker builds leave out the sky images, see scripts/asset-count.mjs) · Repo: `main` is the source of truth.
+> **Status.** This is the plan the project was built from, kept for reference. What is live is described in [`README.md`](../README.md) and [`api-contract.md`](api-contract.md). Not built: the real-or-bogus CNN and the vetting game (3.1, 3.2), NEO likelihood (3.4), sonification, shift-and-stack, sky requests (2.6) and the daily digest (6.5). Cross-tile linking beyond JPL designations (2.2) and forced-photometry follow-up (2.4) are also not live.
+
+Live site: https://driftnet-sky.vercel.app (API: https://spherex-planet-x.bodhishanbhag.workers.dev; deployed Worker builds leave out the sky images, see scripts/asset-count.mjs) · Repo: `main` is the source of truth.
 
 This plan takes the deployed first version to a finished product. It has three parts:
 

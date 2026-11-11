@@ -12,10 +12,12 @@ Old links (`/explore/`, `/detective/…`, `/leads/`) redirect to their new homes
 
 | Page | What you can do |
 |---|---|
-| [Objects](https://driftnet-sky.vercel.app/objects/) | Every moving object in one list: search, filters and AI search; tabs for **Unexplained leads** (ranked, with follow-up files), **Known (JPL)** and **Patches of sky** to blink. Each object has one report page. |
-| [Sky map](https://driftnet-sky.vercel.app/sky/) | Where we have searched, how to read the map, and the Planet Nine search region |
+| [Objects](https://driftnet-sky.vercel.app/objects/) | Every moving object in one list: search, filters and AI search; tabs for **Unexplained leads** (ranked, with follow-up files), **Known (JPL)** and **Patches of sky** to blink. Each object has one report page with its images, orbit in 3D, spectrum and JPL check; each patch shows its movers' tracks in 3D (sky × time). |
+| [Compare](https://driftnet-sky.vercel.app/objects/compare/) | Any two objects side by side, with both orbits in one 3D view. The pair is in the address, so a comparison is a link you can share. |
+| [Sky map](https://driftnet-sky.vercel.app/sky/) | Where we have searched, as a flat all-sky map or a 3D globe, with the Planet Nine search region; and every tracked object placed in the solar system in 3D |
 | [Limits](https://driftnet-sky.vercel.app/limits/) | How faint and how slow an object the pipeline can find, measured with simulated objects |
 | [About](https://driftnet-sky.vercel.app/about/) | Pipeline diagram, data sources and citations, honest limitations, team |
+| `/api/objects/{id}/ades.xml` | An object's measured positions in the Minor Planet Center's ADES format: a draft for a person to review. The site never submits anything, and simulated objects have no export. |
 | [`/api/health`](https://spherex-planet-x.bodhishanbhag.workers.dev/api/health) | Live status of the NASA IRSA, JPL SBIdent, JPL Horizons and SPHEREx archive connections |
 
 ## How it works
@@ -32,7 +34,8 @@ Old links (`/explore/`, `/detective/…`, `/leads/`) redirect to their new homes
    serves /api/*  and the website (frontend/out)       JPL SBIdent and JPL Horizons
         │                                               (known-asteroid check, cached 24 h)
         ▼
- Website (frontend/, Next.js static export)
+ Website (frontend/, Next.js static export)  ──  served by Vercel at driftnet-sky.vercel.app,
+                                                 which proxies /api/* to the Worker
 ```
 
 Pixel processing is too heavy to run inside a Worker, so it happens ahead of time in `pipeline/`. Everything that depends on today's catalogs, like whether a moving dot is a known asteroid, is checked live by the Worker on each request.
@@ -55,7 +58,7 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 
 | Layer | Tools |
 |---|---|
-| Frontend | React / Next.js (static export) |
+| Frontend | React / Next.js (static export) on Vercel; three.js for the 3D figures, loaded only when one is on screen |
 | Backend | Cloudflare Worker (TypeScript, Hono), D1, KV |
 | Pipeline | Python, run in GitHub Actions; reads SPHEREx Level 2 images from NASA's public S3 bucket |
 | Science | Astropy, Photutils, NumPy, SciPy |
@@ -75,7 +78,7 @@ We do not claim to discover Planet X. A candidate that does not match a known ob
 |---|---|
 | `worker/` | Cloudflare Worker (Hono): `/api/*`, live IRSA and JPL queries |
 | `pipeline/` | Python package `spherex_px`: offline SPHEREx data access, detection, linking, scoring; writes `frontend/public/data/` |
-| `frontend/` | Next.js website (static export served by the Worker) |
+| `frontend/` | Next.js website (static export; deployed by Vercel, and served by the Worker too) |
 | `frontend/public/data/` | Real showcase data built by the pipeline |
 | `scripts/build.mjs` | Root build used by Cloudflare: builds the site, type-checks the Worker |
 | `wrangler.toml` | Cloudflare Worker configuration |
@@ -99,7 +102,9 @@ npm test           # Worker tests (vitest)
 npm test --workspace frontend   # frontend unit tests
 ```
 
-Deployment: Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`, on every push to `main`, and posts a preview link on every pull request. The Worker is named `spherex-planet-x` (see `wrangler.toml`). It serves `/api/*` and falls back to the static site for every other path.
+Deployment: both hosts deploy from `main` and post a preview on every pull request. Cloudflare Workers Builds runs `npm ci && npm run build`, then `npx wrangler deploy`; the Worker is named `spherex-planet-x` (see `wrangler.toml`) and serves `/api/*` plus the static site. Vercel (project `driftnet`, root directory `frontend/`) builds the same static export and serves the public site, proxying `/api/*` to the Worker (`frontend/vercel.json`). The deployed Worker leaves the sky images out to stay under Cloudflare's asset limit, so use the Vercel site for pages.
+
+Checks on every pull request (`.github/workflows/frontend-quality.yml`): the build, lint, type-check and unit tests, Playwright screenshots of every page on real data at 360, 768 and 1280 px, and Lighthouse (performance, accessibility, best practices ≥ 90).
 
 ### Pipeline (static data)
 
