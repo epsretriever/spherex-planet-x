@@ -227,11 +227,11 @@ export interface Detection extends WavelengthFields {
   /** Null when the record is minimal (a known object). */
   stamp: ImageRef | null;
   source: Source;
-  /** PROPOSED (row 7): the CNN's P(real) for this stamp. */
+  /** Not published yet: a real-or-bogus model's P(real) for this stamp. */
   real_bogus?: number | null;
   /** SPHEREx's geocentric ICRF position in km at the exposure, from the FITS headers. */
   spacecraft_geocentric_km?: [number, number, number] | null;
-  /** PROPOSED (row 7): occlusion saliency map for this stamp ("the model looked here"). */
+  /** Not published yet: occlusion saliency map for this stamp ("the model looked here"). */
   saliency?: ImageRef | null;
 }
 
@@ -296,22 +296,31 @@ export interface Scores {
   quality_level: QualityLevel;
   method?: "rule_based_v1";
   definition?: string;
-  /** PROPOSED (row 7): the real-or-bogus CNN's P(real), 0–1, alongside the rule-based score. */
+  /** Not published yet: a real-or-bogus model's P(real), 0–1, alongside the rule-based score. */
   real_bogus?: number | null;
   real_bogus_model?: string | null;
 }
 
-/** PROPOSED (row 7): anomaly ranking (Isolation Forest over object features). */
+/**
+ * Anomaly ranking (docs/api-contract.md, Objects): an Isolation Forest over five measured
+ * features of every object with a motion fit. Relative to our own objects: unusual never means
+ * unexplained.
+ */
 export interface Anomaly {
-  /** 0–1, higher is more unusual. */
+  /** 0–1, 1 is the least like the others. */
   score: number;
-  /** 1 is the most unusual published object. */
+  /** 1 is the most unusual ranked object. */
   rank: number;
+  /** How many objects were ranked. */
+  n_ranked: number;
   reason_plain: string;
-  features: { name: string; value: number | null; typical: number | null; unit: string; label_plain: string }[];
+  /** Each feature's value for this object, the median over the ranked objects, and its robust z-score. */
+  features: { name: string; label: string; value: number | null; median: number; z: number | null }[];
+  method?: string;
+  definition?: string;
 }
 
-/** PROPOSED (row 7): Digest2-style orbit-class probabilities from motion and parallax. */
+/** Not published yet (docs/api-contract.md): Digest2-style orbit-class probabilities from motion and parallax. */
 export interface NeoLikelihood {
   neo: number;
   main_belt: number;
@@ -320,7 +329,7 @@ export interface NeoLikelihood {
   validated_on: { n: number; accuracy: number } | null;
 }
 
-/** PROPOSED (row 7) summary fields, shared by candidate and object summaries. */
+/** Ranking summary fields, shared by candidate and object summaries (null until published). */
 export interface MlSummary {
   real_bogus?: number | null;
   anomaly_score?: number | null;
@@ -586,7 +595,7 @@ export interface SurveyTile {
 }
 
 /**
- * PROPOSED (not yet in docs/api-contract.md): the published Planet Nine search region, binned
+ * The published Planet Nine search region (docs/api-contract.md, Survey), binned
  * from Brown & Batygin's reference population by the pipeline. Optional and additive; the map
  * draws nothing without it or without its citation.
  */
@@ -702,4 +711,135 @@ export interface AiSearch extends Versioned {
   valid: boolean;
   model: string | null;
   cached: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Composition: "What is it made of?" (ObjectComposition, CompositionValidation)
+// GET /api/objects/{object_id}/composition and GET /api/validation/composition.
+// Indicative only: a type read from SPHEREx colors, never definitive.
+// ---------------------------------------------------------------------------
+
+export interface CompositionPoint {
+  band_index: number | null;
+  wavelength_um: number;
+  epoch_id: string;
+  mjd: number;
+  flux_ujy: number;
+  flux_err_ujy: number;
+  /** Flux multiplied by this to bring it to the reference distances and phase. */
+  geometry_factor: number | null;
+  /** Relative reflectance, 1 over 1.0-1.2 µm; null when the point is excluded. */
+  reflectance: number | null;
+  reflectance_err: number | null;
+  thermal_fraction: number | null;
+  use: "taxonomy" | "hydration" | "continuum" | "none";
+  excluded_reason: string | null;
+}
+
+export interface TaxonomyMatch {
+  class_name: string;
+  complex: string;
+  chi2: number;
+  dof: number;
+  probability: number;
+}
+
+export interface CompositionTaxonomy {
+  best: TaxonomyMatch;
+  runner_up: TaxonomyMatch | null;
+  top: TaxonomyMatch[];
+  complex_probability: Record<string, number>;
+  best_complex: string;
+  best_complex_plain: string;
+  runner_up_complex: string | null;
+  confidence: "high" | "medium" | "low";
+  confidence_plain: string;
+  n_bands: number;
+  wavelength_span_um: number;
+  reduced_chi2: number;
+  slope_per_um: number;
+  slope_err_per_um: number;
+  slope_range_um: number[];
+  systematic_floor_frac: number;
+  template: { class_name: string; wavelength_um: number[]; reflectance: number[]; sigma: number[] };
+}
+
+export interface CompositionHydration {
+  status: "measured" | "not_covered" | "thermal" | "no_orbit";
+  band_um: number[];
+  continuum_um: number[];
+  band_depth: number | null;
+  band_depth_err: number | null;
+  snr: number | null;
+  n_band_points: number;
+  n_continuum_points: number;
+  continuum: "linear" | "flat" | null;
+  verdict: "band_seen" | "no_clear_band" | "not_measured";
+  verdict_plain: string;
+}
+
+export interface ObjectComposition extends Versioned {
+  object_id: string;
+  generated_utc: string;
+  simulated: boolean;
+  indicative_only: true;
+  status: "classified" | "insufficient_data";
+  result_plain: string;
+  geometry: {
+    method: "orbit_clones" | "same_night_only";
+    reference_mjd: number;
+    helio_distance_au: number | null;
+    observer_distance_au: number | null;
+    phase_angle_deg: number | null;
+    max_correction_frac: number;
+    phase_function: string;
+    note_plain: string;
+  };
+  normalisation: { window_um: number[]; method: "points_in_window" | "template_fit" | "median" | "none"; n_points: number };
+  points: CompositionPoint[];
+  taxonomy: CompositionTaxonomy | null;
+  hydration: CompositionHydration;
+  thermal: { helio_distance_min_au: number | null; flagged: boolean; model: string; note_plain: string };
+  caveats: string[];
+  references: { label: string; citation: string; url: string }[];
+}
+
+export interface CompositionAgreement {
+  n: number;
+  complex_agreement: number | null;
+  broad_agreement: number | null;
+}
+
+export interface CompositionValidation extends Versioned {
+  generated_utc: string;
+  truth_source: string;
+  truth_query_utc: string | null;
+  n_objects: number;
+  n_classified: number;
+  n_identified: number;
+  n_with_taxonomy: number;
+  n_compared: number;
+  overall: CompositionAgreement;
+  by_confidence: Record<string, CompositionAgreement>;
+  baseline_always_s: number | null;
+  rows: {
+    object_id: string;
+    designation: string;
+    spec_B: string | null;
+    spec_T: string | null;
+    sbdb_url: string;
+    truth_class: string | null;
+    truth_system: "SMASS" | "Tholen" | null;
+    truth_complex: string | null;
+    our_status: string | null;
+    our_class: string | null;
+    our_complex: string | null;
+    our_confidence: string | null;
+    complex_agrees: boolean | null;
+    broad_agrees: boolean | null;
+  }[];
+  /** SIMULATED: class means sampled at each real object's bands and errors. */
+  simulated_recovery: { confidence: "high" | "medium" | "low" | "all"; n: number; complex_recovered: number | null }[];
+  simulated_seed: number;
+  method_plain: string;
 }

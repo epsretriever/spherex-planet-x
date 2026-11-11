@@ -2,7 +2,7 @@ import { PageGuide } from "@/components/PageGuide";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
 import { staticFields, staticGrowth, staticSurvey } from "@/lib/staticData";
-import { skyTile } from "@/components/skyTile";
+import { packTile } from "@/components/skyTile";
 import { SkyView } from "./SkyView";
 
 export const metadata: Metadata = pageMeta(
@@ -13,7 +13,10 @@ export const metadata: Metadata = pageMeta(
 
 export default function SkyPage() {
   const fields = staticFields()?.fields ?? [];
-  const survey = staticSurvey();
+  // The page shows only the latest run (last_run); the run history stays in the API, out of the HTML.
+  const { runs: _runs, ...survey0 } = (staticSurvey() ?? {}) as NonNullable<ReturnType<typeof staticSurvey>> & { runs?: unknown };
+  void _runs;
+  const survey = "tiles" in survey0 ? survey0 : null;
   return (
     <div className="container">
       <header className="page-header">
@@ -25,14 +28,14 @@ export default function SkyPage() {
         </p>
       </header>
       {/* The Planet Nine region (hundreds of cells) and the empty patches' positions are left out of the HTML and arrive with the
-          live survey after first paint; tiles carry only the fields the page reads, which keeps the inlined data (and its parse
-          time) down. */}
+          live survey after first paint; tiles carry only the fields the page reads, as plain rows (packTile), which keeps the
+          inlined data (and its parse time) down. */}
       <SkyView
         initial={
           survey
             ? {
                 ...survey,
-                tiles: survey.tiles.map(skyTile),
+                tiles: survey.tiles.map(packTile),
                 planet_nine: null,
                 // Thousands of empty patches: their count is inlined, their positions arrive with the live survey.
                 empty_cells: survey.empty_cells ? { ...survey.empty_cells, positions: [] } : null,

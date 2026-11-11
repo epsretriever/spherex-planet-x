@@ -5,7 +5,7 @@ import { SITE_NAME, SITE_TAGLINE } from "./site";
  * The deployed origin, for absolute share-image URLs. Override with NEXT_PUBLIC_SITE_URL (for
  * example on a preview deployment).
  */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://spherex-planet-x.vercel.app").replace(/\/+$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://driftnet-sky.vercel.app").replace(/\/+$/, "");
 
 export const SHARE_IMAGE = { url: "/og.png", width: 1200, height: 630, alt: `${SITE_NAME}: ${SITE_TAGLINE}` };
 

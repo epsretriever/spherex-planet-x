@@ -1,0 +1,148 @@
+.figure {
+  margin: 0;
+}
+
+.scene {
+  position: relative;
+  height: clamp(320px, 62vw, 520px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 50% 50%, rgb(247 209 61 / 0.06), transparent 45%),
+    var(--bg);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.tall {
+  height: clamp(340px, 70vw, 580px);
+}
+
+.scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.scene canvas:active {
+  cursor: grabbing;
+}
+
+.scene[data-hot="true"] canvas {
+  cursor: pointer;
+}
+
+.tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: -1.6em 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  will-change: transform;
+  text-shadow: 0 0 4px var(--bg), 0 0 2px var(--bg);
+}
+
+.tag[data-kind="object"],
+.tag[data-kind="accent"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tag[data-kind="second"],
+.tag[data-kind="cool"] {
+  color: var(--cool);
+  font-weight: 600;
+}
+
+.tag[data-kind="sun"] {
+  color: var(--ir-7);
+}
+
+.tag[data-kind="hover"] {
+  margin-top: -2.4em;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  text-shadow: none;
+  z-index: 2;
+}
+
+.reset {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.readout {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  max-width: calc(100% - 140px);
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.readout a {
+  pointer-events: auto;
+}
+
+.caption {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.flat {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.flat text {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

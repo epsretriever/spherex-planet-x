@@ -15,8 +15,8 @@ test("landing page leads into the explorer", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Everything that moves");
   await expect(page.getByRole("link", { name: "Synthetic test field" })).toBeVisible();
   await expectNoHorizontalScroll(page);
-  await page.getByRole("link", { name: /Explore the sky/ }).click();
-  await expect(page).toHaveURL(/\/explore\/$/);
+  await page.getByRole("link", { name: /Browse the objects/ }).click();
+  await expect(page).toHaveURL(/\/objects\/$/);
 });
 
 test("field picker opens the blink viewer", async ({ page }) => {
@@ -57,7 +57,7 @@ test("show what moved, then open a mover", async ({ page }) => {
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("link", { name: /See the full evidence/ })).toHaveAttribute(
     "href",
-    "/detective/syn-unmatched/",
+    "/objects/obj-syn-unmatched/",
   );
 });
 
@@ -99,13 +99,13 @@ test("navigation: inline links on wide screens, a menu on narrow ones", async ({
   const menu = page.getByRole("button", { name: "Menu" });
   if (info.project.name === "desktop") {
     await expect(menu).toBeHidden();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Detective" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Objects" }).click();
   } else {
     await menu.click();
     const sheet = page.getByRole("dialog", { name: "Sections" });
-    await expect(sheet.getByRole("link", { name: /Explore/ })).toBeVisible();
-    await sheet.getByRole("link", { name: /Detective/ }).click();
+    await expect(sheet.getByRole("link", { name: /^Home/ })).toHaveCount(1);
+    await sheet.getByRole("link", { name: /^Objects/ }).click();
     await expect(sheet).toBeHidden();
   }
-  await expect(page).toHaveURL(/\/detective\/$/);
+  await expect(page).toHaveURL(/\/objects\/$/);
 });

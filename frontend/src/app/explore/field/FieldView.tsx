@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { BlinkViewer } from "@/components/BlinkViewer";
 import { Deferred } from "@/components/Deferred";
 import { ErrorState } from "@/components/DataState";
+import { FieldTracksPanel } from "@/components/three/FieldTracksPanel";
 import { FieldPageSkeleton, ViewerSkeleton } from "@/components/Skeletons";
 import { Term } from "@/components/Term";
 import { getCandidates, getField } from "@/lib/api";
@@ -79,6 +80,7 @@ export function FieldView({ id, initial, seed }: { id: string | null; initial?: 
           <Deferred fallback={<ViewerSkeleton label="Loading the images" />}>
             <BlinkViewer fieldName={f.name} wcs={f.wcs} epochs={f.epochs} blinkPairs={f.blink_pairs} movers={movers} moverName={moverName} />
           </Deferred>
+          <FieldTracksPanel wcs={f.wcs} epochs={f.epochs} movers={movers} moverName={moverName} />
         </div>
 
         <aside className={styles.aside}>

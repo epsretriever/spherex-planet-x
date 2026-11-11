@@ -93,7 +93,7 @@ export default function LandingPage() {
             <span className={styles.glow}>in the infrared sky.</span>
           </h1>
           <p className={styles.lede}>
-            SPHEREx Planet X Explorer searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
+            Driftnet searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
             observations: asteroids, comets and distant bodies in the outer solar system. Every one is tracked, checked against
             JPL&apos;s catalog of known objects, and published with the evidence for and against it.
           </p>
@@ -102,7 +102,7 @@ export default function LandingPage() {
               Browse the objects →
             </Link>
             <Link href="/objects/?view=leads" className="button">
-              {unidentified != null ? `${unidentified} unexplained leads` : "Unexplained leads"}
+              {unidentified != null ? `${unidentified} not yet identified` : "Unexplained leads"}
             </Link>
             <TourButton />
             <Link href="#how" className={styles.textLink}>
@@ -196,9 +196,9 @@ export default function LandingPage() {
           <div className={styles.modes}>
             <Link href="/objects/?view=leads" className={`card ${styles.mode}`}>
               <span className="eyebrow">Unexplained leads</span>
-              <h3>What JPL can&apos;t explain</h3>
+              <h3>Not yet identified by JPL</h3>
               <p>
-                The objects no known asteroid or comet explains, ranked by the strength of the evidence, each with a blink, the case for
+                The objects JPL hasn&apos;t matched to a known asteroid or comet (some are still being checked, some may be glitches), ranked by the strength of the evidence, each with a blink, the case for
                 and against, and where to point a telescope to confirm it.
               </p>
               <span className={styles.modeCta}>See the leads →</span>

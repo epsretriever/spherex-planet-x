@@ -4,11 +4,14 @@
 //     If the frontend app is not in the tree yet, frontend/public (which holds the pipeline's
 //     static data under data/) is copied to frontend/out so the API still has its data.
 //  2. Stamps the commit into worker/src/build-info.ts when building in CI.
-//  3. Type-checks the Worker.
+//  3. Checks that the deployed asset set fits Cloudflare's static-asset file limit, and in CI
+//     leaves the sky images out of it (scripts/asset-count.mjs).
+//  4. Type-checks the Worker.
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { addDeployIgnores, countUploadedAssets, MAX_WORKER_ASSETS } from "./asset-count.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const frontend = join(root, "frontend");
@@ -42,7 +45,7 @@ if (hasBuildScript(frontend)) {
   if (!existsSync(join(out, "index.html"))) {
     writeFileSync(
       join(out, "index.html"),
-      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPHEREx Planet X</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;background:#0b0e14;color:#e8ecf4"><h1>SPHEREx Planet X</h1><p>API: <a style="color:#6cb4ff" href="/api/health">/api/health</a> · <a style="color:#6cb4ff" href="/api/fields">/api/fields</a></p></body></html>\n`,
+      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Driftnet</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;background:#0b0e14;color:#e8ecf4"><h1>Driftnet</h1><p>API: <a style="color:#6cb4ff" href="/api/health">/api/health</a> · <a style="color:#6cb4ff" href="/api/fields">/api/fields</a></p></body></html>\n`,
     );
   }
 }
@@ -56,6 +59,20 @@ if (sha) {
   );
 }
 
-// 3. Worker type-check
+// 3. Asset count: over the limit, `wrangler deploy` fails after the build with a terse error.
+//    Counted as deployed everywhere, so the quality gate catches it before Cloudflare does.
+const { uploaded, ignored } = countUploadedAssets(out);
+console.log(`static assets for the deployed Worker: ${uploaded} (${ignored} left out)`);
+if (uploaded > MAX_WORKER_ASSETS) {
+  console.error(
+    `frontend/out has ${uploaded} files for the Worker; Cloudflare allows ${MAX_WORKER_ASSETS}. ` +
+      "Add files the Worker does not read to DEPLOY_ONLY_IGNORES in scripts/asset-count.mjs " +
+      "or to frontend/public/.assetsignore.",
+  );
+  process.exit(1);
+}
+if (sha) addDeployIgnores(out);
+
+// 4. Worker type-check
 run("npm run typecheck --workspace worker");
 console.log("build complete");

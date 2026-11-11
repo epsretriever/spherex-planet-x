@@ -106,7 +106,9 @@ def test_records_footprint_and_ledger_then_publishes_them(out, tmp_path):
     t = survey.totals
     assert (t.n_tiles, t.n_processed, t.n_empty, t.n_failed) == (len(fields) + 2, len(fields), 1, 1)
     assert t.n_searched == len(fields) + 1
-    assert t.area_deg2_searched == pytest.approx(t.area_deg2_processed + 0.09)
+    # Searched area counts distinct 0.3 deg cells (overlapping tiles are not double-counted),
+    # so it includes the empty tile's cell but can be below the summed processed tile area.
+    assert 0.09 <= t.area_deg2_searched <= t.area_deg2_processed + 0.09 + 1e-6
     assert t.sky_fraction_searched == pytest.approx(t.area_deg2_searched / 41252.96, rel=1e-3)
     seg = json.loads((out / "survey" / "segments.json").read_text())
     assert seg["qr2/2025W23_1C"]["searched"] == 2 and not seg["qr2/2025W23_1C"]["complete"]

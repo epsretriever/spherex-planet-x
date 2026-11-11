@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildNames, letterFor, type NameInput } from "./names";
+import type { CandidateSummary, FieldSummary } from "./contract";
+import { buildNames, letterFor, toNameInput, toNameSeed, type NameInput } from "./names";
 
 const fields = [
   { field_id: "aqr-a", center: { ra_deg: 346.53, dec_deg: -6.38 } },
@@ -56,5 +57,24 @@ describe("buildNames", () => {
 
   it("drops the constellation when the field is unknown", () => {
     expect(buildNames([c("x", "nowhere", "2025-01-01T00:00:00Z")], fields).get("x")?.title).toBe("Moving object A");
+  });
+});
+
+describe("toNameSeed", () => {
+  const full = (n: NameInput): CandidateSummary =>
+    ({ ...n, label_plain: "x".repeat(200), summary_plain: "y".repeat(500), thumbnail_url: "/t.png", detection_count: 9 }) as unknown as CandidateSummary;
+  const cands = [c("a1", "aqr-a", "2025-01-02"), c("a2", "aqr-b", "2025-01-01"), c("o1", "ori", "2025-01-03", { classification: "injected" })];
+  const fullFields = fields.map((f) => ({ ...f, name: "long name", tile_count: 3, notes_plain: "z".repeat(300) })) as unknown as FieldSummary[];
+
+  it("keeps only what buildNames reads", () => {
+    const seed = toNameSeed(cands.map(full), fullFields);
+    expect(Object.keys(seed.candidates[0]!).sort()).toEqual(Object.keys(toNameInput(full(cands[0]!))).sort());
+    expect(Object.keys(seed.fields[0]!).sort()).toEqual(["center", "field_id"]);
+    expect(JSON.stringify(seed)).not.toContain("yyyy");
+  });
+
+  it("gives the same names as the full lists", () => {
+    const seed = toNameSeed(cands.map(full), fullFields);
+    expect([...buildNames(seed.candidates, seed.fields)]).toEqual([...buildNames(cands.map(full).map(toNameInput), fullFields)]);
   });
 });

@@ -8,11 +8,13 @@ import {
   type CandidateDetail,
   type CandidateList,
   type Classification,
+  type CompositionValidation,
   type FieldDetail,
   type FieldList,
   type InjectionStudy,
   type InjectionStudyIndex,
   type ObjectDetail,
+  type ObjectComposition,
   type ObjectList,
   type ObjectPrediction,
   type Survey,
@@ -243,6 +245,26 @@ export async function getPrediction(objectId: string, days = 60, signal?: AbortS
   );
   expectArray(body, "points", "Prediction");
   return checkVersion(body, "prediction");
+}
+
+/** An object's indicative composition from its SPHEREx colors (404 until it is computed). */
+export async function getComposition(objectId: string, signal?: AbortSignal): Promise<ObjectComposition> {
+  const body = await getJson<ObjectComposition>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/objects/${enc(objectId)}/composition.json` : `/api/objects/${enc(objectId)}/composition`,
+    signal,
+  );
+  expectArray(body, "points", "Composition");
+  return checkVersion(body, "composition");
+}
+
+/** How often our composition types agree with published taxonomies. */
+export async function getCompositionValidation(signal?: AbortSignal): Promise<CompositionValidation> {
+  const body = await getJson<CompositionValidation>(
+    USE_FIXTURES ? `${FIXTURE_BASE}/validation/composition.json` : "/api/validation/composition",
+    signal,
+  );
+  expectArray(body, "rows", "Composition validation");
+  return checkVersion(body, "composition validation");
 }
 
 export async function getSurvey(signal?: AbortSignal): Promise<Survey> {

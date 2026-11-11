@@ -54,10 +54,10 @@ export function tourSteps({ survey, objects, leads, study }: TourData): TourStep
     },
     {
       href: "/objects/?view=leads",
-      title: "What JPL can't explain",
+      title: "Not yet identified by JPL",
       caption: objects
         ? `JPL identifies ${int(known)} of the ${int(real.length)} objects as known asteroids or comets. ${int(unidentifiedIds.size)} remain unexplained${ranked.length ? `; ${strong} are strong leads, and the best scores ${top!.confidence.score}/100` : ""}. Unexplained is not new: each comes with a follow-up file for a telescope.`
-        : "The objects no known asteroid or comet explains, ranked by the strength of the evidence, each with what would confirm it.",
+        : "The objects JPL hasn't matched to a known asteroid or comet, ranked by the strength of the evidence, each with what would confirm it.",
     },
     {
       href: "/limits/",

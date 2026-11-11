@@ -49,12 +49,6 @@ export function TopBar() {
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Sections">
         <nav aria-label="Sections">
           <ul className={styles.menuList}>
-            <li>
-              <Link href="/" className={styles.menuLink} aria-current={pathname === "/" ? "page" : undefined} prefetch={false} onClick={() => setMenuOpen(false)}>
-                <span className={styles.menuLabel}>Home</span>
-                <span className={styles.menuBlurb}>Start here</span>
-              </Link>
-            </li>
             {SECTIONS.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className={styles.menuLink} aria-current={isCurrent(pathname, item) ? "page" : undefined} prefetch={false} onClick={() => setMenuOpen(false)}>

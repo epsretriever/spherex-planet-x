@@ -81,3 +81,19 @@ describe("runs and injection", () => {
     expect(await json(await get("/api/injection/test-study/"))).toEqual(study);
   });
 });
+
+describe("API hygiene", () => {
+  it("never lets an error be cached, and marks every response nosniff", async () => {
+    const { get } = makeClient();
+    const missing = await get("/api/objects/obj-missing");
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get("cache-control")).toBe("no-store");
+    expect(missing.headers.get("x-content-type-options")).toBe("nosniff");
+    const bad = await get("/api/objects?limit=abc");
+    expect(bad.status).toBe(400);
+    expect(bad.headers.get("cache-control")).toBe("no-store");
+    const unknown = await get("/api/nothing-here");
+    expect(unknown.status).toBe(404);
+    expect(unknown.headers.get("cache-control")).toBe("no-store");
+  });
+});

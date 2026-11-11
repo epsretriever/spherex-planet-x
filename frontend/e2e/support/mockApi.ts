@@ -254,11 +254,14 @@ function detail(o: Obj): CandidateDetail {
           anomaly: {
             score: 0.92,
             rank: 1,
+            n_ranked: 12,
             reason_plain: "Synthetic reason: moving 7× slower than typical objects at this position.",
             features: [
-              { name: "rate", value: 4.2, typical: 30.1, unit: "″/hr", label_plain: "Speed" },
-              { name: "color", value: null, typical: 0.4, unit: "", label_plain: "Colour across bands" },
+              { name: "log_rate", label: "Speed (log10 of ″/hr)", value: 0.62, median: 1.48, z: -3.1 },
+              { name: "colour", label: "Colour across bands", value: null, median: 0.4, z: null },
             ],
+            method: "isolation_forest_v1",
+            definition: "Synthetic definition.",
           },
           neo_likelihood: { neo: 0.05, main_belt: 0.15, outer: 0.8, method: "synthetic_digest", validated_on: { n: 42, accuracy: 0.81 } },
         }

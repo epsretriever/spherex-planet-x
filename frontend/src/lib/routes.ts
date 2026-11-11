@@ -11,13 +11,22 @@ export const objectIdFor = (candidateId: string) => `obj-${candidateId}`;
 export const candidateHref = (candidateId: string) => `/objects/${encodeURIComponent(objectIdFor(candidateId))}/`;
 export const objectHref = (objectId: string) => `/objects/${encodeURIComponent(objectId)}/`;
 
+/** The side-by-side page for two objects (either may be missing: the page then asks for it). */
+export function compareHref(a?: string | null, b?: string | null): string {
+  const q = new URLSearchParams();
+  if (a) q.set("a", a);
+  if (b) q.set("b", b);
+  const qs = q.toString();
+  return qs ? `/objects/compare/?${qs}` : "/objects/compare/";
+}
+
 const ID = "([a-z0-9][a-z0-9._-]{0,95})";
 const FALLBACKS: [RegExp, (id: string) => string][] = [
   [new RegExp(`^/explore/${ID}/?$`), (id) => `/explore/field/?id=${encodeURIComponent(id)}`],
   [new RegExp(`^/detective/${ID}/?$`), (id) => `/objects/object/?id=${encodeURIComponent(objectIdFor(id))}`],
   [new RegExp(`^/objects/${ID}/?$`), (id) => `/objects/object/?id=${encodeURIComponent(id)}`],
 ];
-const RESERVED = new Set(["field", "candidate", "object"]);
+const RESERVED = new Set(["field", "candidate", "object", "compare"]);
 
 /** The `?id=` route for an object path that wasn't prerendered, or null. */
 export function queryRouteFor(pathname: string): string | null {

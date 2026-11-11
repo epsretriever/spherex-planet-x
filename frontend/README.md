@@ -1,6 +1,6 @@
 # Frontend
 
-The public website for spherex-planet-x: a Next.js app, exported as static files and served by the `spherex-planet-x` Cloudflare Worker alongside the TypeScript API.
+The public website for Driftnet: a Next.js app exported as static files. Vercel serves it at https://driftnet-sky.vercel.app and proxies `/api/*` to the `spherex-planet-x` Cloudflare Worker (`vercel.json`); the Worker also serves the same export itself.
 
 ## Quick start
 
@@ -39,13 +39,14 @@ NEXT_PUBLIC_USE_FIXTURES=true npm run dev
   - `/objects/object/?id={object_id}`: an object's report (`?candidate=` for a simulated sighting with no object)
   - `/objects/?view=leads|patches`, `?class=known_object`: the Objects page tabs; old `/detective/`, `/leads/`, `/explore/` and
     `/detective/{candidate_id}/` URLs forward here (vercel.json redirects, plus `src/components/Moved.tsx` on other hosts)
+  - `/objects/compare/?a={object_id}&b={object_id}`: two objects side by side; the pair lives in the address, so any comparison is a link
   - `/simulated/?study={study_id}`: injection-recovery results (optional parameter)
 - **Fixture mode** (`NEXT_PUBLIC_USE_FIXTURES=true`) reads `/data/` instead of `/api/`. Lookup order: `fields.json`; `fields/{field_id}.json`, then `field_detail.json`; `candidates.json` (filtered in the browser); `candidates/{candidate_id}.json`, then `candidate_detail.json`; `injection/{study_id}.json`, then `injection_study.json`. Root-relative image URLs resolve under `/data/` too (for example `/static/x.webp` → `/data/static/x.webp`).
 - **The contract** is `docs/api-contract.md`, with JSON Schema in `shared/schema/`. `src/lib/contract.ts` mirrors it by hand. Fix that file when the contract changes.
 
 ## Deployment settings
 
-- `NEXT_PUBLIC_SITE_URL` (build variable): the deployed origin, for example `https://…workers.dev`. Social previews need absolute image URLs, so without it the share image is left out of the page metadata.
+- `NEXT_PUBLIC_SITE_URL` (build variable): the deployed origin. Defaults to `https://driftnet-sky.vercel.app`; canonical links, the share image, `robots.txt` and `sitemap.xml` (`src/app/robots.ts`, `src/app/sitemap.ts`) are built from it.
 - The 404 page is exported as `out/404.html`. To serve it for unknown URLs, the Worker's `wrangler.toml` needs `not_found_handling = "404-page"`. With `"single-page-application"`, unknown URLs get the landing page with status 200. Every route here has its own `index.html`, so SPA fallback isn't needed.
 
 ## Continuous checks
@@ -65,7 +66,7 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 
 - **Write-up.** The report's "In plain words" section fetches `GET /api/candidates/{id}/writeup` when the reader scrolls near it. With an answer, it shows the verdict and three paragraphs. Each number links to the value it came from in `grounded_fields`. The section is labeled with the API's `label_plain` and model ID. Template text (`source: "template"`) is labeled as template text, never as AI.
 - **Ask about this object.** A chat that posts to `POST /api/ask`. It appears only once the write-up has answered, which shows the AI endpoints are live. The citations are JSON paths, shown as chips that hold the value and link to the report section where it appears (`src/lib/citations.ts`). An answer with `answered_from_data: false` is tagged "The data doesn't tell us". A 429 shows the API's own `detail`. The session id is anonymous and kept in `sessionStorage`.
-- **Search by description.** On the Detective page, `POST /api/search` returns a `CandidateFilter`. The page cleans it (`normalizeFilter`), writes it to the URL, and shows each part as a removable chip; the regular controls edit the same values. The `unusual` sort is accepted, but until the anomaly ranking ships (row 7) its chip says the list is sorted by score.
+- **Search by description.** On the Detective page, `POST /api/search` returns a `CandidateFilter`. The page cleans it (`normalizeFilter`), writes it to the URL, and shows each part as a removable chip; the regular controls edit the same values. The `unusual` sort uses the published anomaly ranking; while an object list carries no ranking, its chip says the list is sorted by score.
 - With no AI endpoints (a 404 or 501), or in fixture mode, all three step aside. The report keeps the explanation published with it, and search says it is off.
 - `e2e/ai.spec.ts` covers all of this with synthetic AI responses (`installMockApi(page, { ai: true })`).
 
@@ -76,6 +77,17 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 - The orbit view (`src/components/orbit/`) uses three.js. It is loaded with `import()` only when an object has a drawable orbit and the panel scrolls into view, so no other page pays for it. When WebGL is unavailable, or the reader asks for it, a flat SVG view replaces it.
 - The uncertainty cloud uses `orbit.clones_url` when it serves a list of elements. Otherwise it samples `orbit.n_clones` clones (at most 200) from `orbit.covariance` with a fixed seed. Clones that aren't ellipses are dropped.
 - Planets come from Standish's J2000 mean elements, with only the mean longitude advanced: good for a diagram, not for astrometry. The orbit math is tested in `src/lib/orbit.test.ts`.
+
+## 3D figures
+
+Every 3D figure shares one small stage (`src/components/three/stage.ts`): drag-to-turn controls, HTML labels, and drawing only while the view changes and the figure is on screen. three.js is never in a page's first load: `Figure3D` imports the scene when the figure scrolls into view (or, for the globe, when the reader picks it), and shows a flat SVG of the same data when WebGL can't start or the reader asks for it. With reduced motion requested nothing turns on its own.
+
+| Figure | Where | Data | Flat fallback |
+|---|---|---|---|
+| Orbit with uncertainty cloud (`orbit/OrbitScene.tsx`) | each object's report; two orbits together on the compare page | the object's published orbit and clones | top-down SVG |
+| Sky globe (`three/SkyGlobe.tsx`) | Sky map, "3D globe" view | the survey tiles, empty patches and Planet Nine region the flat map draws | the flat map itself |
+| Solar-system view (`three/SolarSystemScene.tsx`) | Sky map | `/objects/system.json`, written at build time from every published orbit (`src/lib/system.ts`); simulated objects are left out | top-down SVG with a link per object |
+| Sky × time tracks (`three/FieldTracksScene.tsx`) | each patch of sky, under the blink viewer | the field's measured mover tracks (`src/lib/fieldTracks.ts`); simulated movers are labelled SIMULATED | SVG of the paths on the sky |
 
 ## Performance notes
 
@@ -101,6 +113,8 @@ Cards and reports are titled by object, not by status (`src/lib/names.ts`):
 | `src/lib/api.ts` | Fetchers, fixture mode, error mapping |
 | `src/lib/contract.ts` | API types |
 | `src/lib/blink.ts`, `grid.ts`, `grounding.ts` | Blink pairing, grid ↔ image ↔ sky conversion, explanation grounding |
+| `src/components/three/` | Shared 3D stage, the lazy `Figure3D` wrapper and the globe, solar-system and track scenes |
+| `src/lib/compare.ts`, `src/app/objects/compare/` | The side-by-side comparison of two objects |
 | `src/app/globals.css` | Design tokens (colors, type, spacing, motion) |
 | `e2e/` | Playwright tests. `e2e/support/mockApi.ts` answers `/api/*` inside the test browser with clearly synthetic test data; it is never served by the app. |
 

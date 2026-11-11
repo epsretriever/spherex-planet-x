@@ -11,6 +11,10 @@ export interface Env {
   AI_MODEL?: string;
   /** Salt for hashing visitor session ids and IP addresses before they are stored. */
   HASH_SALT?: string;
+  /** MPC observatory code written into ADES exports (ades.ts); "XXX" (not submittable) until set. */
+  MPC_STATION_CODE?: string;
+  /** Submitter and measurer name written into ADES exports. */
+  ADES_SUBMITTER?: string;
 }
 
 /** Minimal cache interface (caches.default in production, an in-memory fake in tests). */

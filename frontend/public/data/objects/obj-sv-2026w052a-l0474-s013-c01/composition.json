@@ -1,0 +1,373 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.0faa384",
+  "object_id": "obj-sv-2026w052a-l0474-s013-c01",
+  "generated_utc": "2026-11-05T04:27:26Z",
+  "simulated": false,
+  "indicative_only": true,
+  "status": "classified",
+  "result_plain": "Its colors look most like carbon-rich C-type asteroids (dark and primitive). Indicative only (low confidence), from 5 SPHEREx bands between 1.41 and 1.81 µm. Next closest: X-type.",
+  "geometry": {
+    "method": "orbit_clones",
+    "reference_mjd": 61070.340819,
+    "helio_distance_au": 1.06,
+    "observer_distance_au": 0.284,
+    "phase_angle_deg": 67.1,
+    "max_correction_frac": 0.00999,
+    "phase_function": "IAU H-G, G = 0.15",
+    "note_plain": "Each point is scaled to the distances and phase angle at the track's median time, from 100 orbit clones; the clones' spread is added to the errors."
+  },
+  "normalisation": {
+    "window_um": [
+      1.0,
+      1.2
+    ],
+    "method": "template_fit",
+    "n_points": 0
+  },
+  "points": [
+    {
+      "band_index": 27,
+      "wavelength_um": 1.4137,
+      "epoch_id": "e01",
+      "mjd": 61070.337088,
+      "flux_ujy": 371.45,
+      "flux_err_ujy": 53.57,
+      "geometry_factor": 0.99974,
+      "reflectance": 1.3934,
+      "reflectance_err": 0.2298,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 28,
+      "wavelength_um": 1.4474,
+      "epoch_id": "e03",
+      "mjd": 61070.33858,
+      "flux_ujy": 376.93,
+      "flux_err_ujy": 54.22,
+      "geometry_factor": 0.99984,
+      "reflectance": 1.4226,
+      "reflectance_err": 0.2342,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 29,
+      "wavelength_um": 1.4827,
+      "epoch_id": "e05",
+      "mjd": 61070.340073,
+      "flux_ujy": 259.2,
+      "flux_err_ujy": 51.63,
+      "geometry_factor": 0.99994,
+      "reflectance": 0.9839,
+      "reflectance_err": 0.2112,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 30,
+      "wavelength_um": 1.5182,
+      "epoch_id": "e07",
+      "mjd": 61070.341565,
+      "flux_ujy": 335.03,
+      "flux_err_ujy": 52.22,
+      "geometry_factor": 1.00005,
+      "reflectance": 1.2857,
+      "reflectance_err": 0.2253,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 38,
+      "wavelength_um": 1.8119,
+      "epoch_id": "e15",
+      "mjd": 61070.47553,
+      "flux_ujy": 1883.21,
+      "flux_err_ujy": 181.6,
+      "geometry_factor": 1.00999,
+      "reflectance": 8.8777,
+      "reflectance_err": 1.1179,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 88,
+      "wavelength_um": 4.5261,
+      "epoch_id": "e14",
+      "mjd": 61070.474038,
+      "flux_ujy": 1454.03,
+      "flux_err_ujy": 142.94,
+      "geometry_factor": 1.00989,
+      "reflectance": null,
+      "reflectance_err": null,
+      "thermal_fraction": 0.9951,
+      "use": "none",
+      "excluded_reason": "thermal emission may be more than 10% of the light"
+    }
+  ],
+  "taxonomy": {
+    "best": {
+      "class_name": "Sa",
+      "complex": "S",
+      "chi2": 46.082,
+      "dof": 4,
+      "probability": 0.0988
+    },
+    "runner_up": {
+      "class_name": "A",
+      "complex": "A",
+      "chi2": 46.185,
+      "dof": 4,
+      "probability": 0.0938
+    },
+    "top": [
+      {
+        "class_name": "Sa",
+        "complex": "S",
+        "chi2": 46.082,
+        "dof": 4,
+        "probability": 0.0988
+      },
+      {
+        "class_name": "A",
+        "complex": "A",
+        "chi2": 46.185,
+        "dof": 4,
+        "probability": 0.0938
+      },
+      {
+        "class_name": "D",
+        "complex": "D",
+        "chi2": 46.767,
+        "dof": 4,
+        "probability": 0.0701
+      },
+      {
+        "class_name": "X",
+        "complex": "X",
+        "chi2": 47.171,
+        "dof": 4,
+        "probability": 0.0573
+      },
+      {
+        "class_name": "C",
+        "complex": "C",
+        "chi2": 47.268,
+        "dof": 4,
+        "probability": 0.0546
+      }
+    ],
+    "complex_probability": {
+      "C": 0.2613,
+      "X": 0.2175,
+      "S": 0.1815,
+      "A": 0.0938,
+      "D": 0.0701,
+      "T": 0.0521,
+      "K": 0.0384,
+      "L": 0.03,
+      "Q": 0.0287,
+      "O": 0.0129,
+      "R": 0.0111,
+      "V": 0.0026
+    },
+    "best_complex": "C",
+    "best_complex_plain": "carbon-rich C-type asteroids (dark and primitive)",
+    "runner_up_complex": "X",
+    "confidence": "low",
+    "confidence_plain": "Low: other asteroid types fit these colors almost as well, so treat this as a weak hint.",
+    "n_bands": 5,
+    "wavelength_span_um": 0.398,
+    "reduced_chi2": 11.52,
+    "slope_per_um": 8.5665,
+    "slope_err_per_um": 2.1705,
+    "slope_range_um": [
+      1.4137,
+      1.8119
+    ],
+    "systematic_floor_frac": 0.08,
+    "template": {
+      "class_name": "Sa",
+      "wavelength_um": [
+        0.7,
+        0.75,
+        0.8,
+        0.85,
+        0.9,
+        0.95,
+        1.0,
+        1.05,
+        1.1,
+        1.15,
+        1.2,
+        1.25,
+        1.3,
+        1.35,
+        1.4,
+        1.45,
+        1.5,
+        1.55,
+        1.6,
+        1.65,
+        1.7,
+        1.75,
+        1.8,
+        1.85,
+        1.9,
+        1.95,
+        2.0,
+        2.05,
+        2.1,
+        2.15,
+        2.2,
+        2.25,
+        2.3,
+        2.35,
+        2.4,
+        2.45
+      ],
+      "reflectance": [
+        1.2279,
+        1.2059,
+        1.1126,
+        1.0323,
+        1.0032,
+        0.9801,
+        0.9601,
+        0.953,
+        0.9821,
+        1.0313,
+        1.0734,
+        1.1055,
+        1.1417,
+        1.1968,
+        1.256,
+        1.3232,
+        1.3925,
+        1.4597,
+        1.5138,
+        1.552,
+        1.572,
+        1.5851,
+        1.5921,
+        1.5961,
+        1.5971,
+        1.5951,
+        1.5971,
+        1.6071,
+        1.6212,
+        1.6352,
+        1.6443,
+        1.6523,
+        1.6593,
+        1.6713,
+        1.6864,
+        1.6984
+      ],
+      "sigma": [
+        0.0515,
+        0.0491,
+        0.0454,
+        0.0449,
+        0.0465,
+        0.0467,
+        0.0455,
+        0.0449,
+        0.0468,
+        0.0499,
+        0.0519,
+        0.0537,
+        0.0551,
+        0.0572,
+        0.0588,
+        0.0601,
+        0.0627,
+        0.0654,
+        0.068,
+        0.0701,
+        0.0711,
+        0.0722,
+        0.0732,
+        0.0738,
+        0.074,
+        0.0752,
+        0.0756,
+        0.0767,
+        0.0773,
+        0.0785,
+        0.079,
+        0.0801,
+        0.0813,
+        0.0821,
+        0.0846,
+        0.0919
+      ]
+    }
+  },
+  "hydration": {
+    "status": "not_covered",
+    "band_um": [
+      2.7,
+      3.1
+    ],
+    "continuum_um": [
+      1.6,
+      2.68
+    ],
+    "band_depth": null,
+    "band_depth_err": null,
+    "snr": null,
+    "n_band_points": 0,
+    "n_continuum_points": 1,
+    "continuum": null,
+    "verdict": "not_measured",
+    "verdict_plain": "Not measured: SPHEREx did not see this object at 2.7-3.1 µm with enough nearby points to define the continuum."
+  },
+  "thermal": {
+    "helio_distance_min_au": 1.033,
+    "flagged": true,
+    "model": "Standard Thermal Model (eta 0.756, emissivity 0.9), dark surface (p_V 0.05) at the closest clone distance; points over 10% thermal are not used",
+    "note_plain": "At 1.03 AU from the Sun (closest of its orbit clones) a dark surface would be warm enough that above about 4.5 µm part of the light is its own heat, not reflected sunlight. Those points are left out."
+  },
+  "caveats": [
+    "Indicative, not definitive: a type read from a few SPHEREx colors is a hint. Confirming it needs a dedicated spectrum from a telescope.",
+    "SPHEREx starts at 0.75 µm, so it misses the visible colors that separate many subclasses. Only the broad type (S, C, X and so on) is meaningful here.",
+    "The sightings are hours apart and the asteroid rotates, so brightness changes from its shape are mixed into its colors. Every point carries an extra 8% error for this.",
+    "Spectra look redder at larger phase angles (phase reddening). That effect is not corrected.",
+    "At 1.03 AU from the Sun (closest of its orbit clones) a dark surface would be warm enough that above about 4.5 µm part of the light is its own heat, not reflected sunlight. Those points are left out.",
+    "No asteroid type fits these colors well (reduced chi-square 11.5). The colors may be affected by the object's rotation, a blended star or a measurement problem."
+  ],
+  "references": [
+    {
+      "label": "Bus-DeMeo taxonomy",
+      "citation": "DeMeo, Binzel, Slivan & Bus (2009), Icarus 202, 160-180: class mean spectra",
+      "url": "https://doi.org/10.1016/j.icarus.2009.02.005"
+    },
+    {
+      "label": "Solar spectrum",
+      "citation": "ASTM E490-00a (2014), Standard Solar Constant and Zero Air Mass Solar Spectral Irradiance Tables",
+      "url": "https://doi.org/10.1520/E0490"
+    },
+    {
+      "label": "Phase function",
+      "citation": "Bowell et al. (1989), Asteroids II, 524-556: the H-G magnitude system",
+      "url": "https://ui.adsabs.harvard.edu/abs/1989aste.conf..524B"
+    },
+    {
+      "label": "Thermal model",
+      "citation": "Lebofsky et al. (1986), Icarus 68, 239-251: the Standard Thermal Model",
+      "url": "https://doi.org/10.1016/0019-1035(86)90021-7"
+    },
+    {
+      "label": "3-micron band",
+      "citation": "Rivkin et al. (2015), Asteroids IV, 65-87: hydrated minerals on asteroids",
+      "url": "https://doi.org/10.2458/azu_uapress_9780816532131-ch004"
+    }
+  ]
+}

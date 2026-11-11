@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { toNameSeed, type NameSeed } from "./names";
 import type { CandidateDetail, CandidateList, FieldDetail, FieldList, InjectionStudy, InjectionStudyIndex, ObjectDetail, ObjectList, ObjectPrediction, Survey } from "./contract";
 
 /**
@@ -57,8 +58,8 @@ export function staticSurvey(): Survey | null {
 }
 
 /** The lists the name table is built from, for the first render. */
-export function staticNameSeed() {
-  return { candidates: staticCandidates()?.candidates ?? [], fields: staticFields()?.fields ?? [] };
+export function staticNameSeed(): NameSeed {
+  return toNameSeed(staticCandidates()?.candidates ?? [], staticFields()?.fields ?? []);
 }
 
 /** The newest published injection-recovery study. */

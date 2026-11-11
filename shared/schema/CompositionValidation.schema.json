@@ -1,0 +1,367 @@
+{
+  "$defs": {
+    "CompositionAgreement": {
+      "additionalProperties": false,
+      "properties": {
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "complex_agreement": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Complex Agreement"
+        },
+        "broad_agreement": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Broad Agreement"
+        }
+      },
+      "required": [
+        "n",
+        "complex_agreement",
+        "broad_agreement"
+      ],
+      "title": "CompositionAgreement",
+      "type": "object"
+    },
+    "CompositionValidationRow": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "designation": {
+          "title": "Designation",
+          "type": "string"
+        },
+        "spec_B": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "SMASSII (Bus & Binzel 2002) class from JPL SBDB",
+          "title": "Spec B"
+        },
+        "spec_T": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Tholen (1984) class from JPL SBDB",
+          "title": "Spec T"
+        },
+        "sbdb_url": {
+          "title": "Sbdb Url",
+          "type": "string"
+        },
+        "truth_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Truth Class"
+        },
+        "truth_system": {
+          "anyOf": [
+            {
+              "enum": [
+                "SMASS",
+                "Tholen"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Truth System"
+        },
+        "truth_complex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Truth Complex"
+        },
+        "our_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Our Status"
+        },
+        "our_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Our Class"
+        },
+        "our_complex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Our Complex"
+        },
+        "our_confidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Our Confidence"
+        },
+        "complex_agrees": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Complex Agrees"
+        },
+        "broad_agrees": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Broad Agrees"
+        }
+      },
+      "required": [
+        "object_id",
+        "designation",
+        "spec_B",
+        "spec_T",
+        "sbdb_url",
+        "truth_class",
+        "truth_system",
+        "truth_complex",
+        "our_status",
+        "our_class",
+        "our_complex",
+        "our_confidence",
+        "complex_agrees",
+        "broad_agrees"
+      ],
+      "title": "CompositionValidationRow",
+      "type": "object"
+    },
+    "SimulatedRecoveryRow": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "all"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "n": {
+          "title": "N",
+          "type": "integer"
+        },
+        "complex_recovered": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Complex Recovered"
+        }
+      },
+      "required": [
+        "confidence",
+        "n",
+        "complex_recovered"
+      ],
+      "title": "SimulatedRecoveryRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "How often our class agrees with published taxonomies, and with simulated spectra.",
+  "properties": {
+    "schema_version": {
+      "default": "1.2",
+      "enum": [
+        "1.0",
+        "1.1",
+        "1.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "description": "Pipeline package version plus the git commit of the code that built the data",
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "generated_utc": {
+      "title": "Generated Utc",
+      "type": "string"
+    },
+    "truth_source": {
+      "title": "Truth Source",
+      "type": "string"
+    },
+    "truth_query_utc": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Truth Query Utc"
+    },
+    "n_objects": {
+      "title": "N Objects",
+      "type": "integer"
+    },
+    "n_classified": {
+      "title": "N Classified",
+      "type": "integer"
+    },
+    "n_identified": {
+      "description": "Objects JPL identified (from the live Worker)",
+      "title": "N Identified",
+      "type": "integer"
+    },
+    "n_with_taxonomy": {
+      "description": "Identified objects with spec_B or spec_T in SBDB",
+      "title": "N With Taxonomy",
+      "type": "integer"
+    },
+    "n_compared": {
+      "description": "Of those, objects we also classified",
+      "title": "N Compared",
+      "type": "integer"
+    },
+    "overall": {
+      "$ref": "#/$defs/CompositionAgreement"
+    },
+    "by_confidence": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CompositionAgreement"
+      },
+      "title": "By Confidence",
+      "type": "object"
+    },
+    "baseline_always_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Agreement if every object were called S-complex, for comparison",
+      "title": "Baseline Always S"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/CompositionValidationRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    },
+    "simulated_recovery": {
+      "description": "SIMULATED: class means sampled at each object's real bands and errors",
+      "items": {
+        "$ref": "#/$defs/SimulatedRecoveryRow"
+      },
+      "title": "Simulated Recovery",
+      "type": "array"
+    },
+    "simulated_seed": {
+      "title": "Simulated Seed",
+      "type": "integer"
+    },
+    "method_plain": {
+      "title": "Method Plain",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pipeline_version",
+    "generated_utc",
+    "truth_source",
+    "truth_query_utc",
+    "n_objects",
+    "n_classified",
+    "n_identified",
+    "n_with_taxonomy",
+    "n_compared",
+    "overall",
+    "by_confidence",
+    "baseline_always_s",
+    "rows",
+    "simulated_recovery",
+    "simulated_seed",
+    "method_plain"
+  ],
+  "title": "CompositionValidation",
+  "type": "object"
+}
