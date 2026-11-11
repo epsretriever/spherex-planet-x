@@ -10,14 +10,16 @@ import { CopyLink } from "./CopyLink";
  */
 export function ObjectActions({ objectId, title, simulated }: { objectId: string; title: string; simulated: boolean }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-4)" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
       <CopyLink title={title} />
-      <Link className="button" href={compareHref(objectId)} prefetch={false}>
-        Compare with another object
+      <Link className="button" href={compareHref(objectId)} prefetch={false} aria-label="Compare with another object">
+        Compare
       </Link>
       {!simulated && (
-        <a className="button" href={`/api/objects/${encodeURIComponent(objectId)}/ades.xml`} title="Measured positions as ADES 2022 XML: a draft for review, never submitted anywhere by this site">
-          Astrometry (ADES XML)
+        <a className="button" href={`/api/objects/${encodeURIComponent(objectId)}/ades.xml`} aria-label="Astrometry (ADES XML)"
+          title="Measured positions as ADES 2022 XML: a draft for review, never submitted anywhere by this site"
+        >
+          ADES XML
         </a>
       )}
     </div>

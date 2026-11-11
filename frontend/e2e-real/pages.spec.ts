@@ -144,7 +144,8 @@ test("evidence report", async ({ page }, info) => {
     await expect(page.getByRole("button", { name: "Show fewer sightings" })).toBeVisible();
   }
   // One page now holds what were two (the evidence report and the object page: visits, orbit, distance).
-  if (info.project.name === "phone-360") expect(height, "report height on a phone").toBeLessThan(13_000);
+  // The budget grew by 200 px for the report's action row (copy link, compare, ADES export).
+  if (info.project.name === "phone-360") expect(height, "report height on a phone").toBeLessThan(13_200);
 });
 
 test("report section nav stays pinned while scrolling", async ({ page }) => {

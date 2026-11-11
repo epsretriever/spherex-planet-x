@@ -35,7 +35,8 @@ export function CopyLink({ path, title, label = "Copy link" }: { path?: string; 
       <button type="button" className="button" onClick={share}>
         {label}
       </button>
-      <span role="status" aria-live="polite" style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
+      {/* Empty until there is something to say, so it takes no room in the row. */}
+      <span role="status" aria-live="polite" style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", display: note ? undefined : "contents" }}>
         {note}
       </span>
     </>
