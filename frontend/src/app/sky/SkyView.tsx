@@ -8,11 +8,9 @@ import { Deferred } from "@/components/Deferred";
 import { WhenVisible } from "@/components/WhenVisible";
 import { unpackTile, type PackedTile } from "@/components/skyTile";
 import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
-import type { GrowthDay } from "@/lib/staticData";
 import type { SkyGlobeProps } from "@/components/three/SkyGlobe";
 import figStyles from "@/components/three/Figure3D.module.css";
 import { SystemPanel } from "@/components/three/SystemPanel";
-import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
 import { fmt, formatUtcDate, formatUtcDateTime } from "@/lib/format";
@@ -50,11 +48,9 @@ export type PackedSkySurvey = Omit<Survey, "tiles"> & { tiles: PackedTile[] };
 export function SkyView({
   initial: packed,
   fieldNames,
-  growth = [],
 }: {
   initial: PackedSkySurvey | null;
   fieldNames: Record<string, string>;
-  growth?: GrowthDay[];
 }) {
   const initial = useMemo<SkySurvey | null>(() => (packed ? { ...packed, tiles: packed.tiles.map(unpackTile) } : null), [packed]);
   const [showAll, setShowAll] = useState(false);
@@ -344,10 +340,6 @@ export function SkyView({
       </figure>
 
       {/* Everything from here down is screens below the map: it renders when the reader gets near it. */}
-      <WhenVisible minHeight={300} margin="400px">
-        <CoverageChart days={growth} />
-      </WhenVisible>
-
       <SystemPanel />
 
       <section className={styles.section} aria-labelledby="tiles-title">

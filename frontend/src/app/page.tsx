@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
-import { GrowthCharts } from "@/components/home/GrowthCharts";
-import { HeroBlink, type HeroBlinkProps } from "@/components/home/HeroBlink";
+import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
 import { HomeSky } from "@/components/home/HomeSky";
 import { HowToUse } from "@/components/home/HowToUse";
 import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
-import { formatInterval, formatUtcDate, formatUtcShortDate, formatUtcTime, formatWavelength } from "@/lib/format";
-import { gridToImage } from "@/lib/grid";
-import { fieldHref, objectHref } from "@/lib/routes";
-import { staticCandidates, staticField, staticGrowth, staticObjects, staticSurvey } from "@/lib/staticData";
+import { formatUtcDate } from "@/lib/format";
+import { staticCandidates, staticGrowth, staticSurvey } from "@/lib/staticData";
 import styles from "./page.module.css";
 
 /** The whole sky: 4π steradians, in square degrees. */
@@ -17,44 +14,19 @@ const SKY_DEG2 = 41252.96;
 
 const CAPABILITIES = [
   {
-    title: "Find what moves",
-    body: "We read SPHEREx Level 2 images from NASA's public archive, measure every source in every exposure, set aside what stays fixed to the sky, and link the sightings that move steadily into tracks.",
+    kicker: "Find",
+    title: "Moving-object detection in real survey data",
+    body: "We process SPHEREx Level 2 images from NASA's public archive, measure every source in every exposure, discard what stays fixed to the sky, and link the sightings that move consistently into tracks.",
   },
   {
-    title: "Check it against what's known",
-    body: "Each track is compared with JPL's catalog of known asteroids and comets for the exact time and place of each image. Matches are labelled known; anything left over is reported as unexplained, never as a discovery.",
+    kicker: "Verify",
+    title: "Every track checked against known objects",
+    body: "Each track is compared with JPL's catalog of known asteroids and comets for the exact time and place of each image. Matches are labelled as known; anything left over is reported as unexplained, never as a discovery.",
   },
   {
-    title: "Show the evidence",
-    body: "Every object gets a report with its measured positions, motion fit, signal quality, the ways it could be wrong, and a link from every image to the archive file it came from. AI-written summaries are checked number by number against the measurements.",
-  },
-];
-
-const WAYS_IN = [
-  {
-    href: "/objects/?view=patches",
-    title: "Blink the sky",
-    body: "Pick a patch of sky and flip between real SPHEREx images taken hours or days apart.",
-  },
-  {
-    href: "/objects/?view=leads",
-    title: "What JPL can't explain",
-    body: "Objects no known asteroid or comet explains, ranked by the strength of the evidence, with where to point a telescope to confirm them.",
-  },
-  {
-    href: "/objects/",
-    title: "Weigh the evidence",
-    body: "Every moving object in one list. Each report has its images, positions, speed, signal quality, the JPL check and, once fitted, its orbit.",
-  },
-  {
-    href: "/sky/",
-    title: "Where we've searched",
-    body: "Every patch of sky processed so far on one all-sky map, with the ecliptic and the Milky Way for reference.",
-  },
-  {
-    href: "/limits/",
-    title: "What we could miss",
-    body: "How faint and how slow an object we can recover, measured by planting simulated objects in real images.",
+    kicker: "Explain",
+    title: "Evidence you can audit",
+    body: "Every object gets a report with its measured positions, motion fit, signal quality, the ways it could be wrong, and a link from every image to the exact archive file it came from. AI-written summaries are checked number by number against the measurements.",
   },
 ];
 
@@ -94,51 +66,6 @@ function skyShare(area: number) {
   return p < 0.01 ? "<0.01%" : `${p < 1 ? p.toFixed(2) : p.toFixed(1)}%`;
 }
 
-/** "about half the width of this patch of Aquarius": distance as a share of the picture, not arcseconds. */
-function shiftWords(fraction: number, arcsec: number): string {
-  const share = fraction > 0.85 ? "nearly the full width" : fraction > 0.6 ? "about two-thirds of the width" : fraction > 0.4 ? "about half the width" : fraction > 0.25 ? "about a third of the width" : null;
-  return share ? `${share} of this patch of Aquarius` : `${Math.round(arcsec)}″ across this patch of Aquarius`;
-}
-
-/** The showcase patch the hero blinks: its default pair, with the mover's place in each image. */
-const HERO_FIELD = "aquarius-a";
-
-function heroBlink(): HeroBlinkProps | null {
-  const field = staticField(HERO_FIELD);
-  if (!field) return null;
-  const pair = field.blink_pairs.find((p) => p.default) ?? field.blink_pairs[0];
-  const mover = field.movers[0];
-  if (!pair || !mover) return null;
-  const epochs = [pair.epoch_id_a, pair.epoch_id_b].map((id) => field.epochs.find((e) => e.epoch_id === id));
-  const points = [pair.epoch_id_a, pair.epoch_id_b].map((id) => mover.track.find((t) => t.epoch_id === id));
-  if (epochs.some((e) => !e?.image?.source) || points.some((p) => !p)) return null;
-  const h = field.wcs.height_px;
-  const frames = epochs.map((e, i) => ({
-    key: i === 0 ? "A" : "B",
-    src: e!.image.url,
-    timeLabel: formatUtcTime(e!.time_utc),
-    dateLabel: `${formatUtcShortDate(e!.time_utc)}, ${e!.time_utc.slice(0, 4)}`,
-    wavelengthLabel: formatWavelength(e!.wavelength_um_center),
-    sourceFile: e!.image.source.file,
-    archiveUrl: e!.image.source.archive_url ?? null,
-    mover: gridToImage(points[i]!.x_grid, points[i]!.y_grid, h),
-  })) as HeroBlinkProps["frames"];
-  const shiftPx = Math.hypot(points[1]!.x_grid - points[0]!.x_grid, points[1]!.y_grid - points[0]!.y_grid);
-  const shift = shiftPx * field.wcs.cdelt_arcsec;
-  const object = staticObjects()?.objects.find((o) => o.candidate_ids.includes(mover.candidate_id));
-  return {
-    frames,
-    widthPx: field.wcs.width_px,
-    heightPx: h,
-    place: "a patch of Aquarius",
-    interval: formatInterval(epochs[0]!.mjd, epochs[1]!.mjd),
-    shift: shiftWords(shiftPx / field.wcs.width_px, shift),
-    wavelengthMatched: pair.lambda_matched,
-    fieldHref: fieldHref(field.field_id),
-    objectHref: object ? objectHref(object.object_id) : null,
-  };
-}
-
 export default function LandingPage() {
   // Real numbers from the data the site was built with.
   const survey = staticSurvey();
@@ -146,71 +73,53 @@ export default function LandingPage() {
   const t = survey?.totals;
   // Objects JPL couldn't identify, as last recorded from the live site by the pipeline.
   const unidentified = staticGrowth().findLast((d) => d.unidentified != null)?.unidentified ?? null;
-  const tracked = candidates ? candidates.candidates.filter((c) => c.classification !== "injected").length : null;
-  const area = t ? (t.area_deg2_searched ?? t.area_deg2_processed) : null;
-  const blink = heroBlink();
+  const stats = [
+    t && { value: fmtInt(t.n_epochs), label: "SPHEREx images analyzed" },
+    t && { value: fmtInt(t.n_searched ?? t.n_processed), label: "patches of sky searched" },
+    t && { value: `${(t.area_deg2_searched ?? t.area_deg2_processed).toFixed(1)} deg²`, label: `of sky covered (${skyShare(t.area_deg2_searched ?? t.area_deg2_processed)})` },
+    candidates && { value: fmtInt(candidates.candidates.filter((c) => c.classification !== "injected").length), label: "moving objects tracked" },
+  ].filter((s): s is { value: string; label: string } => !!s);
 
   return (
     <>
+      <SpacetimeFabric />
       <section className={styles.hero} aria-labelledby="hero-title">
-        <div className={`container ${styles.heroGrid}`}>
+        <div className={styles.heroShade} aria-hidden="true" />
+        <div className={`container ${styles.heroInner}`}>
+          <p className="eyebrow">NASA SPHEREx · moving-object search · Planet X</p>
           <h1 id="hero-title" className={styles.title}>
-            <span>Stars stay put.</span> <span>Asteroids don&rsquo;t.</span>
+            Everything that moves
+            <br />
+            <span className={styles.glow}>in the infrared sky.</span>
           </h1>
-          <div className={styles.heroText}>
-            <p className={styles.lede}>
-              Driftnet compares real infrared images from NASA&apos;s SPHEREx space telescope, taken hours apart. Anything that jumps
-              between them is moving: an asteroid, a comet, or something farther out. Every mover is checked against JPL&apos;s catalog of
-              known objects and published with the evidence for and against it.
-            </p>
-            <div className={styles.actions}>
-              <Link href="/objects/?view=patches" className="button button-primary">
-                Blink a patch of sky
-              </Link>
-              <Link href="/objects/" className="button">
-                Browse the objects
-              </Link>
-              <TourButton />
-            </div>
-            {t && (
-              <dl className={styles.ledger}>
-                <div>
-                  <dt>SPHEREx images analyzed</dt>
-                  <dd>{fmtInt(t.n_epochs)}</dd>
-                </div>
-                <div>
-                  <dt>Patches of sky searched</dt>
-                  <dd>{fmtInt(t.n_searched ?? t.n_processed)}</dd>
-                </div>
-                <div>
-                  <dt>Share of the sky covered</dt>
-                  <dd>
-                    {skyShare(area!)} <span className={styles.unit}>({area!.toFixed(0)} deg²)</span>
-                  </dd>
-                </div>
-                {tracked != null && (
-                  <div>
-                    <dt>Moving objects tracked</dt>
-                    <dd>{fmtInt(tracked)}</dd>
-                  </div>
-                )}
-                {unidentified != null && (
-                  <div>
-                    <dt>
-                      <Link href="/objects/?view=leads">Not yet identified</Link>
-                    </dt>
-                    <dd>{fmtInt(unidentified)}</dd>
-                  </div>
-                )}
-              </dl>
-            )}
-            {survey && <p className={styles.asOf}>Survey totals as of {formatUtcDate(survey.generated_utc)}.</p>}
+          <p className={styles.lede}>
+            Driftnet searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
+            observations: asteroids, comets and distant bodies in the outer solar system. Every one is tracked, checked against
+            JPL&apos;s catalog of known objects, and published with the evidence for and against it.
+          </p>
+          <div className={styles.actions}>
+            <Link href="/objects/" className="button button-primary">
+              Browse the objects
+            </Link>
+            <Link href="/objects/?view=leads" className="button">
+              {unidentified != null ? `${unidentified} not yet identified` : "Unexplained leads"}
+            </Link>
+            <TourButton />
+            <Link href="#how" className={styles.textLink}>
+              How it works ↓
+            </Link>
           </div>
-          {blink && (
-            <div className={styles.heroBlink}>
-              <HeroBlink {...blink} />
-            </div>
+          {stats.length > 0 && (
+            <dl className={styles.stats}>
+              {stats.map((s) => (
+                <div key={s.label}>
+                  <dt>{s.label}</dt>
+                  <dd className="mono">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
+          {survey && <p className={styles.asOf}>Survey data as of {formatUtcDate(survey.generated_utc)}.</p>}
         </div>
       </section>
 
@@ -219,21 +128,20 @@ export default function LandingPage() {
       </div>
 
       <div className="container">
-        <GrowthCharts days={staticGrowth()} />
-
         <section className={styles.what} aria-labelledby="what-heading">
           <div className={styles.whatHead}>
-            <h2 id="what-heading">Tombaugh&apos;s method, at SPHEREx scale</h2>
+            <p className="eyebrow">What it does</p>
+            <h2 id="what-heading">A transparent search for moving objects, built on real data</h2>
             <p className={styles.sectionLede}>
-              In 1930 Clyde Tombaugh found Pluto, the first &ldquo;Planet X&rdquo;, by flicking between two photographs of the same stars
-              taken days apart. SPHEREx photographs each part of the sky again and again, in 102 infrared colors, which makes its archive a
-              natural place to do the same thing with software. Driftnet turns those images into a searchable, checkable record of what
-              moved.
+              Moving objects reveal themselves by shifting against the fixed stars. SPHEREx photographs each part of the sky again and
+              again, in 102 infrared colors, which makes its archive a natural place to look. We turn those images into a searchable,
+              checkable record of what moved.
             </p>
           </div>
           <ul className={styles.capabilities}>
             {CAPABILITIES.map((c) => (
-              <li key={c.title} className={styles.capability}>
+              <li key={c.kicker} className={`card ${styles.capability}`}>
+                <span className="eyebrow">{c.kicker}</span>
                 <h3>{c.title}</h3>
                 <p>{c.body}</p>
               </li>
@@ -244,25 +152,27 @@ export default function LandingPage() {
         <section id="how" className={`section ${styles.how}`} aria-labelledby="how-heading">
           <div className={styles.howGrid}>
             <div className={styles.howIntro}>
+              <p className="eyebrow">How it works</p>
               <h2 id="how-heading">From raw images to an evidence report</h2>
               <p className={styles.sectionLede}>
                 A Python pipeline in GitHub Actions searches new patches of sky several times a day and checks every new track against
                 JPL&apos;s catalogs before it is published. Tracks JPL couldn&apos;t explain are re-checked on a schedule, so labels can
                 change as catalogs grow.
               </p>
-              <figure className={styles.instrument}>
+              <div className={`card ${styles.instrument}`}>
+                <p className={`mono ${styles.instrumentLabel}`}>What SPHEREx sees</p>
                 <SpectralStrip />
-                <figcaption className={styles.instrumentNote}>
-                  What SPHEREx sees: 0.75 to 5 µm, invisible to our eyes. Each detector&apos;s filter changes color from edge to edge, so
-                  one object can look brighter or fainter from one visit to the next.
-                </figcaption>
-              </figure>
+                <p className={styles.instrumentNote}>
+                  0.75 to 5 µm, invisible to our eyes. Each detector&apos;s filter changes color from edge to edge, so one object can look
+                  brighter or fainter from one visit to the next.
+                </p>
+              </div>
             </div>
             <ol className={styles.pipeline}>
               {PIPELINE.map((s, i) => (
                 <li key={s.title} className={styles.stage}>
-                  <span className={styles.stageNo} aria-hidden="true">
-                    {i + 1}
+                  <span className={`mono ${styles.stageNo}`} aria-hidden="true">
+                    {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
                     <h3>{s.title}</h3>
@@ -277,30 +187,67 @@ export default function LandingPage() {
         <HomeSky searched={t ? (t.n_searched ?? t.n_processed) : null} withObjects={t ? t.n_processed : null} />
 
         <section className="section" aria-labelledby="modes-heading">
-          <h2 id="modes-heading">See it for yourself</h2>
-          <ul className={styles.ways}>
-            {WAYS_IN.map((w) => (
-              <li key={w.href}>
-                <Link href={w.href} className={styles.way}>
-                  <span className={styles.wayTitle}>{w.title}</span>
-                  <span className={styles.wayBody}>{w.body}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className={styles.sectionHead}>
+            <div>
+              <p className="eyebrow">Ways in</p>
+              <h2 id="modes-heading">See it for yourself</h2>
+            </div>
+          </div>
+          <div className={styles.modes}>
+            <Link href="/objects/?view=leads" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Unexplained leads</span>
+              <h3>Not yet identified by JPL</h3>
+              <p>
+                The objects JPL hasn&apos;t matched to a known asteroid or comet (some are still being checked, some may be glitches), ranked by the strength of the evidence, each with a blink, the case for
+                and against, and where to point a telescope to confirm it.
+              </p>
+              <span className={styles.modeCta}>See the leads</span>
+            </Link>
+            <Link href="/objects/?view=patches" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Patches of sky</span>
+              <h3>Blink the sky</h3>
+              <p>Pick a patch of sky and flip between real SPHEREx images taken hours or days apart. Stars hold still; movers jump.</p>
+              <span className={styles.modeCta}>Start exploring</span>
+            </Link>
+            <Link href="/objects/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Objects</span>
+              <h3>Weigh the evidence</h3>
+              <p>
+                Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the JPL
+                check, the explanations we can and can&apos;t rule out, and, once fitted, its orbit and distance.
+              </p>
+              <span className={styles.modeCta}>Browse objects</span>
+            </Link>
+            <Link href="/sky/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Sky map</span>
+              <h3>Where we&apos;ve searched</h3>
+              <p>Every patch of sky we&apos;ve processed on one all-sky map, with the ecliptic and the Milky Way for reference.</p>
+              <span className={styles.modeCta}>Open the map</span>
+            </Link>
+            <Link href="/limits/" className={`card ${styles.mode}`}>
+              <span className="eyebrow">Detection limits</span>
+              <h3>What we could miss</h3>
+              <p>How faint and how slow an object we can recover, measured by planting simulated objects in real images.</p>
+              <span className={styles.modeCta}>See the limits</span>
+            </Link>
+          </div>
         </section>
 
         <section className="section" aria-labelledby="featured-heading">
           <div className={styles.sectionHead}>
-            <h2 id="featured-heading">Patches of sky to explore</h2>
+            <div>
+              <p className="eyebrow">Start here</p>
+              <h2 id="featured-heading">Patches of sky to explore</h2>
+            </div>
             <Link href="/objects/?view=patches" className={styles.more}>
-              See all patches
+              See all
             </Link>
           </div>
           <FieldGrid limit={3} />
         </section>
 
         <section className={`section ${styles.integrity}`} aria-labelledby="integrity-heading">
+          <p className="eyebrow">Scientific integrity</p>
           <h2 id="integrity-heading">We&apos;re looking, not claiming.</h2>
           <p>
             Scientists have proposed that an undiscovered planet, often called Planet X or Planet Nine, may orbit far beyond Neptune.
