@@ -125,12 +125,11 @@ describe("objects", () => {
     expect(body.objects[0].summary_plain).toContain("matches the known asteroid");
   });
 
-  it("has no prediction or ADES export before an orbit exists", async () => {
+  it("has no prediction before an orbit exists", async () => {
     const { get } = makeClient({ files });
     const p = await get(`/api/objects/${obj.object_id}/prediction`);
     expect(p.status).toBe(404);
     expect((await json(p)).detail).toContain("no orbit yet");
-    expect((await get(`/api/objects/${obj.object_id}/ades.xml`)).status).toBe(404);
     expect((await get("/api/objects/obj-missing")).status).toBe(404);
   });
 
