@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "pipeline_version": "0.1.0+git.56e0ec2",
-  "build_run_id": "gh-42583803807-1",
+  "build_run_id": "gh-43072715891-1",
   "object_id": "obj-sv-2025w292a-l0168-s001-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -1207,6 +1207,51 @@
     "quality_level": "high",
     "method": "rule_based_v1",
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
+  },
+  "anomaly": {
+    "score": 0.28,
+    "rank": 223,
+    "n_ranked": 537,
+    "reason_plain": "Moving at 24° to the ecliptic, steeper than most objects we have tracked",
+    "features": [
+      {
+        "name": "log_rate",
+        "label": "motion rate",
+        "value": 1.5351,
+        "median": 1.4522,
+        "z": 0.37
+      },
+      {
+        "name": "cross_ecliptic",
+        "label": "motion across the ecliptic",
+        "value": 0.4136,
+        "median": 0.1186,
+        "z": 2.46
+      },
+      {
+        "name": "abs_ecl_lat",
+        "label": "distance from the ecliptic",
+        "value": 0.2604,
+        "median": 0.9205,
+        "z": -0.87
+      },
+      {
+        "name": "log_helio_au",
+        "label": "distance from the Sun",
+        "value": 0.3436,
+        "median": 0.3874,
+        "z": -0.49
+      },
+      {
+        "name": "colour",
+        "label": "infrared colour (0.75-2.5 µm)",
+        "value": -0.8991,
+        "median": -0.3452,
+        "z": -0.9
+      }
+    ],
+    "method": "isolation_forest_v1",
+    "definition": "Isolation Forest over motion rate, motion across the ecliptic, ecliptic latitude, distance from the Sun and infrared colour of every published object with a motion fit over 3 or more detections (not two-detection pairs or likely artifacts). It ranks how unlike the others an object is; unusual does not mean new or unexplained."
   },
   "explanation": null,
   "spectrum": {
