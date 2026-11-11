@@ -165,6 +165,7 @@ test("detection limits page", async ({ page }, info) => {
 
 test("sky map", async ({ page }, info) => {
   await checkPage(page, info, "/sky/", "sky");
+  await page.getByLabel("Flat map").check();
   const map = page.getByRole("group", { name: "All-sky map in equatorial coordinates" });
   // Every published processed tile is a link to its field.
   await expect(map.getByRole("link")).not.toHaveCount(0);

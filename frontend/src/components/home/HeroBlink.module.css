@@ -1,0 +1,131 @@
+.figure {
+  margin: 0;
+  width: 100%;
+}
+
+/* The plate: a dark well with a thin frame, nearly square-cornered like glass. */
+.plate {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--well);
+  outline: 1px solid var(--border);
+  outline-offset: 6px;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  visibility: hidden;
+}
+
+.image[data-shown="true"] {
+  visibility: visible;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.is {
+  fill: none;
+  stroke: var(--track);
+  stroke-width: 2;
+}
+
+.was {
+  fill: none;
+  stroke: var(--track);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 3;
+  opacity: 0.65;
+}
+
+.path {
+  stroke: var(--track);
+  stroke-width: 1;
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+/* The frame's date and wavelength, written on the plate the way plates were labelled. */
+.frameTag {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: rgb(11 31 58 / 0.86);
+  font-size: var(--text-sm);
+  font-stretch: var(--stretch-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.frameKey {
+  font-weight: 700;
+}
+
+.frameWave {
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.control {
+  min-width: 11.5em;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  font-weight: 600;
+}
+
+.caption {
+  margin-top: var(--space-3);
+  max-width: 62ch;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.caption p {
+  margin: 0 0 var(--space-2);
+}
+
+.caption p:first-child {
+  color: var(--text);
+  font-size: var(--text-md);
+}
+
+.note {
+  color: var(--text-muted);
+}
+
+.sources {
+  font-stretch: var(--stretch-data);
+}
+
+.sources a {
+  color: var(--text-muted);
+}

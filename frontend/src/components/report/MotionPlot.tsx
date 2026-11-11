@@ -104,7 +104,7 @@ export function MotionPlot({ detections, motion }: { detections: Detection[]; mo
         )}
         {pts.map((p, i) => (
           <g key={i}>
-            <circle cx={sx(p.east)} cy={sy(p.north)} r={Math.max(2, p.err * pxPerArcsec)} fill="rgb(255 138 76 / 0.15)" stroke="var(--accent)" strokeWidth={1} />
+            <circle cx={sx(p.east)} cy={sy(p.north)} r={Math.max(2, p.err * pxPerArcsec)} fill="rgb(242 245 249 / 0.12)" stroke="var(--accent)" strokeWidth={1} />
             <circle cx={sx(p.east)} cy={sy(p.north)} r={3} fill="var(--accent)" />
             {(pts.length <= 8 || i === 0 || i === pts.length - 1) && (
               <text className={styles.tick} x={sx(p.east) + 7} y={sy(p.north) - 7} style={{ fill: "var(--text)" }}>

@@ -59,7 +59,7 @@ export function M50Chart({ points, xLabel, unit }: { points: M50Point[]; xLabel:
             </text>
           ) : (
             <g key={p.x}>
-              <circle cx={sx(logX(p.x))} cy={sy(p.m50_ab)} r={5} fill="var(--accent)" stroke="#08060d" strokeWidth={2} />
+              <circle cx={sx(logX(p.x))} cy={sy(p.m50_ab)} r={5} fill="var(--accent)" stroke="#0b1f3a" strokeWidth={2} />
               <text className={styles.tick} x={sx(logX(p.x))} y={sy(p.m50_ab) - 10} textAnchor="middle" style={{ fill: "var(--text)" }}>
                 {fmt(p.m50_ab, 1)}
               </text>

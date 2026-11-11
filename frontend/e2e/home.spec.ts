@@ -7,17 +7,17 @@ test.beforeEach(async ({ page }) => {
 
 test("home explains what the project does and how, with real survey numbers", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Everything that moves\s*in the infrared sky\./);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Stars stay put\.\s*Asteroids don’t\./);
   // Numbers come from the published survey data, never placeholders.
-  const stats = page.locator("dl").first();
-  await expect(stats.getByText("SPHEREx images analyzed")).toBeVisible();
-  await expect(stats.locator("dd").first()).toHaveText(/^\d[\d,]*$/);
+  const ledger = page.locator("dl").first();
+  await expect(ledger.getByText("SPHEREx images analyzed")).toBeVisible();
+  await expect(ledger.locator("dd").first()).toHaveText(/^\d[\d,]*$/);
 
-  await expect(page.getByRole("heading", { name: "A transparent search for moving objects, built on real data" })).toBeVisible();
-  for (const name of ["Find", "Verify", "Explain"]) await expect(page.getByText(name, { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tombaugh's method, at SPHEREx scale" })).toBeVisible();
+  for (const name of ["Find what moves", "Check it against what's known", "Show the evidence"]) {
+    await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+  }
 
-  await page.getByRole("link", { name: "How it works ↓" }).click();
-  await expect(page).toHaveURL(/#how$/);
   const how = page.getByRole("region", { name: "From raw images to an evidence report" });
   await expect(how.getByRole("listitem")).toHaveCount(6);
   await expect(how.getByRole("heading", { name: "Check against JPL" })).toBeVisible();
@@ -27,75 +27,29 @@ test("home explains what the project does and how, with real survey numbers", as
   await expect(page.getByText(/We're looking, not claiming/)).toBeVisible();
 });
 
-test("the spacetime fabric is decorative and follows the pointer without blocking links", async ({ page }) => {
+test("the hero blinks two real SPHEREx images, each traceable to its archive file", async ({ page }) => {
   await page.goto("/");
-  const canvas = page.locator("canvas[aria-hidden='true']").first();
-  await expect(canvas).toBeAttached();
-  const box = (await canvas.boundingBox())!;
-  expect(box.width).toBeGreaterThan(300);
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.6, { steps: 8 });
-  await page.waitForTimeout(500);
-  // Canvas ignores the pointer, so the buttons over it still work.
-  await page.getByRole("link", { name: "See the evidence" }).click();
-  await expect(page).toHaveURL(/\/detective\/$/);
-  expect(errors).toEqual([]);
-});
-
-test("with reduced motion the fabric is drawn once and left still", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
-  await page.waitForTimeout(1500);
-  const frames = await page.evaluate(
-    () =>
-      new Promise<number>((resolve) => {
-        const c = document.querySelector("canvas") as HTMLCanvasElement;
-        const first = c.toDataURL();
-        setTimeout(() => resolve(c.toDataURL() === first ? 0 : 1), 600);
-      }),
-  );
-  expect(frames).toBe(0);
-});
-
-test("clicking sends a ripple and the fabric keeps animating", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "warning" && m.text().includes("[spacetime]") && errors.push(m.text()));
-  await page.goto("/");
-  await page.waitForLoadState("load");
-  await page.waitForTimeout(2500);
-  const vp = page.viewportSize()!;
-  await page.mouse.move(vp.width * 0.6, vp.height * 0.6, { steps: 5 });
-  for (let i = 0; i < 3; i++) {
-    await page.mouse.down();
-    await page.mouse.up();
-    await page.waitForTimeout(120);
+  const hero = page.getByRole("figure", { name: /circled dot/ });
+  const a = hero.getByRole("img", { name: /SPHEREx infrared image A/ });
+  await expect(a).toBeVisible();
+  // It flips on its own, and the visitor can stop it.
+  await expect(hero.getByRole("img", { name: /SPHEREx infrared image B/ })).toBeVisible({ timeout: 3000 });
+  const pause = hero.getByRole("button", { name: "Pause blinking" });
+  await pause.click();
+  await expect(hero.getByRole("button", { name: "Resume blinking" })).toHaveAttribute("aria-pressed", "true");
+  for (const key of ["A", "B"]) {
+    await expect(hero.getByRole("link", { name: new RegExp(`^image ${key} `) })).toHaveAttribute("href", /nasa-irsa-spherex.*\.fits$/);
   }
-  const changes = await page.evaluate(
-    () =>
-      new Promise<boolean>((resolve) => {
-        const c = document.querySelector("canvas") as HTMLCanvasElement;
-        const first = c.toDataURL();
-        setTimeout(() => resolve(c.toDataURL() !== first), 400);
-      }),
-  );
-  expect(changes).toBe(true);
-  // Scrolling moves the fabric too.
-  await page.mouse.wheel(0, vp.height);
-  await page.waitForTimeout(600);
-  expect(errors).toEqual([]);
+  await expect(hero.getByRole("link", { name: "Blink all images of this patch" })).toHaveAttribute("href", /aquarius-a/);
 });
 
-test("with reduced motion the fabric still follows the reader's pointer", async ({ page }) => {
+test("with reduced motion the hero holds still until the visitor flips it", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.waitForLoadState("load");
-  const shot = () => page.evaluate(() => (document.querySelector("canvas") as HTMLCanvasElement).toDataURL());
-  const before = await shot();
-  const vp = page.viewportSize()!;
-  await page.mouse.move(vp.width * 0.3, vp.height * 0.4);
-  await page.mouse.move(vp.width * 0.7, vp.height * 0.6, { steps: 10 });
-  await page.waitForTimeout(500);
-  expect(await shot()).not.toBe(before);
+  const hero = page.getByRole("figure", { name: /circled dot/ });
+  await expect(hero.getByRole("img", { name: /SPHEREx infrared image A/ })).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(hero.getByRole("img", { name: /SPHEREx infrared image A/ })).toBeVisible();
+  await hero.getByRole("button", { name: "Show image B" }).click();
+  await expect(hero.getByRole("img", { name: /SPHEREx infrared image B/ })).toBeVisible();
 });

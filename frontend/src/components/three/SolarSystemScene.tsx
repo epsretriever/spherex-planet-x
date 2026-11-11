@@ -29,7 +29,7 @@ export default function SolarSystemScene({ bodies, onFail }: SolarSystemProps) {
 
   const build = (stage: Stage, host: HTMLDivElement) => {
     const { scene } = stage;
-    const accent = cssColor("--accent", "#ff8a4c");
+    const accent = cssColor("--track", "#7cf0c8");
     const muted = cssColor("--text-muted", "#aa9fbd");
     const gold = cssColor("--ir-7", "#f7d13d");
 
@@ -119,7 +119,7 @@ export default function SolarSystemScene({ bodies, onFail }: SolarSystemProps) {
           <>
             <strong>{hot.name}</strong>: about {fmt(norm(hot.p), 1)} AU from the Sun on {hot.date}
             {hot.range ? ` (anywhere from ${fmt(hot.range[0], 1)} to ${fmt(hot.range[1], 1)} AU fits)` : ""}.{" "}
-            <a href={objectHref(hot.id)}>Open its report →</a>
+            <a href={objectHref(hot.id)}>Open its report</a>
           </>
         ) : (
           "Point at a dot to name the object and see how uncertain its distance is."

@@ -217,7 +217,7 @@ function LeadCard({ lead, rank }: { lead: Ranked; rank: number }) {
       </section>
 
       <footer className={styles.links}>
-        <Link href={objectHref(lead.object_id)}>Full report: evidence, orbit and distance →</Link>
+        <Link href={objectHref(lead.object_id)}>Full report: evidence, orbit and distance</Link>
       </footer>
     </article>
   );

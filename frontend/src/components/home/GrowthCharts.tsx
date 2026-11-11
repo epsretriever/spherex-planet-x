@@ -10,17 +10,17 @@ const int = (v: number) => v.toLocaleString("en-US");
 
 /** Fixed order and colors: a series keeps its color whichever others are hidden. */
 const SERIES: { key: Key; label: string; color: string; fmt: (v: number, d: GrowthDay) => string }[] = [
-  { key: "tiles_searched", label: "Patches of sky searched", color: "#3987e5", fmt: int },
+  { key: "tiles_searched", label: "Patches of sky searched", color: "#8fc7ff", fmt: int },
   {
     key: "area_deg2",
     label: "Sky searched",
-    color: "#d95926",
+    color: "#ff9a6b",
     fmt: (v, d) => `${v.toFixed(1)} deg² · ${d.sky_percent.toFixed(2)}%`,
   },
-  { key: "candidates", label: "Candidates found", color: "#199e70", fmt: int },
-  { key: "objects", label: "Objects tracked", color: "#c98500", fmt: int },
-  { key: "identified", label: "Identified (known to JPL)", color: "#d55181", fmt: int },
-  { key: "unidentified", label: "Unidentified", color: "#9085e9", fmt: int },
+  { key: "candidates", label: "Candidates found", color: "#5fd9a8", fmt: int },
+  { key: "objects", label: "Objects tracked", color: "#ffcf5a", fmt: int },
+  { key: "identified", label: "Identified (known to JPL)", color: "#ff8fb8", fmt: int },
+  { key: "unidentified", label: "Unidentified", color: "#c4b5ff", fmt: int },
 ];
 
 const H = 340;

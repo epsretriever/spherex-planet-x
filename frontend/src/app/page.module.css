@@ -1,105 +1,75 @@
+/* Home. One loud thing: the blinking plate in the hero. Everything else is set quietly. */
+
 .hero {
-  position: relative;
-  /* Clicking the hero sends a ripple through the fabric; don't start a text selection. */
-  user-select: none;
-  -webkit-user-select: none;
-  margin-top: calc(var(--space-6) * -1);
-  min-height: min(88vh, 860px);
-  display: flex;
-  align-items: center;
-  padding: var(--space-16) 0 var(--space-12);
-  overflow: hidden;
-  background:
-    radial-gradient(700px 380px at 72% 38%, rgb(237 105 37 / 0.14), transparent 70%),
-    radial-gradient(600px 420px at 12% 0%, rgb(120 28 109 / 0.32), transparent 70%),
-    radial-gradient(1200px 500px at 50% 120%, rgb(74 12 107 / 0.35), transparent 70%);
+  padding: var(--space-12) 0 var(--space-16);
 }
 
-/* Keeps the text readable over the fabric, and fades the hero into the page. */
-.heroShade {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgb(8 6 13 / 0.45) 0%, rgb(8 6 13 / 0.12) 45%, transparent 65%),
-    linear-gradient(180deg, transparent 70%, var(--bg) 100%);
+/* Phone: headline, then the plate, then the rest, so the blink is on the first screen.
+   Wide: headline and text on the left, the plate beside them. */
+.heroGrid {
+  display: grid;
+  grid-template-areas: "title" "plate" "text";
+  gap: var(--space-8);
+  align-items: start;
 }
 
-.heroInner {
-  position: relative;
-  z-index: 1;
+@media (min-width: 960px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-areas: "title plate" "text plate";
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-16);
+    row-gap: 0;
+  }
+}
+
+.heroText {
+  grid-area: text;
+}
+
+.heroBlink {
+  grid-area: plate;
+  /* Leave room for the plate's offset frame. */
+  padding: 6px;
   width: 100%;
+  max-width: 520px;
 }
 
-/* Scroll-linked motion, where the browser supports scroll timelines (no script involved):
-   the hero text drifts up and fades as you scroll past it, sections rise into place, and the
-   pipeline's connecting line draws itself as you read down it. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .heroInner {
-      animation: hero-out linear both;
-      animation-timeline: view();
-      animation-range: exit 0% exit 90%;
-    }
-
-    .capability,
-    .stage,
-    .mode {
-      animation: rise-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 70%;
-    }
-
-    .pipeline::before {
-      transform-origin: top;
-      animation: draw-line linear both;
-      animation-timeline: view();
-      animation-range: entry 20% cover 70%;
-    }
-  }
-}
-
-@keyframes hero-out {
-  to {
-    opacity: 0.15;
-    transform: translateY(-80px) scale(0.97);
-  }
-}
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.98);
-  }
-}
-
-@keyframes draw-line {
-  from {
-    transform: scaleY(0);
+@media (min-width: 960px) {
+  .heroBlink {
+    justify-self: end;
+    align-self: center;
   }
 }
 
 .title {
-  max-width: 14ch;
-  font-size: clamp(2.6rem, 7vw, 5.25rem);
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(2rem, 8.2vw, 3.75rem);
+  font-stretch: 115%;
+  font-weight: 700;
   line-height: 1;
-  margin-bottom: var(--space-6);
+  letter-spacing: -0.025em;
 }
 
-.glow {
-  background: linear-gradient(90deg, var(--ir-7), var(--ir-5) 45%, var(--ir-3));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Two statements, two lines. */
+.title span {
+  display: block;
+}
+
+@media (min-width: 960px) {
+  .title {
+    align-self: end;
+    margin-bottom: var(--space-6);
+  }
 }
 
 .lede {
-  max-width: 60ch;
-  font-size: var(--text-lg);
-  color: color-mix(in srgb, var(--text) 82%, var(--text-muted));
+  max-width: 58ch;
+  margin-top: 0;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--text);
 }
 
 .actions {
@@ -110,95 +80,83 @@
   margin-top: var(--space-8);
 }
 
-.textLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  padding: 0 var(--space-2);
-  color: var(--text-muted);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.textLink:hover {
-  color: var(--text);
-}
-
-.stats {
+/* Running totals, set like an observing log: label above, figure below, no boxes. */
+.ledger {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  max-width: 760px;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: var(--space-4) var(--space-8);
   margin: var(--space-12) 0 0;
 }
 
-@media (min-width: 768px) {
-  .stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+@media (min-width: 640px) {
+  .ledger {
+    grid-template-columns: repeat(3, minmax(0, max-content));
   }
 }
 
-.stats > div {
+.ledger > div {
   display: flex;
   flex-direction: column-reverse;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
-  background: rgb(18 14 26 / 0.6);
+  gap: 2px;
 }
 
-.stats dt {
-  font-size: var(--text-xs);
+.ledger dt {
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
-.stats dd {
+.ledger dd {
   margin: 0;
   font-size: var(--text-xl);
-  color: var(--text);
+  font-weight: 600;
+  font-stretch: var(--stretch-data);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.unit {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .asOf {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-4) 0 0;
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
-/* What it does */
+.sectionLede {
+  max-width: 64ch;
+  font-size: 1.125rem;
+  color: var(--text-muted);
+}
+
 .what {
-  margin-top: var(--space-8);
+  margin-top: var(--space-16);
 }
 
 .whatHead {
-  max-width: 760px;
   margin-bottom: var(--space-8);
-}
-
-.sectionLede {
-  font-size: var(--text-lg);
-  color: var(--text-muted);
 }
 
 .capabilities {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: var(--space-4);
+  gap: var(--space-8);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.capability {
-  padding: var(--space-6);
-}
-
-.capability :global(.eyebrow) {
-  margin-bottom: var(--space-2);
+@media (min-width: 860px) {
+  .capabilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .capability h3 {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: 1.125rem;
 }
 
 .capability p {
@@ -206,67 +164,65 @@
   color: var(--text-muted);
 }
 
-/* How it works */
+.how {
+  margin-top: var(--space-16);
+}
+
 .howGrid {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-12);
 }
 
 @media (min-width: 960px) {
   .howGrid {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     align-items: start;
   }
 
   .howIntro {
     position: sticky;
-    top: 96px;
+    /* Clear the sticky top bar. */
+    top: calc(56px + var(--space-8));
   }
 }
 
+.instrument {
+  margin: var(--space-8) 0 0;
+}
+
+.instrumentNote {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* A real sequence, so it's numbered. */
 .pipeline {
-  position: relative;
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-6);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* The line that joins the stages. */
-.pipeline::before {
-  content: "";
-  position: absolute;
-  top: 20px;
-  bottom: 20px;
-  left: 19px;
-  width: 2px;
-  background: linear-gradient(180deg, var(--ir-7), var(--ir-4) 50%, var(--ir-1));
-  opacity: 0.6;
-}
-
 .stage {
-  position: relative;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
 .stageNo {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--border-strong);
-  background: var(--surface-2);
-  color: var(--accent);
-  font-size: var(--text-sm);
+  font-size: var(--text-xl);
   font-weight: 600;
+  font-stretch: var(--stretch-data);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text-muted);
 }
 
 .stage h3 {
-  margin: 8px 0 var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-size: 1.125rem;
 }
 
 .stage p {
@@ -274,29 +230,60 @@
   color: var(--text-muted);
 }
 
-.instrument {
-  margin-top: var(--space-6);
-  padding: var(--space-6);
+.ways {
+  display: grid;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
 }
 
-.instrumentLabel {
-  margin: 0 0 var(--space-4);
-  font-size: var(--text-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.ways li {
+  border-bottom: 1px solid var(--border);
+}
+
+.way {
+  display: grid;
+  gap: var(--space-1) var(--space-8);
+  padding: var(--space-4) 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (min-width: 760px) {
+  .way {
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
+.wayTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-stretch: var(--stretch-display);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 4px;
+}
+
+.wayBody {
+  max-width: 64ch;
   color: var(--text-muted);
 }
 
-.instrumentNote {
-  margin: var(--space-4) 0 0;
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+.way:hover {
+  color: var(--text);
+}
+
+.way:hover .wayTitle {
+  text-decoration-color: currentColor;
 }
 
 .sectionHead {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-6);
@@ -311,15 +298,13 @@
   align-items: center;
   min-height: var(--touch);
   font-weight: 600;
-  text-decoration: none;
 }
 
+/* The caution note: the sodium rule marks it as a caveat, the same color as warnings. */
 .integrity {
-  max-width: 820px;
-  padding: var(--space-8) var(--space-6);
-  border-left: 3px solid var(--status-unexplained);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  background: linear-gradient(90deg, rgb(255 209 102 / 0.06), transparent 60%);
+  max-width: 760px;
+  padding-left: var(--space-6);
+  border-left: 2px solid var(--sodium);
 }
 
 .integrity p {
@@ -328,55 +313,4 @@
 
 .integrity p:last-child {
   margin: 0;
-}
-
-.modes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  gap: var(--space-4);
-}
-
-.mode {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-8) var(--space-6);
-  color: var(--text);
-  text-decoration: none;
-  transition:
-    border-color var(--dur) var(--ease-out),
-    box-shadow var(--dur) var(--ease-out);
-}
-
-.mode:hover {
-  color: var(--text);
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-  box-shadow: var(--glow);
-}
-
-.mode :global(.eyebrow) {
-  margin: 0;
-}
-
-.mode h3 {
-  font-size: var(--text-xl);
-  margin: 0;
-}
-
-.mode p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-.modeCta {
-  margin-top: var(--space-2);
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* Over the animated backdrop, a blurred header would be re-blurred every frame: use a solid one. */
-:global(body:has(canvas[data-fabric])) :global(header) {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background: rgb(8 6 13 / 0.94);
 }

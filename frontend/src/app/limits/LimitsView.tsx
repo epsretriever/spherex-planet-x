@@ -202,7 +202,7 @@ function Study({ s }: { s: LimitsStudy }) {
               {s.example_candidate_ids.map((id) => (
                 <li key={id}>
                   <Link href={candidateHref(id)} className="button">
-                    <span className={styles.simTag}>SIMULATED</span> {id} →
+                    <span className={styles.simTag}>SIMULATED</span> {id}
                   </Link>
                 </li>
               ))}

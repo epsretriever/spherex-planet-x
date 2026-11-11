@@ -144,7 +144,7 @@ export default function TourPanel() {
           </Link>
         ) : (
           <button type="button" className="button button-primary" onClick={() => go(step + 1)}>
-            Next →
+            Next
           </button>
         )}
       </div>
