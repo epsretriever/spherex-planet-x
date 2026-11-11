@@ -12,6 +12,8 @@ export interface SceneProps {
   planets: Planet[];
   epochMjd: number;
   objectLabel: string;
+  /** More orbits to draw beside the main one (the comparison page), each with its own label. */
+  others?: { elements: Elements; label: string }[];
   /** Called when WebGL can't start, so the caller can show the 2D view instead. */
   onFail: () => void;
 }
@@ -38,7 +40,7 @@ function line(points: Vec3[], material: THREE.LineBasicMaterial) {
  * orbit, and its uncertainty cloud (one faint orbit and one dot per clone). Drag to turn, pinch
  * or scroll to zoom. Turns slowly on its own unless the reader prefers reduced motion.
  */
-export default function OrbitScene({ object, clones, planets, epochMjd, objectLabel, onFail }: SceneProps) {
+export default function OrbitScene({ object, clones, planets, epochMjd, objectLabel, others, onFail }: SceneProps) {
   const host = useRef<HTMLDivElement>(null);
   const labels = useRef<HTMLDivElement>(null);
   const failed = useRef(onFail);
@@ -62,7 +64,7 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
     renderer.domElement.setAttribute("aria-hidden", "true");
 
     const scene = new THREE.Scene();
-    const reach = Math.max(object.a_au * (1 + object.e), ...planets.map((p) => p.a * (1 + p.e)), 1.5);
+    const reach = Math.max(object.a_au * (1 + object.e), ...(others ?? []).map((o) => o.elements.a_au * (1 + o.elements.e)), ...planets.map((p) => p.a * (1 + p.e)), 1.5);
     const camera = new THREE.PerspectiveCamera(40, 1, reach / 200, reach * 20);
     camera.position.set(0, reach * 1.25, reach * 1.6);
 
@@ -81,7 +83,7 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
     const sun = new THREE.Mesh(new THREE.SphereGeometry(reach * 0.018, 24, 16), mat(new THREE.MeshBasicMaterial({ color: cssColor("--ir-7", "#f7d13d") })));
     scene.add(sun);
 
-    const tags: { text: string; pos: THREE.Vector3; kind: "sun" | "planet" | "object" }[] = [{ text: "Sun", pos: new THREE.Vector3(), kind: "sun" }];
+    const tags: { text: string; pos: THREE.Vector3; kind: "sun" | "planet" | "object" | "second" }[] = [{ text: "Sun", pos: new THREE.Vector3(), kind: "sun" }];
 
     const planetLine = mat(new THREE.LineBasicMaterial({ color: muted, transparent: true, opacity: 0.45 }));
     const planetDot = mat(new THREE.MeshBasicMaterial({ color: cool }));
@@ -112,6 +114,15 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
     obj.position.copy(objPos);
     scene.add(obj);
     tags.push({ text: objectLabel, pos: objPos, kind: "object" });
+
+    for (const other of others ?? []) {
+      scene.add(line(orbitPoints(other.elements, 240), mat(new THREE.LineBasicMaterial({ color: cool }))));
+      const pos = toThree(positionAt(other.elements));
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(reach * 0.013, 16, 12), mat(new THREE.MeshBasicMaterial({ color: cool })));
+      dot.position.copy(pos);
+      scene.add(dot);
+      tags.push({ text: other.label, pos, kind: "second" });
+    }
 
     // HTML labels, positioned each frame.
     const tagEls = tags.map((t) => {
@@ -182,7 +193,7 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
       renderer.domElement.remove();
       tagEls.forEach((s) => s.remove());
     };
-  }, [object, clones, planets, epochMjd, objectLabel]);
+  }, [object, clones, planets, epochMjd, objectLabel, others]);
 
   return (
     <div ref={host} className={styles.scene}>
