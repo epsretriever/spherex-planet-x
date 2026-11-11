@@ -106,7 +106,9 @@ export function CompareView() {
       {(!a || !b) && (
         <p className={styles.prompt} role="status">
           {!a && !b ? "Choose two objects above to compare them." : "Choose one more object to compare."} Not sure which?{" "}
-          <Link href="/objects/">Browse the objects</Link>, open one, and use &ldquo;Compare with another object&rdquo;.
+          <Link href="/objects/" prefetch={false}>
+            Browse the objects
+          </Link>, open one, and use &ldquo;Compare with another object&rdquo;.
         </p>
       )}
 

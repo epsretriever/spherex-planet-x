@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { Deferred } from "@/components/Deferred";
+import { WhenVisible } from "@/components/WhenVisible";
+import { unpackTile, type PackedTile } from "@/components/skyTile";
 import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
 import type { GrowthDay } from "@/lib/staticData";
 import type { SkyGlobeProps } from "@/components/three/SkyGlobe";
@@ -41,17 +43,20 @@ const TABLE_ROWS = 30;
 
 /** A survey whose tiles may carry only the fields this page reads (the build-time copy). */
 export type SkySurvey = Omit<Survey, "tiles"> & { tiles: SkyTile[] };
+/** The same, as inlined in the page: tiles as rows (see packTile). */
+export type PackedSkySurvey = Omit<Survey, "tiles"> & { tiles: PackedTile[] };
 
 /** The survey footprint: as published at build time, then as the API serves it now. */
 export function SkyView({
-  initial,
+  initial: packed,
   fieldNames,
   growth = [],
 }: {
-  initial: SkySurvey | null;
+  initial: PackedSkySurvey | null;
   fieldNames: Record<string, string>;
   growth?: GrowthDay[];
 }) {
+  const initial = useMemo<SkySurvey | null>(() => (packed ? { ...packed, tiles: packed.tiles.map(unpackTile) } : null), [packed]);
   const [showAll, setShowAll] = useState(false);
   const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
   const [raUnits, setRaUnits] = useState<RaUnits>("deg");
@@ -297,7 +302,10 @@ export function SkyView({
         </figcaption>
       </figure>
 
-      <CoverageChart days={growth} />
+      {/* Everything from here down is screens below the map: it renders when the reader gets near it. */}
+      <WhenVisible minHeight={300} margin="400px">
+        <CoverageChart days={growth} />
+      </WhenVisible>
 
       <SystemPanel />
 
@@ -308,6 +316,7 @@ export function SkyView({
           The depth (m₅₀) is the magnitude at which we find half of the simulated objects we plant there; it stays blank until that test has
           run on the tile.
         </p>
+        <WhenVisible minHeight={640} margin="600px">
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -376,6 +385,7 @@ export function SkyView({
             </button>
           </p>
         )}
+        </WhenVisible>
         <p className={styles.note}>
           {survey.description} Survey map generated {formatUtcDateTime(survey.generated_utc)}.
           {survey.last_run && (
