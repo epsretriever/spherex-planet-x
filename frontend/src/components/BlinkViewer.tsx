@@ -717,7 +717,7 @@ function MoverSheet({
             </div>
           </dl>
           <Link className="button button-primary" href={candidateHref(mover.candidate_id)}>
-            See the full evidence →
+            See the full evidence
           </Link>
         </div>
       )}

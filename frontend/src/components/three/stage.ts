@@ -55,6 +55,14 @@ export interface Stage {
   pick(points: THREE.Vector3[], clientX: number, clientY: number, radiusPx?: number, shown?: (i: number) => boolean): number;
   /** Ask for a redraw (the stage draws only when something changed). */
   invalidate(): void;
+  /**
+   * Run `cb(seconds)` before every frame and keep drawing while the figure is on screen, for
+   * scenes with living parts (twinkle, pulses). Never runs with reduced motion: the scene is
+   * drawn once, still.
+   */
+  onFrame(cb: (t: number) => void): void;
+  /** The reader asked the OS for reduced motion. */
+  reduced: boolean;
   reset(): void;
   dispose(): void;
 }
@@ -97,10 +105,18 @@ export function createStage(host: HTMLElement, labelLayer: HTMLElement, opts: St
   let onScreen = true;
   let dirty = true;
   let frames = 0;
+  const tickers: ((t: number) => void)[] = [];
+  const clock = new THREE.Clock();
 
   const draw = () => {
     // Damping and auto-rotation need a few more frames after the last change.
     const moved = controls.update();
+    const living = tickers.length > 0 && !reduce && onScreen && !document.hidden;
+    if (living) {
+      const t = clock.getElapsedTime();
+      for (const cb of tickers) cb(t);
+      dirty = true;
+    }
     if (!onScreen || (!dirty && !moved && frames <= 0)) return;
     frames = dirty || moved ? 30 : frames - 1;
     dirty = false;
@@ -190,6 +206,12 @@ export function createStage(host: HTMLElement, labelLayer: HTMLElement, opts: St
       return best;
     },
     invalidate,
+    onFrame(cb) {
+      tickers.push(cb);
+      if (reduce) cb(0);
+      dirty = true;
+    },
+    reduced: reduce,
     reset() {
       camera.position.copy(home);
       controls.target.set(0, 0, 0);

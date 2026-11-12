@@ -9,28 +9,14 @@ import { pageMeta, SITE_URL } from "@/lib/meta";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 import styles from "./layout.module.css";
 
-// Self-hosted, preloaded variable fonts (see src/fonts/README.md). Each exposes a CSS variable
-// that globals.css builds its font stacks from.
-const inter = localFont({
-  src: "../fonts/inter-latin-wght-normal.woff2",
+// Self-hosted, preloaded variable font (see src/fonts/README.md). Archivo has weight and width
+// axes, so one file covers headlines (expanded), body text and data (condensed, tabular figures).
+const archivo = localFont({
+  src: "../fonts/archivo-latin-wdth-wght-normal.woff2",
   weight: "100 900",
   display: "swap",
-  variable: "--font-inter",
-});
-const spaceGrotesk = localFont({
-  src: "../fonts/space-grotesk-latin-wght-normal.woff2",
-  weight: "300 700",
-  display: "swap",
-  variable: "--font-space-grotesk",
-});
-const jetbrainsMono = localFont({
-  src: "../fonts/jetbrains-mono-latin-wght-normal.woff2",
-  weight: "100 800",
-  display: "swap",
-  variable: "--font-jetbrains-mono",
-  // Only labels and numbers use it; leave it off the critical path so the text that counts as the
-  // largest paint (Inter) downloads first.
-  preload: false,
+  variable: "--font-archivo",
+  declarations: [{ prop: "font-stretch", value: "62% 125%" }],
 });
 
 export const metadata: Metadata = {
@@ -41,13 +27,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08060d",
+  themeColor: "#0b1f3a",
   colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={archivo.variable}>
       <body>
         <a href="#main" className={styles.skip}>
           Skip to content

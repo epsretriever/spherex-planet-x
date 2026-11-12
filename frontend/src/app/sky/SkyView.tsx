@@ -8,11 +8,9 @@ import { Deferred } from "@/components/Deferred";
 import { WhenVisible } from "@/components/WhenVisible";
 import { unpackTile, type PackedTile } from "@/components/skyTile";
 import { DEPTH_RANGE, OBJECT_STEPS, SkyMap, type RaUnits, type SkyColorBy, type SkyTile, depthColor, hasSourcedRegion } from "@/components/SkyMap";
-import type { GrowthDay } from "@/lib/staticData";
 import type { SkyGlobeProps } from "@/components/three/SkyGlobe";
 import figStyles from "@/components/three/Figure3D.module.css";
 import { SystemPanel } from "@/components/three/SystemPanel";
-import { CoverageChart } from "./CoverageChart";
 import { getFields, getSurvey } from "@/lib/api";
 import type { Survey, SurveyTile } from "@/lib/contract";
 import { fmt, formatUtcDate, formatUtcDateTime } from "@/lib/format";
@@ -50,29 +48,55 @@ export type PackedSkySurvey = Omit<Survey, "tiles"> & { tiles: PackedTile[] };
 export function SkyView({
   initial: packed,
   fieldNames,
-  growth = [],
 }: {
   initial: PackedSkySurvey | null;
   fieldNames: Record<string, string>;
-  growth?: GrowthDay[];
 }) {
   const initial = useMemo<SkySurvey | null>(() => (packed ? { ...packed, tiles: packed.tiles.map(unpackTile) } : null), [packed]);
   const [showAll, setShowAll] = useState(false);
   const [colorBy, setColorBy] = useState<SkyColorBy>("objects");
   const [raUnits, setRaUnits] = useState<RaUnits>("deg");
-  // The 3D globe (three.js) is fetched only when the reader asks for it.
-  const [view, setView] = useState<"flat" | "globe">("flat");
+  // The 3D globe opens first; three.js arrives once the page is idle, so the page paints without it.
+  const [view, setView] = useState<"flat" | "globe">("globe");
   const [Globe, setGlobe] = useState<ComponentType<SkyGlobeProps> | null>(null);
   const [globeNote, setGlobeNote] = useState<string | null>(null);
   const noGlobe = () => {
     setView("flat");
     setGlobeNote("The 3D globe needs WebGL, which this browser or device doesn't offer. The flat map shows the same patches.");
   };
+  const loadGlobe = () => {
+    if (!Globe) import("@/components/three/SkyGlobe").then((m) => setGlobe(() => m.default), noGlobe);
+  };
   const showGlobe = () => {
     setView("globe");
     setGlobeNote(null);
-    if (!Globe) import("@/components/three/SkyGlobe").then((m) => setGlobe(() => m.default), noGlobe);
+    loadGlobe();
   };
+  useEffect(() => {
+    // Without WebGL, start on the flat map quietly; it shows the same patches.
+    let gl = false;
+    try {
+      const c = document.createElement("canvas");
+      gl = !!(c.getContext("webgl2") ?? c.getContext("webgl"));
+    } catch {
+      gl = false;
+    }
+    if (!gl) {
+      const t = setTimeout(() => setView("flat"), 0);
+      return () => clearTimeout(t);
+    }
+    // three.js (and building the scene) is heavy; start it at the reader's first sign of life
+    // (a pointer move, touch, scroll or key) so the page itself paints and settles first.
+    const events = ["pointermove", "pointerdown", "touchstart", "scroll", "keydown", "wheel"] as const;
+    const go = () => {
+      events.forEach((e) => window.removeEventListener(e, go));
+      loadGlobe();
+    };
+    events.forEach((e) => window.addEventListener(e, go, { passive: true, once: true }));
+    return () => events.forEach((e) => window.removeEventListener(e, go));
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // With the build-time survey on screen, the live one (and the Planet Nine region) can wait until the page is idle.
   const [live, setLive] = useState(!initial);
   useEffect(() => {
@@ -148,22 +172,30 @@ export function SkyView({
       <figure className={`card ${styles.mapCard}`}>
         <div className={styles.explainer}>
           <h2 className={styles.explainerTitle}>How to read this map</h2>
-          <p>
-            This is a map of the <strong>whole sky</strong>, like a globe unrolled flat. <strong>Left–right</strong> goes around the sky
-            (right ascension, 0–360°); <strong>up–down</strong> is north–south (declination, +90° at the top, −90° at the bottom). Each dot
-            is a patch we searched; the rest of the oval is sky we haven&apos;t searched yet.
-          </p>
+          {view === "globe" ? (
+            <p>
+              This is the <strong>whole sky</strong> as a globe, seen from outside. Each faint dot is a patch we searched; each{" "}
+              <strong>green beacon</strong> is a patch where something moved, with a taller pillar for more objects. The dashed gold ring is
+              the <strong>ecliptic</strong>, where the planets travel, and the band of light is the <strong>Milky Way</strong>.
+            </p>
+          ) : (
+            <p>
+              This is a map of the <strong>whole sky</strong>, like a globe unrolled flat. <strong>Left–right</strong> goes around the sky
+              (right ascension, 0–360°); <strong>up–down</strong> is north–south (declination, +90° at the top, −90° at the bottom). Each
+              dot is a patch we searched; the rest of the oval is sky we haven&apos;t searched yet.
+            </p>
+          )}
         </div>
         <div className={styles.controls}>
           <fieldset className={styles.colorBy}>
             <legend>View</legend>
             <label>
-              <input type="radio" name="sky-view" value="flat" checked={view === "flat"} onChange={() => setView("flat")} />
-              Flat map
-            </label>
-            <label>
               <input type="radio" name="sky-view" value="globe" checked={view === "globe"} onChange={showGlobe} />
               3D globe
+            </label>
+            <label>
+              <input type="radio" name="sky-view" value="flat" checked={view === "flat"} onChange={() => setView("flat")} />
+              Flat map
             </label>
           </fieldset>
         {view === "flat" && anyDepth && (
@@ -199,10 +231,14 @@ export function SkyView({
             {Globe ? (
               <Globe tiles={tiles} emptyCells={empty?.positions} planetNine={p9} tileName={(t) => name(t) ?? t.tile_id} onFail={noGlobe} />
             ) : (
-              <div className={`skeleton ${figStyles.scene} ${figStyles.tall}`} role="status" aria-label="Loading the 3D globe" />
+              <div className={`${figStyles.scene} ${figStyles.tall} ${figStyles.waiting}`} role="status">
+                <button type="button" className="button" onClick={loadGlobe}>
+                  Show the 3D globe
+                </button>
+              </div>
             )}
             <p className={styles.axes}>
-              <span>The same sky wrapped back onto a globe, seen from outside: drag to turn it, pinch or scroll to zoom.</span>
+              <span>The same sky wrapped back onto a globe, seen from outside: drag to turn it, pinch or scroll to zoom, and select a green beacon to open its patch.</span>
               <span>From outside, east and west are mirrored compared with the flat map.</span>
             </p>
           </>
@@ -220,10 +256,11 @@ export function SkyView({
         <figcaption className={styles.legend}>
           <ul>
             <li>
-              <span className={styles.swTile} aria-hidden="true" /> Searched, moving objects found ({count("processed")}): select one to open
+              <span className={styles.swTile} style={view === "globe" ? { background: "var(--track)", borderColor: "var(--track)" } : undefined} aria-hidden="true" />{" "}
+              Searched, moving objects found ({count("processed")}): select one to open
               its patch
             </li>
-            {(colorBy === "objects" || !anyDepth) && (
+            {view === "flat" && (colorBy === "objects" || !anyDepth) && (
               <li className={styles.countKey}>
                   {OBJECT_STEPS.map((st) => (
                     <span key={st.min}>
@@ -303,10 +340,6 @@ export function SkyView({
       </figure>
 
       {/* Everything from here down is screens below the map: it renders when the reader gets near it. */}
-      <WhenVisible minHeight={300} margin="400px">
-        <CoverageChart days={growth} />
-      </WhenVisible>
-
       <SystemPanel />
 
       <section className={styles.section} aria-labelledby="tiles-title">
@@ -397,7 +430,7 @@ export function SkyView({
           )}
         </p>
         <p className={styles.next}>
-          <Link href="/limits/">How faint can we see? Detection limits →</Link>
+          <Link href="/limits/">How faint can we see? Detection limits</Link>
         </p>
       </section>
       </Deferred>

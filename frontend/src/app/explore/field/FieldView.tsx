@@ -119,7 +119,7 @@ export function FieldView({ id, initial, seed }: { id: string | null; initial?: 
             </dl>
             {realMovers > 0 && (
               <Link className="button" href={`/objects/?field=${encodeURIComponent(f.field_id)}`}>
-                See the evidence for each →
+                See the evidence for each
               </Link>
             )}
           </div>

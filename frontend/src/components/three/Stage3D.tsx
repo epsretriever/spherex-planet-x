@@ -15,6 +15,7 @@ export function Stage3D({
   onFail,
   children,
   tall = false,
+  plain = false,
 }: {
   options: Omit<StageOptions, "tagClass">;
   build: (stage: Stage, host: HTMLDivElement) => void | (() => void);
@@ -23,6 +24,8 @@ export function Stage3D({
   /** Overlays (a readout, extra buttons) drawn above the canvas. */
   children?: ReactNode;
   tall?: boolean;
+  /** No frame and no reset button: a decorative figure inside a larger layout. */
+  plain?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const labels = useRef<HTMLDivElement>(null);
@@ -56,12 +59,14 @@ export function Stage3D({
   }, deps);
 
   return (
-    <div ref={host} className={`${styles.scene} ${tall ? styles.tall : ""}`}>
+    <div ref={host} className={`${styles.scene} ${tall ? styles.tall : ""} ${plain ? styles.plain : ""}`}>
       <div ref={labels} className={styles.tags} aria-hidden="true" />
       {children}
-      <button type="button" className={styles.reset} onClick={() => stageRef.current?.reset()}>
-        Reset view
-      </button>
+      {!plain && (
+        <button type="button" className={styles.reset} onClick={() => stageRef.current?.reset()}>
+          Reset view
+        </button>
+      )}
     </div>
   );
 }

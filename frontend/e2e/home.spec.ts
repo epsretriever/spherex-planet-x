@@ -38,8 +38,8 @@ test("the spacetime fabric is decorative and follows the pointer without blockin
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.6, { steps: 8 });
   await page.waitForTimeout(500);
   // Canvas ignores the pointer, so the buttons over it still work.
-  await page.getByRole("link", { name: "See the evidence" }).click();
-  await expect(page).toHaveURL(/\/detective\/$/);
+  await page.getByRole("link", { name: "Browse the objects", exact: true }).click();
+  await expect(page).toHaveURL(/\/objects\/$/);
   expect(errors).toEqual([]);
 });
 

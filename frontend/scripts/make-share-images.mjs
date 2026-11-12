@@ -15,42 +15,38 @@ const icon = readFileSync(join(root, "src/app/icon.svg"), "utf8");
 // setContent pages can't load file:// URLs, so fonts are inlined.
 const font = (_family, file) => `url(data:font/woff2;base64,${readFileSync(join(root, "src/fonts", file)).toString("base64")})`;
 
-// The same 102-channel diagram as the landing page: six detectors × 17 channels.
-const stops = ["#4a0c6b", "#781c6d", "#a52c60", "#cf4446", "#ed6925", "#fb9b06", "#f7d13d"];
-const ramp = (t) => {
-  const x = Math.min(0.9999, Math.max(0, t)) * (stops.length - 1);
-  const i = Math.floor(x);
-  const f = x - i;
-  const ch = (h, k) => parseInt(h.slice(1 + 2 * k, 3 + 2 * k), 16);
-  const m = (k) => Math.round(ch(stops[i], k) + (ch(stops[i + 1], k) - ch(stops[i], k)) * f);
-  return `rgb(${m(0)},${m(1)},${m(2)})`;
+// The hero's plate: a real SPHEREx image of the Aquarius showcase patch, with the mover circled.
+const plate = `data:image/webp;base64,${readFileSync(join(root, "public/data/fields/aquarius-a/e01.webp")).toString("base64")}`;
+const field = JSON.parse(readFileSync(join(root, "public/data/fields/aquarius-a.json"), "utf8"));
+const H = field.wcs.height_px;
+const at = (id) => {
+  const t = field.movers[0].track.find((p) => p.epoch_id === id);
+  return { x: t.x_grid - 0.5, y: H - t.y_grid + 0.5 };
 };
-const bars = Array.from({ length: 6 }, (_, d) =>
-  `<div class="det">${Array.from({ length: 17 }, (_, k) => `<span style="background:${ramp((d * 17 + k) / 101)}"></span>`).join("")}</div>`,
-).join("");
+const pair = field.blink_pairs.find((p) => p.default);
+const now = at(pair.epoch_id_a);
+const later = at(pair.epoch_id_b);
+const archivo = font("archivo", "archivo-latin-wdth-wght-normal.woff2");
 
 const og = `<!doctype html><html><head><meta charset="utf-8"><style>
-@font-face { font-family: Display; src: ${font("space-grotesk", "space-grotesk-latin-wght-normal.woff2")}; }
-@font-face { font-family: Body; src: ${font("inter", "inter-latin-wght-normal.woff2")}; }
-@font-face { font-family: Mono; src: ${font("jetbrains-mono", "jetbrains-mono-latin-wght-normal.woff2")}; }
+@font-face { font-family: Archivo; src: ${archivo}; font-weight: 100 900; font-stretch: 62% 125%; }
 html, body { margin: 0; width: 1200px; height: 630px; }
-body { box-sizing: border-box; padding: 72px 80px; color: #f3eef9; font-family: Body;
-  background: radial-gradient(700px 400px at 85% 10%, rgba(237,105,37,.22), transparent 70%),
-              radial-gradient(600px 500px at 0% 0%, rgba(120,28,109,.45), transparent 70%), #08060d;
-  display: flex; flex-direction: column; justify-content: space-between; }
-.brand { display: flex; align-items: center; gap: 18px; font-family: Display; font-size: 34px; font-weight: 600; }
-.brand svg { width: 56px; height: 56px; }
-h1 { font-family: Display; font-size: 92px; line-height: .98; letter-spacing: -.03em; margin: 0; font-weight: 650; }
-h1 span { background: linear-gradient(90deg,#f7d13d,#ed6925 45%,#a52c60); -webkit-background-clip: text; color: transparent; }
-p { margin: 18px 0 0; font-size: 28px; color: #aa9fbd; }
-.strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; height: 70px; }
-.det { display: grid; grid-template-columns: repeat(17, 1fr); gap: 2px; }
-.det span { border-radius: 1px; }
-.axis { display: flex; justify-content: space-between; font-family: Mono; font-size: 18px; color: #aa9fbd; margin-top: 10px; }
+body { box-sizing: border-box; padding: 64px 72px; color: #f2f5f9; font-family: Archivo; background: #102a4c;
+  display: grid; grid-template-columns: 1fr 420px; gap: 56px; align-items: center; }
+.brand { display: flex; align-items: center; gap: 14px; font-size: 34px; font-weight: 700; font-stretch: 112%; }
+.brand svg { width: 52px; height: 52px; }
+h1 { font-size: 66px; line-height: 1; letter-spacing: -.025em; margin: 48px 0 0; white-space: nowrap; font-weight: 700; font-stretch: 115%; }
+h1 span { display: block; }
+p { margin: 28px 0 0; font-size: 25px; line-height: 1.35; color: #a9bcd6; max-width: 26em; }
+.plate { position: relative; width: 420px; height: 420px; outline: 2px solid #2e5180; outline-offset: 10px; background: #0b1f3a; }
+.plate img, .plate svg { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 </style></head><body>
-<div class="brand">${icon}<span>${name}</span></div>
-<div><h1>The sky moves.<br><span>Catch it in the act.</span></h1><p>${tagline}</p></div>
-<div><div class="strip">${bars}</div><div class="axis"><span>0.75 µm</span><span>102 infrared channels · NASA SPHEREx</span><span>5.0 µm</span></div></div>
+<div><div class="brand">${icon}<span>${name}</span></div>
+<h1><span>Stars stay put.</span><span>Asteroids don’t.</span></h1><p>${tagline}</p></div>
+<div class="plate"><img src="${plate}" alt=""><svg viewBox="0 0 ${field.wcs.width_px} ${H}">
+<line x1="${now.x}" y1="${now.y}" x2="${later.x}" y2="${later.y}" stroke="#7cf0c8" stroke-width="1" stroke-dasharray="1 4" opacity=".7"/>
+<circle cx="${later.x}" cy="${later.y}" r="8" fill="none" stroke="#7cf0c8" stroke-width="1.2" stroke-dasharray="3 3" opacity=".7"/>
+<circle cx="${now.x}" cy="${now.y}" r="8" fill="none" stroke="#7cf0c8" stroke-width="2"/></svg></div>
 </body></html>`;
 
 const browser = await chromium.launch();
@@ -60,7 +56,7 @@ await page.evaluate(() => document.fonts.ready);
 await page.screenshot({ path: join(root, "public/og.png") });
 
 await page.setViewportSize({ width: 180, height: 180 });
-await page.setContent(`<html><body style="margin:0;background:#08060d">${icon.replace("<svg ", '<svg width="180" height="180" ')}</body></html>`);
+await page.setContent(`<html><body style="margin:0;background:#102a4c">${icon.replace("<svg ", '<svg width="180" height="180" ')}</body></html>`);
 await page.screenshot({ path: join(root, "src/app/apple-icon.png") });
 await browser.close();
 console.log("wrote public/og.png and src/app/apple-icon.png");

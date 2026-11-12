@@ -62,7 +62,7 @@ export function RecoveryGrid({ study }: { study: InjectionStudy }) {
                       <button
                         type="button"
                         className={styles.cell}
-                        style={{ background: bg, color: c.fraction > 0.55 ? "#140a02" : "#f3eef9" }}
+                        style={{ background: bg, color: c.fraction > 0.55 ? "#140a02" : "#f2f5f9" }}
                         aria-pressed={active === c}
                         onClick={() => setActive(active === c ? null : c)}
                         onMouseEnter={() => setActive(c)}

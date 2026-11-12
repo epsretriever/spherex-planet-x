@@ -6,6 +6,7 @@ import { useState } from "react";
 import { SECTIONS, isCurrent } from "@/lib/sections";
 import { SITE_NAME } from "@/lib/site";
 import { Sheet } from "./Sheet";
+import { LogoMark } from "./LogoMark";
 import styles from "./TopBar.module.css";
 
 export function TopBar() {
@@ -16,9 +17,7 @@ export function TopBar() {
     <header className={styles.bar}>
       <div className={`container ${styles.inner}`}>
         <Link href="/" className={styles.brand} prefetch={false}>
-          <span className={styles.mark} aria-hidden="true">
-            <span />
-          </span>
+          <LogoMark className={styles.mark} />
           <span>{SITE_NAME}</span>
         </Link>
         <nav aria-label="Main" className={styles.navWrap}>

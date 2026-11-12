@@ -1,24 +1,30 @@
-/* Design tokens: see docs/frontend-plan.md, section 3. */
+/* Design tokens: see docs/frontend-plan.md, section 3.
+   Cyanotype: John Herschel, an astronomer, invented the Prussian-blue photographic print in 1842.
+   The ground is that blue; type and primary actions are the paper it was printed on. */
 :root {
   color-scheme: dark;
 
-  /* Surfaces: violet-black, like the sky between infrared sources. */
-  --bg: #08060d;
-  --surface: #120e1a;
-  --surface-2: #1b1526;
-  --surface-3: #251d33;
-  --border: #2d2440;
-  --border-strong: #43375c;
-  --text: #f3eef9;
-  --text-muted: #aa9fbd;
+  /* Surfaces: Prussian blue, darkest where images sit. */
+  --bg: #102a4c;
+  --well: #0b1f3a;
+  --surface: #143156;
+  --surface-2: #1a3a63;
+  --surface-3: #214572;
+  --border: #2e5180;
+  --border-strong: #46699b;
+  --text: #f2f5f9;
+  --text-muted: #a9bcd6;
 
-  /* Ember: the warm glow of thermal infrared. Used for actions. */
-  --accent: #ff8a4c;
-  --accent-strong: #ffb07a;
-  --on-accent: #1a0b03;
-  --cool: #7cc4ff;
+  /* Paper: primary actions are printed in the ground's opposite. */
+  --accent: #f2f5f9;
+  --accent-strong: #ffffff;
+  --on-accent: #102a4c;
+  /* Links read as paper-white with an underline; sodium marks focus and caution. */
+  --link: #dce8f7;
+  --sodium: #ffcf5a;
+  --cool: #9cd4ff;
 
-  /* Spectral ramp (inferno-like), short to long wavelength. */
+  /* Spectral ramp (inferno-like), short to long wavelength. Data only. */
   --ir-0: #1b0c41;
   --ir-1: #4a0c6b;
   --ir-2: #781c6d;
@@ -29,32 +35,36 @@
   --ir-7: #f7d13d;
   --ir-gradient: linear-gradient(90deg, var(--ir-0), var(--ir-1), var(--ir-2), var(--ir-3), var(--ir-4), var(--ir-5), var(--ir-6), var(--ir-7));
 
-  /* Classification colors: always paired with an icon and a label. */
-  --status-known: #5aa9ff;
+  /* Classification colors: always paired with an icon and a label. Tuned to read on blue. */
+  --status-known: #9cd4ff;
   --status-unexplained: #ffd166;
-  --status-artifact: #9a92ab;
-  --status-pair: #c3a6ff;
-  --status-simulated: #f06bd8;
+  --status-artifact: #a3b1c6;
+  --status-pair: #d9c2ff;
+  --status-simulated: #ff8ae6;
   --track: #7cf0c8;
-  --predicted: #f3eef9;
+  --predicted: #f2f5f9;
   /* Where an image has no data (outside the detector). */
-  --no-data: repeating-linear-gradient(135deg, #1a1622 0 5px, #0d0b12 5px 10px);
+  --no-data: repeating-linear-gradient(135deg, #12284a 0 5px, #0b1f3a 5px 10px);
   --ok: #7cf0c8;
   --warning: #ffd166;
-  --danger: #ff7a7a;
+  --danger: #ff8a80;
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* One family. Width carries the hierarchy: expanded headlines, normal reading, condensed data. */
+  --font-sans: var(--font-archivo), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+  --stretch-display: 112%;
+  --stretch-data: 87.5%;
 
+  /* Scale after Bringhurst: 12 14 16 18 21 24 36 48 72. */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
-  --text-lg: 1.25rem;
+  --text-lg: 1.3125rem;
   --text-xl: 1.5rem;
-  --text-2xl: 2rem;
-  --text-3xl: 2.5rem;
-  --text-4xl: clamp(2.5rem, 7vw, 4.75rem);
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
+  --text-4xl: clamp(2.25rem, 6.5vw, 4.5rem);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -65,14 +75,15 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  --radius: 10px;
-  --radius-sm: 6px;
+  /* Plates are nearly square-cornered; controls a little softer; pills stay round. */
+  --radius: 4px;
+  --radius-sm: 3px;
   --radius-pill: 999px;
   --touch: 44px;
   --gutter: 16px;
   --content-max: 1180px;
-  --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -16px rgb(0 0 0 / 0.8);
-  --glow: 0 0 0 1px rgb(255 138 76 / 0.35), 0 0 24px -4px rgb(255 138 76 / 0.45);
+  --shadow: none;
+  --glow: 0 0 0 1px var(--sodium);
 
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --dur: 180ms;
@@ -101,11 +112,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(1200px 600px at 85% -10%, rgb(207 68 70 / 0.12), transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, rgb(74 12 107 / 0.25), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--text-md);
@@ -117,9 +124,10 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  line-height: 1.15;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-stretch: var(--stretch-display);
+  line-height: 1.1;
+  font-weight: 640;
+  letter-spacing: -0.012em;
   margin: 0 0 var(--space-3);
   text-wrap: balance;
 }
@@ -147,16 +155,19 @@ p {
 }
 
 a {
-  color: var(--accent);
-  text-underline-offset: 2px;
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--link) 55%, transparent);
+  text-underline-offset: 3px;
 }
 
 a:hover {
   color: var(--accent-strong);
+  text-decoration-color: currentColor;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--sodium);
   outline-offset: 2px;
 }
 
@@ -173,6 +184,7 @@ input {
 
 .mono {
   font-family: var(--font-mono);
+  font-stretch: var(--stretch-data);
   font-variant-numeric: tabular-nums;
 }
 
@@ -219,7 +231,8 @@ input {
 }
 
 .button:hover {
-  border-color: var(--accent);
+  border-color: var(--border-strong);
+  background: var(--surface-3);
   color: var(--text);
 }
 
@@ -249,21 +262,18 @@ input {
   }
 }
 
+/* A quiet sentence-case kicker; used sparingly where a heading needs a category. */
 .eyebrow {
-  margin: 0 0 var(--space-3);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .card {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 70%, var(--bg)));
-  box-shadow: var(--shadow);
+  background: var(--surface);
 }
 
 .page-header {

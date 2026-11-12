@@ -68,7 +68,7 @@ export function HowToUse() {
               <h3>{s.title}</h3>
               <p>{s.body}</p>
               <Link href={s.href} prefetch={false}>
-                {s.cta} →
+                {s.cta}
               </Link>
             </div>
           </li>

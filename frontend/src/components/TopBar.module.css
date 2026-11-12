@@ -2,15 +2,14 @@
   position: relative;
   top: 0;
   z-index: 10;
-  background: rgb(8 6 13 / 0.86);
+  background: rgb(11 31 58 / 0.92);
   backdrop-filter: saturate(140%) blur(10px);
   -webkit-backdrop-filter: saturate(140%) blur(10px);
 }
 
 .spectrum {
   height: 1px;
-  background: var(--ir-gradient);
-  opacity: 0.7;
+  background: var(--border);
 }
 
 .inner {
@@ -29,9 +28,10 @@
   min-height: var(--touch);
   color: var(--text);
   font-family: var(--font-display);
+  font-stretch: var(--stretch-display);
   font-size: var(--text-lg);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   text-decoration: none;
 }
 
@@ -41,34 +41,7 @@
 
 /* A source caught in two positions: the app in one glyph. */
 .mark {
-  position: relative;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border-strong);
-}
-
-.mark::before,
-.mark span {
-  content: "";
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-.mark::before {
-  left: 3px;
-  top: 9px;
-  background: var(--ir-3);
-  opacity: 0.7;
-}
-
-.mark span {
-  right: 3px;
-  top: 4px;
-  background: var(--ir-6);
-  box-shadow: 0 0 8px var(--ir-5);
+  flex: none;
 }
 
 .navWrap {
@@ -215,6 +188,7 @@
 
 .menuLabel {
   font-family: var(--font-display);
+  font-stretch: var(--stretch-display);
   font-size: var(--text-lg);
   font-weight: 600;
 }

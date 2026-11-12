@@ -37,8 +37,8 @@ interface Meteor {
 
 /** Planets around the fabric's star: orbit size (× base), angular speed, mass, look. */
 const PLANETS = [
-  { r: 0.45, speed: 2.4, phase: 0.6, mass: 0.18, size: 2.6, color: "#c3a6ff" },
-  { r: 0.8, speed: 1.5, phase: 2.2, mass: 0.28, size: 3.4, color: "#7cc4ff" },
+  { r: 0.45, speed: 2.4, phase: 0.6, mass: 0.18, size: 2.6, color: "#d9c2ff" },
+  { r: 0.8, speed: 1.5, phase: 2.2, mass: 0.28, size: 3.4, color: "#9cd4ff" },
   { r: 1.2, speed: 0.95, phase: 4.1, mass: 0.42, size: 4.6, color: "#ffb07a" },
   { r: 1.75, speed: 0.6, phase: 5.3, mass: 0.32, size: 3.8, color: "#7cf0c8" },
 ];
@@ -112,7 +112,7 @@ export function SpacetimeFabric() {
       // Stars at three depths: scroll and the pointer move the near ones more.
       const px = pointer.lean * 10;
       const py = pointer.tilt * 6;
-      ctx.fillStyle = "rgb(243, 238, 249)";
+      ctx.fillStyle = "rgb(242, 245, 249)";
       for (const s of stars) {
         const k = 0.15 + s.layer * 0.85;
         const x = (((s.x - px * k) % w) + w) % w;
@@ -136,7 +136,7 @@ export function SpacetimeFabric() {
         const ty = y - m.vy * 0.2;
         const tail = ctx.createLinearGradient(x, y, tx, ty);
         tail.addColorStop(0, `rgba(255, 240, 220, ${(0.9 * Math.sin(age * Math.PI)).toFixed(3)})`);
-        tail.addColorStop(1, "rgba(255, 138, 76, 0)");
+        tail.addColorStop(1, "rgba(156, 212, 255, 0)");
         ctx.strokeStyle = tail;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -220,13 +220,13 @@ export function SpacetimeFabric() {
       for (let i = 0; i <= COLS; i++) for (let j = 0; j < ROWS; j++) seg(pts[j]![i]!, pts[j + 1]![i]!);
       ctx.lineWidth = 1;
       buckets.forEach((path, k) => {
-        // Far lines fade into violet; lines in a well glow ember.
+        // Far lines fade into the blue ground; lines in a well glow with the mover color.
         const glow = Math.floor(k / (DEPTH + 1)) / GLOW;
         const depth = 0.3 + 0.7 * ((k % (DEPTH + 1)) / DEPTH);
         const alpha = Math.min(0.85, (0.08 + 0.42 * depth) * (0.75 + 0.6 * glow)) * fade;
-        const r = Math.round(124 + (255 - 124) * glow);
-        const g = Math.round(96 + (138 - 96) * glow);
-        const b = Math.round(220 + (76 - 220) * glow);
+        const r = Math.round(120 + (124 - 120) * glow);
+        const g = Math.round(160 + (240 - 160) * glow);
+        const b = Math.round(220 + (200 - 220) * glow);
         ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
         ctx.stroke(path);
       });
@@ -238,7 +238,7 @@ export function SpacetimeFabric() {
         // A click can land a moment after this frame's timestamp: nothing to draw yet.
         if (age <= 0 || a <= 0) continue;
         const rad = age * 520;
-        ctx.strokeStyle = `rgba(255, 176, 122, ${(0.55 * a).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(124, 240, 200, ${(0.55 * a).toFixed(3)})`;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(r.x, r.y, rad, rad * 0.45, 0, 0, Math.PI * 2);
@@ -263,7 +263,7 @@ export function SpacetimeFabric() {
 
       for (const pl of planets) {
         // Faint orbit path, then the planet in its own dip.
-        ctx.strokeStyle = `rgba(170, 159, 189, ${(0.18 * fade).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(169, 188, 214, ${(0.2 * fade).toFixed(3)})`;
         ctx.beginPath();
         ctx.ellipse(sw.x, sw.y, orbitR * pl.p.r * 1.35, orbitR * pl.p.r * 0.42, 0, 0, Math.PI * 2);
         ctx.stroke();
@@ -276,8 +276,8 @@ export function SpacetimeFabric() {
 
       if (pointer.strength > 0.01) {
         const glow = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 70);
-        glow.addColorStop(0, `rgba(255, 138, 76, ${(0.25 * pointer.strength).toFixed(3)})`);
-        glow.addColorStop(1, "rgba(255, 138, 76, 0)");
+        glow.addColorStop(0, `rgba(156, 212, 255, ${(0.22 * pointer.strength).toFixed(3)})`);
+        glow.addColorStop(1, "rgba(156, 212, 255, 0)");
         ctx.fillStyle = glow;
         ctx.beginPath();
         ctx.arc(pointer.x, pointer.y, 70, 0, Math.PI * 2);
