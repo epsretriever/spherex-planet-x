@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import type { AppEnv } from "../app";
 import type { AiSubjectKind, AiWriteup, AskRequest, FieldList, ObjectList, SearchRequest, Survey } from "../contract";
 import { ensureSchema } from "../db";
@@ -7,7 +7,12 @@ import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { DEFAULT_MODEL, cacheGet, cachePut, rateLimit, sha256 } from "../ai/core";
 import { type GuideTotals, guide } from "../ai/guide";
-import { LANGUAGES, MAX_AUDIO_BYTES, SPEECH_LANGUAGES, speak, transcribe, translateWriteup } from "../ai/media";
+import {
+  LANGUAGES,
+  MAX_AUDIO_BYTES,
+  SPEECH_LANGUAGES,
+  SPEECH_MODEL as SPEECH_MODEL_ID,
+  speakClip, speechParts, transcribe, translateWriteup } from "../ai/media";
 import type { Subject } from "../ai/facts";
 import { type AiContext, ask, search, templateWriteup, writeup } from "../ai/features";
 import { loadCandidate } from "./candidates";
@@ -18,6 +23,7 @@ export const ASK_PER_SESSION_PER_HOUR = 20;
 export const ASK_PER_IP_PER_HOUR = 60;
 export const SEARCH_PER_IP_PER_HOUR = 60;
 export const SPEECH_PER_IP_PER_HOUR = 30;
+export const SPEECH_CLIPS_PER_IP_PER_HOUR = 180;
 export const TRANSCRIBE_PER_IP_PER_HOUR = 30;
 export const GUIDE_PER_SESSION_PER_HOUR = 20;
 export const GUIDE_PER_IP_PER_HOUR = 60;
@@ -81,29 +87,68 @@ function writeupRoute(kind: AiSubjectKind) {
     c.header("Cache-Control", english.source === "ai" && translated ? "public, max-age=3600" : "no-store");
     return c.json(out);
   });
-  // Read-aloud: MP3 clips of the write-up (in ?lang= when it has a checked translation).
-  app.get("/:id/writeup/speech", async (c) => {
+  /** The checked text read aloud for ?lang=: the write-up, or its translation (409/503 when unavailable). */
+  async function speechText(c: Context<AppEnv>, lang: string) {
     const deps = c.get("deps");
-    const id = c.req.param("id");
-    const lang = langParam(c.req.query("lang"));
+    const id = c.req.param("id")!;
     if (!SPEECH_LANGUAGES.has(lang)) throw badRequest(`read-aloud is available in ${[...SPEECH_LANGUAGES].join(", ")}`);
     const { detail, pending } = await loadSubject(c.env, deps, kind, id);
     if (pending) throw new ApiError(409, "JPL's catalog is still being checked for this object. Try again in a minute.");
     const ctx = await context(c.env, deps);
+    const english: AiWriteup = await writeup(ctx, kind, id, detail as Subject);
+    const text = lang === "en" ? english : await translateWriteup(ctx, english, lang);
+    if (lang !== "en" && (text as { lang?: string }).lang !== lang) {
+      throw new ApiError(503, "The translation isn't available right now, so it can't be read aloud.");
+    }
+    return { ctx, id, parts: speechParts([text.verdict, ...text.paragraphs]) };
+  }
+
+  async function limitSpeech(c: Context<AppEnv>, ctx: Awaited<ReturnType<typeof context>>, bucket: string, max: number) {
+    const deps = c.get("deps");
     const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
-    if (!(await rateLimit(ctx.db, await visitorKey(c.env, "speech-ip", ip), SPEECH_PER_IP_PER_HOUR, 3600, deps.now()))) {
+    if (!(await rateLimit(ctx.db, await visitorKey(c.env, bucket, ip), max, 3600, deps.now()))) {
       c.header("Retry-After", retryAfter(deps.now()));
       throw new ApiError(429, "Too many read-aloud requests this hour. Please try again later.");
     }
-    const english: AiWriteup = await writeup(ctx, kind, id, detail as Subject);
-    const text = lang === "en" ? english : await translateWriteup(ctx, english, lang);
-    if ((text as { lang?: string }).lang !== undefined && (text as { lang?: string }).lang !== lang) {
-      throw new ApiError(503, "The translation isn't available right now, so it can't be read aloud.");
-    }
-    const speech = await speak(ctx, [text.verdict, ...text.paragraphs], lang);
-    if (!speech) throw new ApiError(503, "Read-aloud isn't available right now.");
-    c.header("Cache-Control", "public, max-age=86400");
-    return c.json({ subject_kind: kind, subject_id: id, ...speech });
+  }
+
+  // Read-aloud: the URLs of one audio clip per paragraph, made on demand by the route below.
+  app.get("/:id/writeup/speech", async (c) => {
+    const lang = langParam(c.req.query("lang"));
+    const { ctx, id, parts } = await speechText(c, lang);
+    if (!ctx.ai) throw new ApiError(503, "Read-aloud isn't available right now.");
+    await limitSpeech(c, ctx, "speech-ip", SPEECH_PER_IP_PER_HOUR);
+    const base = `/api/${kind === "object" ? "objects" : "candidates"}/${encodeURIComponent(id)}/writeup/speech`;
+    const q = lang === "en" ? "" : `?lang=${lang}`;
+    c.header("Cache-Control", "no-store");
+    return c.json({
+      subject_kind: kind,
+      subject_id: id,
+      lang,
+      model: SPEECH_MODEL_ID,
+      clips: parts.map((_, i) => `${base}/${i}${q}`),
+      cached: false,
+    });
+  });
+
+  // One paragraph as audio (WAV from MeloTTS), cached in KV and by the browser.
+  app.get("/:id/writeup/speech/:n", async (c) => {
+    const n = Number(c.req.param("n"));
+    if (!Number.isInteger(n) || n < 0) throw badRequest("clip number must be 0 or more");
+    const lang = langParam(c.req.query("lang"));
+    const { ctx, parts } = await speechText(c, lang);
+    if (n >= parts.length) throw new ApiError(404, "No such clip.");
+    await limitSpeech(c, ctx, "speech-clip-ip", SPEECH_CLIPS_PER_IP_PER_HOUR);
+    const clip = await speakClip(ctx, parts[n]!, lang);
+    if (!clip) throw new ApiError(503, "Read-aloud isn't available right now.");
+    return new Response(clip.bytes, {
+      headers: {
+        "Content-Type": clip.type,
+        "Content-Length": String(clip.bytes.byteLength),
+        "Cache-Control": "public, max-age=86400",
+        "X-Cache": clip.cached ? "hit" : "miss",
+      },
+    });
   });
   return app;
 }

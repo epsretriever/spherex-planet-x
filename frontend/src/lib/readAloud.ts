@@ -24,7 +24,7 @@ export const AI_VOICE_LANGUAGES = new Set(["en", "es", "fr", "zh", "ja", "ko"]);
 export type ReadState = "idle" | "loading" | "playing";
 
 /**
- * Reads the write-up aloud: MeloTTS clips from the API, played in order; when they aren't
+ * Reads the write-up aloud: MeloTTS clips from the API (one URL per paragraph), played in order; when they aren't
  * available (no AI, language without an AI voice, an error), the browser's speech synthesis.
  */
 export function useReadAloud(kind: AiSubjectKind, id: string) {
@@ -74,10 +74,18 @@ export function useReadAloud(kind: AiSubjectKind, id: string) {
         if (token !== run.current) return;
         setVoice("ai");
         setState("playing");
-        for (const clip of speech.clips) {
+        // Each clip is made on demand; the next one loads while the current one plays.
+        const load = (url: string) => {
+          const a = new Audio(url);
+          a.preload = "auto";
+          return a;
+        };
+        let next: HTMLAudioElement | null = speech.clips[0] ? load(speech.clips[0]) : null;
+        for (let i = 0; i < speech.clips.length && next; i++) {
           if (token !== run.current) return;
-          const a = new Audio(clip);
+          const a = next;
           audio.current = a;
+          next = speech.clips[i + 1] ? load(speech.clips[i + 1]!) : null;
           await new Promise<void>((resolve, reject) => {
             a.onended = () => resolve();
             a.onerror = () => reject(new Error("clip failed"));

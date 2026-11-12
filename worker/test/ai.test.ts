@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL } from "../src/ai/core";
 import { describe, expect, it } from "vitest";
 import { FORBIDDEN, parseJsonResponse } from "../src/ai/core";
 import { facts } from "../src/ai/facts";
@@ -92,7 +93,7 @@ describe("GET /api/candidates/:id/writeup", () => {
     expect(r.status).toBe(200);
     const w = (await r.json()) as AiWriteup;
     expect(w).toMatchObject({ source: "ai", numeric_check: "passed", cached: false, subject_kind: "candidate" });
-    expect(w.model).toBe("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+    expect(w.model).toBe(DEFAULT_MODEL);
     expect(w.paragraphs).toHaveLength(3);
     expect(ai.calls[0]!.input.messages).toHaveLength(2);
     const again = (await (await c.get("/api/candidates/test-field-sim01/writeup")).json()) as AiWriteup;

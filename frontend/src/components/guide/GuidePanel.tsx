@@ -166,7 +166,7 @@ export default function GuidePanel({ open, onClose }: { open: boolean; onClose: 
           {voice.message}
         </p>
       )}
-      <p className={styles.meta}>AI answers can be wrong. Llama 3.3 on Cloudflare Workers AI.</p>
+      <p className={styles.meta}>AI answers can be wrong. Llama 4 Scout on Cloudflare Workers AI.</p>
     </section>
   );
 }

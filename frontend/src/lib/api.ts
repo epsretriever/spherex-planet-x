@@ -321,7 +321,7 @@ export async function getWriteup(kind: AiSubjectKind, id: string, signal?: Abort
   return checkVersion({ ...body, grounded_fields: body.grounded_fields ?? [] }, "writeup");
 }
 
-/** The write-up read aloud (MeloTTS on Workers AI), one MP3 data URL per paragraph. */
+/** The write-up read aloud (MeloTTS on Workers AI): one clip URL per paragraph, each made on demand. */
 export async function getWriteupSpeech(kind: AiSubjectKind, id: string, lang: string, signal?: AbortSignal): Promise<WriteupSpeech> {
   if (USE_FIXTURES) throw noAi();
   const q = lang !== "en" ? `?lang=${enc(lang)}` : "";

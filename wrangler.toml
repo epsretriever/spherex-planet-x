@@ -46,7 +46,7 @@ migrations_dir = "migrations"
 binding = "AI"
 
 [vars]
-AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+AI_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct"
 # Optional, for the ADES astrometry export (worker/src/ades.ts): MPC_STATION_CODE (an MPC
 # observatory code; files say "XXX, not valid for submission" until it is set) and ADES_SUBMITTER.
 # The Worker never submits anything; the export is a draft for a person to review.
@@ -65,4 +65,4 @@ database_name = "spherex-planet-x"
 migrations_dir = "migrations"
 
 [env.offline.vars]
-AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+AI_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct"
