@@ -188,6 +188,9 @@ test("sky map: 3D globe and the solar-system view, or their flat fallbacks", asy
   const errors = trackConsole(page);
   await page.goto("/sky/", { waitUntil: "networkidle" });
   await page.getByLabel("3D globe").check();
+  // three.js loads on the visitor's first interaction (so it doesn't weigh on page load).
+  await page.mouse.move(200, 200);
+  await page.mouse.move(240, 260);
   // With WebGL the globe is drawn; without it the page says so and goes back to the flat map.
   await expect(page.locator("figure canvas").or(page.getByText(/The 3D globe needs WebGL/))).toBeVisible({ timeout: 20_000 });
   const system = page.locator("section", { has: page.getByRole("heading", { name: "The same objects, out in the solar system" }) });
