@@ -674,7 +674,7 @@ export interface AiWriteup extends Versioned {
   translation?: { model: string; from: "en"; numeric_check: "passed" | "failed" | "not_run"; cached: boolean };
 }
 
-/** GET /api/{objects|candidates}/{id}/writeup/speech: the write-up read aloud, one MP3 per paragraph. */
+/** GET /api/{objects|candidates}/{id}/writeup/speech: URLs of the write-up read aloud, one audio clip (WAV) per paragraph. */
 export interface WriteupSpeech {
   subject_kind: AiSubjectKind;
   subject_id: string;

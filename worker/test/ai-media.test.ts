@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AiWriteup, FieldList } from "../src/contract";
 import { GUIDE_PAGES, fallbackLinks, guideNumbers, validLinks } from "../src/ai/guide";
-import { SPEECH_MODEL, TRANSCRIBE_MODEL, TRANSLATE_MODEL, numbersAllowed, numbersIn } from "../src/ai/media";
+import { SPEECH_MODEL, TRANSCRIBE_MODEL, TRANSLATE_MODEL, audioType, numbersAllowed, numbersIn, splitSentences } from "../src/ai/media";
 import { sqliteD1 } from "./d1";
 import { candidate } from "./factory";
 import { makeClient } from "./helpers";
@@ -127,30 +127,39 @@ describe("GET /api/candidates/:id/writeup?lang=", () => {
 });
 
 describe("GET /api/candidates/:id/writeup/speech", () => {
-  const mp3 = "SUQz".padEnd(200, "A");
+  // A tiny WAV, as MeloTTS returns it (base64 of "RIFF....WAVE" + padding).
+  const wav = btoa("RIFF\u0000\u0000\u0000\u0000WAVEfmt " + "\u0000".repeat(80));
 
-  it("returns one MP3 clip per paragraph and caches them", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [SPEECH_MODEL]: () => ({ audio: mp3 }) });
+  it("lists one clip URL per paragraph, and each clip is audio made on demand and cached", async () => {
+    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [SPEECH_MODEL]: () => ({ audio: wav }) });
     const c = await client(ai);
     const r = await c.get("/api/candidates/test-field-sim01/writeup/speech");
     expect(r.status).toBe(200);
-    const s = (await r.json()) as { clips: string[]; lang: string; cached: boolean };
-    expect(s.clips).toHaveLength(4);
-    expect(s.clips[0]).toBe(`data:audio/mpeg;base64,${mp3}`);
-    expect(ai.calls.filter((x) => x.model === SPEECH_MODEL).map((x) => x.input.lang)).toEqual(["en", "en", "en", "en"]);
-    const again = (await (await c.get("/api/candidates/test-field-sim01/writeup/speech")).json()) as { cached: boolean };
-    expect(again.cached).toBe(true);
+    const s = (await r.json()) as { clips: string[]; lang: string };
+    expect(s.clips).toEqual([0, 1, 2, 3].map((i) => `/api/candidates/test-field-sim01/writeup/speech/${i}`));
+    expect(ai.calls.filter((x) => x.model === SPEECH_MODEL)).toHaveLength(0); // nothing synthesized yet
+    const clip = await c.get(s.clips[1]!);
+    expect(clip.status).toBe(200);
+    expect(clip.headers.get("content-type")).toBe("audio/wav");
+    expect(clip.headers.get("x-cache")).toBe("miss");
+    expect(new TextDecoder().decode((await clip.arrayBuffer()).slice(0, 4))).toBe("RIFF");
+    expect(ai.calls.filter((x) => x.model === SPEECH_MODEL).map((x) => x.input)).toEqual([{ prompt: goodWriteup.paragraphs[0], lang: "en" }]);
+    const again = await c.get(s.clips[1]!);
+    expect(again.headers.get("x-cache")).toBe("hit");
+    expect(ai.calls.filter((x) => x.model === SPEECH_MODEL)).toHaveLength(1);
+    expect((await c.get("/api/candidates/test-field-sim01/writeup/speech/9")).status).toBe(404);
   });
 
   it("reads the checked translation aloud in its language", async () => {
     const ai = fakeAi({
       "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup),
       [TRANSLATE_MODEL]: echoTranslate,
-      [SPEECH_MODEL]: () => ({ audio: mp3 }),
+      [SPEECH_MODEL]: () => ({ audio: wav }),
     });
     const c = await client(ai);
-    const r = await c.get("/api/candidates/test-field-sim01/writeup/speech?lang=es");
-    expect(r.status).toBe(200);
+    const s = (await (await c.get("/api/candidates/test-field-sim01/writeup/speech?lang=es")).json()) as { clips: string[] };
+    expect(s.clips[0]).toBe("/api/candidates/test-field-sim01/writeup/speech/0?lang=es");
+    expect((await c.get(s.clips[0]!)).status).toBe(200);
     const spoken = ai.calls.filter((x) => x.model === SPEECH_MODEL);
     expect(spoken[0]!.input).toMatchObject({ lang: "es" });
     expect(String(spoken[0]!.input.prompt).startsWith("[es] ")).toBe(true);
@@ -160,9 +169,34 @@ describe("GET /api/candidates/:id/writeup/speech", () => {
     const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [SPEECH_MODEL]: () => new Error("capacity") });
     const c = await client(ai);
     expect((await c.get("/api/candidates/test-field-sim01/writeup/speech?lang=hi")).status).toBe(400);
-    const r = await c.get("/api/candidates/test-field-sim01/writeup/speech");
+    const r = await c.get("/api/candidates/test-field-sim01/writeup/speech/0");
     expect(r.status).toBe(503);
     expect(r.headers.get("cache-control")).toBe("no-store");
+  });
+});
+
+describe("splitting and audio sniffing", () => {
+  it("splits sentences but not decimals", () => {
+    expect(splitSentences("It moves 0.04 arcsec. The score is 0.95! Done?")).toEqual(["It moves 0.04 arcsec.", "The score is 0.95!", "Done?"]);
+    expect(splitSentences("")).toEqual([]);
+  });
+  it("labels audio by its bytes", () => {
+    expect(audioType(new TextEncoder().encode("RIFF....WAVE"))).toBe("audio/wav");
+    expect(audioType(new TextEncoder().encode("ID3\u0004"))).toBe("audio/mpeg");
+    expect(audioType(new Uint8Array([0xff, 0xfb, 0, 0]))).toBe("audio/mpeg");
+  });
+});
+
+describe("translation keeps every sentence", () => {
+  it("translates each sentence on its own", async () => {
+    const ai = fakeAi({
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm({ ...goodWriteup, paragraphs: ["It was seen 3 times. It moves 3 arcseconds per hour.", ...goodWriteup.paragraphs.slice(1)] }),
+      // Like m2m100 on long inputs: keeps only the first sentence.
+      [TRANSLATE_MODEL]: (i) => ({ translated_text: `[es] ${String(i.text).split(". ")[0]}` }),
+    });
+    const w = (await (await (await client(ai)).get("/api/candidates/test-field-sim01/writeup?lang=es")).json()) as { paragraphs: string[]; lang: string };
+    expect(w.lang).toBe("es");
+    expect(w.paragraphs[0]).toBe("[es] It was seen 3 times. [es] It moves 3 arcseconds per hour.");
   });
 });
 

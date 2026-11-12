@@ -13,7 +13,7 @@ export const TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b";
 export const SPEECH_MODEL = "@cf/myshell-ai/melotts";
 export const TRANSCRIBE_MODEL = "@cf/openai/whisper-large-v3-turbo";
 /** Bump when translation or speech post-processing changes. */
-const MEDIA_VERSION = "1";
+const MEDIA_VERSION = "2";
 
 /** Languages the write-up can be translated into (m2m100 codes), with their own names. */
 export const LANGUAGES: Record<string, string> = {
@@ -106,6 +106,16 @@ export function numbersAllowed(text: string, allowed: number[]): boolean {
 
 // --------------------------------------------------------------------------- translation
 
+/** Split a paragraph into sentences without breaking decimals ("0.04"), initials or "e.g.". */
+export function splitSentences(text: string): string[] {
+  const t = text.trim();
+  if (!t) return [];
+  return t
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9"'(])/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
 export interface TranslatedWriteup extends AiWriteup {
   /** Language of verdict and paragraphs. */
   lang: string;
@@ -137,11 +147,15 @@ export async function translateWriteup(ctx: MediaContext, w: AiWriteup, lang: st
   let out: string[] | null = hit;
   if (!out) {
     if (!ctx.ai || !(await takeQuota(ctx.db, "translate", ctx.deps.now()))) return english("not_run");
-    const results = await Promise.all(
-      pieces.map((text) => (text ? runModel(ctx, TRANSLATE_MODEL, { text, source_lang: "en", target_lang: lang }) : Promise.resolve({ translated_text: "" }))),
-    );
-    const texts = results.map((r, i) => (pieces[i] ? cleanTranslation(r) : ""));
-    if (texts.some((t) => t === null)) return english("not_run");
+    // m2m100 sometimes drops later sentences of a long input, so each sentence is translated on its own.
+    const sentences = pieces.map(splitSentences);
+    const flat = sentences.flat();
+    const results = await Promise.all(flat.map((text) => runModel(ctx, TRANSLATE_MODEL, { text, source_lang: "en", target_lang: lang })));
+    const done = results.map(cleanTranslation);
+    if (done.some((t) => t === null)) return english("not_run");
+    let k = 0;
+    const joiner = lang === "zh" || lang === "ja" ? "" : " ";
+    const texts = sentences.map((ss) => ss.map(() => done[k++]!).join(joiner));
     // Every number in each translated piece must be a number from its English original.
     if (texts.some((t, i) => !numbersAllowed(t!, numbersIn(pieces[i]!)))) return english("failed");
     out = texts as string[];
@@ -160,15 +174,19 @@ export async function translateWriteup(ctx: MediaContext, w: AiWriteup, lang: st
 
 // --------------------------------------------------------------------------- speech
 
-export interface Speech {
-  lang: string;
-  model: string;
-  /** One MP3 per paragraph, as data: URLs, to play in order. */
-  clips: string[];
-  cached: boolean;
-}
+/** Longest paragraph read aloud, in characters (MeloTTS slows down sharply on long inputs). */
+const MAX_CLIP_CHARS = 900;
+/** Most paragraphs read aloud for one write-up. */
+export const MAX_CLIPS = 6;
 
-const MAX_SPEECH_CHARS = 2400;
+/** Paragraphs to read aloud: the checked write-up or translation, trimmed to the limits above. */
+export function speechParts(texts: string[]): string[] {
+  return texts
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, MAX_CLIPS)
+    .map((t) => (t.length > MAX_CLIP_CHARS ? `${t.slice(0, MAX_CLIP_CHARS).replace(/\s+\S*$/, "")}…` : t));
+}
 
 function toBase64(bytes: Uint8Array): string {
   let s = "";
@@ -176,40 +194,57 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(s);
 }
 
-/** MeloTTS returns `{audio: base64}` from the binding, or raw MP3 bytes from some runtimes. */
-async function audioBase64(raw: unknown): Promise<string | null> {
+function fromBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/** MeloTTS returns `{audio: base64}` from the binding, or raw bytes from some runtimes. */
+async function audioBytes(raw: unknown): Promise<Uint8Array | null> {
   if (!raw) return null;
   const a = (raw as { audio?: unknown }).audio;
-  if (typeof a === "string" && a.length > 100) return a.replace(/^data:audio\/\w+;base64,/, "");
-  if (raw instanceof Uint8Array) return toBase64(raw);
-  if (raw instanceof ArrayBuffer) return toBase64(new Uint8Array(raw));
+  if (typeof a === "string" && a.length > 100) return fromBase64(a.replace(/^data:audio\/[\w-]+;base64,/, ""));
+  if (raw instanceof Uint8Array) return raw;
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
   if (typeof (raw as ReadableStream).getReader === "function") {
     const buf = await new Response(raw as ReadableStream).arrayBuffer();
-    return buf.byteLength ? toBase64(new Uint8Array(buf)) : null;
+    return buf.byteLength ? new Uint8Array(buf) : null;
   }
   return null;
 }
 
-/** Spoken MP3s of `texts` (already checked text: a write-up or its checked translation). */
-export async function speak(ctx: MediaContext, texts: string[], lang: string): Promise<Speech | null> {
-  if (!SPEECH_LANGUAGES.has(lang)) return null;
-  const parts = texts.map((t) => t.trim()).filter(Boolean);
-  let total = 0;
-  const kept: string[] = [];
-  for (const p of parts) {
-    if (total + p.length > MAX_SPEECH_CHARS) break;
-    kept.push(p);
-    total += p.length;
+/** The audio format of `bytes`, from its first bytes (MeloTTS currently returns WAV). */
+export function audioType(bytes: Uint8Array): string {
+  const tag = String.fromCharCode(...bytes.subarray(0, 4));
+  if (tag === "RIFF") return "audio/wav";
+  if (tag === "OggS") return "audio/ogg";
+  if (tag.startsWith("ID3") || (bytes[0] === 0xff && (bytes[1]! & 0xe0) === 0xe0)) return "audio/mpeg";
+  if (tag === "fLaC") return "audio/flac";
+  return "application/octet-stream";
+}
+
+export interface SpeechClip {
+  bytes: Uint8Array;
+  type: string;
+  cached: boolean;
+}
+
+/** One paragraph read aloud, cached in KV as raw bytes. Null when the model is unavailable or capped. */
+export async function speakClip(ctx: MediaContext, text: string, lang: string): Promise<SpeechClip | null> {
+  if (!SPEECH_LANGUAGES.has(lang) || !text) return null;
+  const key = `ai:m${MEDIA_VERSION}:tts:${lang}:${await sha256(text)}`;
+  const hit = await cacheGet<string>(ctx.deps, key);
+  if (typeof hit === "string" && hit.length > 60) {
+    const bytes = fromBase64(hit);
+    return { bytes, type: audioType(bytes), cached: true };
   }
-  if (!kept.length) return null;
-  const key = `ai:m${MEDIA_VERSION}:tts:${lang}:${await sha256(kept.join("\n"))}`;
-  const hit = await cacheGet<string[]>(ctx.deps, key);
-  if (hit) return { lang, model: SPEECH_MODEL, clips: hit.map((b) => `data:audio/mpeg;base64,${b}`), cached: true };
   if (!ctx.ai || !(await takeQuota(ctx.db, "speech", ctx.deps.now()))) return null;
-  const audio = await Promise.all(kept.map(async (prompt) => audioBase64(await runModel(ctx, SPEECH_MODEL, { prompt, lang }))));
-  if (audio.some((a) => !a)) return null;
-  await cachePut(ctx.deps, key, audio);
-  return { lang, model: SPEECH_MODEL, clips: (audio as string[]).map((b) => `data:audio/mpeg;base64,${b}`), cached: false };
+  const bytes = await audioBytes(await runModel(ctx, SPEECH_MODEL, { prompt: text, lang }));
+  if (!bytes || bytes.byteLength <= 44) return null;
+  await cachePut(ctx.deps, key, toBase64(bytes));
+  return { bytes, type: audioType(bytes), cached: false };
 }
 
 // --------------------------------------------------------------------------- voice input

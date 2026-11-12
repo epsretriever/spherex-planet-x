@@ -21,7 +21,7 @@ export const DAILY_CAPS: Record<AiKind, number> = {
   search: 600,
   digest: 10,
   translate: 600,
-  speech: 200,
+  speech: 1200,
   transcribe: 300,
   guide: 150,
 };
