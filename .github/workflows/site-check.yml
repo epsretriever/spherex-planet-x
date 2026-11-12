@@ -64,8 +64,9 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          # /leads/ is now a permanent redirect to the Objects page's leads tab: follow it.
           for p in / /leads/ /about/ /sky/ /objects/; do
-            code=$(curl -s -o page.html -w '%{http_code}' "$SITE$p")
+            code=$(curl -sL -o page.html -w '%{http_code}' "$SITE$p")
             og=$(grep -o '<meta property="og:image" content="[^"]*"' page.html | head -1 || true)
             echo "$p $code ${og:-no og:image}" | tee -a "$GITHUB_STEP_SUMMARY"
             test "$code" = 200
@@ -74,7 +75,7 @@ jobs:
           curl -fsSL "$SITE/leads/leads.json" | jq '{published_leads: (.leads | length)}' | tee -a "$GITHUB_STEP_SUMMARY"
           for i in 1 2 3; do
             google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=20000 \
-              --dump-dom "$SITE/leads/" > leads.html || true
+              --dump-dom "$SITE/objects/?view=leads" > leads.html || true
             grep -q "unexplained object" leads.html && break
             sleep 10
           done
