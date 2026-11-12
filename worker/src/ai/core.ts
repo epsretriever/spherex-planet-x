@@ -15,10 +15,19 @@ export const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const PROMPT_VERSION = "2";
 
 /** Daily call caps per feature, to stay inside the free 10,000 neurons/day allowance. */
-export const DAILY_CAPS: Record<AiKind, number> = { writeup: 400, ask: 600, search: 600, digest: 10 };
+export const DAILY_CAPS: Record<AiKind, number> = {
+  writeup: 400,
+  ask: 600,
+  search: 600,
+  digest: 10,
+  translate: 600,
+  speech: 200,
+  transcribe: 300,
+  guide: 150,
+};
 const CACHE_TTL_S = 30 * 24 * 3600;
 
-export type AiKind = "writeup" | "ask" | "search" | "digest";
+export type AiKind = "writeup" | "ask" | "search" | "digest" | "translate" | "speech" | "transcribe" | "guide";
 
 export interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Footer } from "@/components/Footer";
+import { Guide } from "@/components/guide/Guide";
 import { TopBar } from "@/components/TopBar";
 import { Tour } from "@/components/tour/Tour";
 import { pageMeta, SITE_URL } from "@/lib/meta";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <Footer />
         <Tour />
+        <Guide />
       </body>
     </html>
   );

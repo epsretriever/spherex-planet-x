@@ -5,6 +5,8 @@ import { DataError, askAbout } from "@/lib/api";
 import { resolveCitations, showValue, type Citation } from "@/lib/citations";
 import type { AiAnswer, AiSubjectKind } from "@/lib/contract";
 import { sessionId } from "@/lib/session";
+import { useVoiceInput } from "@/lib/voice";
+import { MicButton } from "../MicButton";
 import { GroundedText } from "./GroundedText";
 import { Panel } from "./Panel";
 import styles from "./report.module.css";
@@ -53,6 +55,8 @@ export function AskPanel({ subjectKind, subjectId, doc }: { subjectKind: AiSubje
       settle({ id, question: text, status: "error", message });
     }
   };
+
+  const voice = useVoiceInput((text) => void ask(text));
 
   if (off) return null;
 
@@ -103,10 +107,21 @@ export function AskPanel({ subjectKind, subjectId, doc }: { subjectKind: AiSubje
           autoComplete="off"
           enterKeyHint="send"
         />
+        {voice.supported && <MicButton state={voice.state} onStart={() => void voice.start()} onStop={voice.stop} disabled={busy} />}
         <button type="submit" className="button button-primary" disabled={busy || !question.trim()}>
           Ask
         </button>
       </form>
+      {voice.state === "recording" && (
+        <p className={styles.note} role="status" style={{ marginTop: "var(--space-2)" }}>
+          Listening… press the button again to send (up to 20 seconds).
+        </p>
+      )}
+      {voice.message && (
+        <p className={styles.answerError} role="alert" style={{ marginTop: "var(--space-2)" }}>
+          {voice.message}
+        </p>
+      )}
       {turns.length === 0 && (
         <p className={styles.suggest}>
           {SUGGESTIONS.map((s) => (
