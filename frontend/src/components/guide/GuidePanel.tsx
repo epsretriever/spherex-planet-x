@@ -109,7 +109,7 @@ export default function GuidePanel({ open, onClose }: { open: boolean; onClose: 
                     <p className={styles.links}>
                       {t.answer.links.map((l) => (
                         <Link key={l.href} href={l.href} prefetch={false} onClick={onClose}>
-                          {l.label} →
+                          {l.label}
                         </Link>
                       ))}
                     </p>
