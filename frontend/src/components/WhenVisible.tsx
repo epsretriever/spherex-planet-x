@@ -57,17 +57,28 @@ export function Seen({ onSeen, margin = "400px" }: { onSeen: () => void; margin?
       seen.current();
       return;
     }
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          obs.disconnect();
-          seen.current();
-        }
-      },
-      { rootMargin: margin },
-    );
+    let done = false;
+    const fire = () => {
+      if (done) return;
+      done = true;
+      obs.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      seen.current();
+    };
+    const obs = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && fire(), { rootMargin: margin });
+    // A jump past the marker (section links, #hash links, a fast fling) never makes it intersect,
+    // so also fire once it is above the bottom of the viewport.
+    const onScroll = () => {
+      if (el.getBoundingClientRect().top < window.innerHeight) fire();
+    };
     obs.observe(el);
-    return () => obs.disconnect();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      done = true;
+      obs.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [margin]);
 
   return <div ref={ref} aria-hidden="true" />;
