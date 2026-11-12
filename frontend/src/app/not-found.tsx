@@ -25,7 +25,7 @@ export default function NotFound() {
       </p>
       <div className={styles.actions}>
         <Link href="/objects/" className="button button-primary">
-          Browse the objects →
+          Browse the objects
         </Link>
         <Link href="/sky/" className="button">
           Open the sky map

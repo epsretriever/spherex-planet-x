@@ -1,0 +1,29 @@
+.sky {
+  display: grid;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+@media (min-width: 860px) {
+  .sky {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+}
+
+.text p {
+  max-width: 52ch;
+  color: var(--text-muted);
+}
+
+.text p:last-child {
+  margin: 0;
+}
+
+.globe {
+  position: relative;
+  height: clamp(300px, 70vw, 480px);
+}
+
+.placeholder {
+  height: 100%;
+}

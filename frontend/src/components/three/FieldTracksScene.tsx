@@ -22,7 +22,7 @@ const square = (t: number) => [at(-1, -1, t), at(1, -1, t), at(1, 1, t), at(-1, 
 export default function FieldTracksScene({ data, onFail }: FieldTracksProps) {
   const build = (stage: Stage) => {
     const { scene } = stage;
-    const accent = cssColor("--accent", "#ff8a4c");
+    const accent = cssColor("--track", "#7cf0c8");
     const muted = cssColor("--text-muted", "#aa9fbd");
     const cool = cssColor("--cool", "#7cc4ff");
     const line = (pts: THREE.Vector3[], mat: THREE.Material) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);

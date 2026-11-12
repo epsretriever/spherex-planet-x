@@ -1,13 +1,13 @@
 # Fonts
 
-Latin subsets of three variable fonts, self-hosted through `next/font/local` so Next.js preloads
-them from the page head and sizes fallback fonts to match (no layout shift when they swap in).
+Latin subset of one variable font, self-hosted through `next/font/local` so Next.js preloads it
+from the page head and sizes the fallback font to match (no layout shift when it swaps in).
 
-| File | Font | License |
-|---|---|---|
-| `inter-latin-wght-normal.woff2` | Inter | SIL Open Font License 1.1 (`inter-OFL.txt`) |
-| `space-grotesk-latin-wght-normal.woff2` | Space Grotesk | SIL Open Font License 1.1 (`space-grotesk-OFL.txt`) |
-| `jetbrains-mono-latin-wght-normal.woff2` | JetBrains Mono | SIL Open Font License 1.1 (`jetbrains-mono-OFL.txt`) |
+| File | Font | Axes | License |
+|---|---|---|---|
+| `archivo-latin-wdth-wght-normal.woff2` | Archivo (Omnibus-Type) | weight 100–900, width 62–125% | SIL Open Font License 1.1 (`archivo-OFL.txt`) |
 
-Copied from the `@fontsource-variable/*` packages. Characters outside Latin (for example λ and χ)
-fall back to the system font.
+Copied from `@fontsource-variable/archivo` (`archivo-latin-standard-normal.woff2`, which carries both
+axes). Width does the typographic work: expanded for headlines, normal for reading, condensed with
+tabular figures for data. Characters outside Latin (for example λ, χ and arrows) fall back to the
+system font.

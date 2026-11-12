@@ -140,7 +140,7 @@ function Limitations() {
         <strong>&ldquo;What is it made of?&rdquo; is indicative only.</strong> A SPHEREx track usually covers a narrow range of wavelengths over
         about a day, while the asteroid rotates, so most composition answers are low confidence. Points above about 3 µm are often the
         object&apos;s own heat rather than reflected sunlight, and are left out for near-Sun objects.{" "}
-        <Link href="/limits/#composition">How often it is right →</Link>
+        <Link href="/limits/#composition">How often it is right</Link>
       </li>
       <li>
         <strong>The scores are rankings, not probabilities.</strong> No object here has been confirmed by another telescope.
@@ -191,7 +191,7 @@ export default function AboutPage() {
         <p>Measured by planting simulated objects in real SPHEREx images and running the same pipeline on them.</p>
         <Limitations />
         <p>
-          <Link href="/limits/">The full detection-limits study →</Link>
+          <Link href="/limits/">The full detection-limits study</Link>
         </p>
       </section>
 
@@ -240,7 +240,7 @@ export default function AboutPage() {
         <p>
           We plant fake moving objects, of known brightness and speed, into real images and check how many the pipeline finds. We
           also run it on patches with nothing planted to count false alarms. These planted objects are always labeled SIMULATED.{" "}
-          <Link href="/limits/">See the results →</Link>
+          <Link href="/limits/">See the results</Link>
         </p>
       </section>
 

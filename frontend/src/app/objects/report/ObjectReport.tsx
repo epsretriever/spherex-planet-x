@@ -419,7 +419,7 @@ function Neighbors({ current, nameFor }: { current: CandidateDetail; nameFor: Na
       )}
       {next && (
         <Link href={candidateHref(next.candidate_id)} className={`card ${styles.neighbor} ${styles.next}`}>
-          <span className={styles.kicker}>Next →</span>
+          <span className={styles.kicker}>Next</span>
           <span>{nameFor({ candidate_id: next.candidate_id, classification: next.classification, designation: next.known_object_designation }).title}</span>
         </Link>
       )}

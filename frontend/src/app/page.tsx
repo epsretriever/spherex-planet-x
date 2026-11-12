@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
-import { GrowthCharts } from "@/components/home/GrowthCharts";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
+import { HomeSky } from "@/components/home/HomeSky";
 import { HowToUse } from "@/components/home/HowToUse";
 import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
@@ -99,7 +99,7 @@ export default function LandingPage() {
           </p>
           <div className={styles.actions}>
             <Link href="/objects/" className="button button-primary">
-              Browse the objects →
+              Browse the objects
             </Link>
             <Link href="/objects/?view=leads" className="button">
               {unidentified != null ? `${unidentified} not yet identified` : "Unexplained leads"}
@@ -128,8 +128,6 @@ export default function LandingPage() {
       </div>
 
       <div className="container">
-        <GrowthCharts days={staticGrowth()} />
-
         <section className={styles.what} aria-labelledby="what-heading">
           <div className={styles.whatHead}>
             <p className="eyebrow">What it does</p>
@@ -186,6 +184,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <HomeSky searched={t ? (t.n_searched ?? t.n_processed) : null} withObjects={t ? t.n_processed : null} />
+
         <section className="section" aria-labelledby="modes-heading">
           <div className={styles.sectionHead}>
             <div>
@@ -201,13 +201,13 @@ export default function LandingPage() {
                 The objects JPL hasn&apos;t matched to a known asteroid or comet (some are still being checked, some may be glitches), ranked by the strength of the evidence, each with a blink, the case for
                 and against, and where to point a telescope to confirm it.
               </p>
-              <span className={styles.modeCta}>See the leads →</span>
+              <span className={styles.modeCta}>See the leads</span>
             </Link>
             <Link href="/objects/?view=patches" className={`card ${styles.mode}`}>
               <span className="eyebrow">Patches of sky</span>
               <h3>Blink the sky</h3>
               <p>Pick a patch of sky and flip between real SPHEREx images taken hours or days apart. Stars hold still; movers jump.</p>
-              <span className={styles.modeCta}>Start exploring →</span>
+              <span className={styles.modeCta}>Start exploring</span>
             </Link>
             <Link href="/objects/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Objects</span>
@@ -216,19 +216,19 @@ export default function LandingPage() {
                 Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the JPL
                 check, the explanations we can and can&apos;t rule out, and, once fitted, its orbit and distance.
               </p>
-              <span className={styles.modeCta}>Browse objects →</span>
+              <span className={styles.modeCta}>Browse objects</span>
             </Link>
             <Link href="/sky/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Sky map</span>
               <h3>Where we&apos;ve searched</h3>
               <p>Every patch of sky we&apos;ve processed on one all-sky map, with the ecliptic and the Milky Way for reference.</p>
-              <span className={styles.modeCta}>Open the map →</span>
+              <span className={styles.modeCta}>Open the map</span>
             </Link>
             <Link href="/limits/" className={`card ${styles.mode}`}>
               <span className="eyebrow">Detection limits</span>
               <h3>What we could miss</h3>
               <p>How faint and how slow an object we can recover, measured by planting simulated objects in real images.</p>
-              <span className={styles.modeCta}>See the limits →</span>
+              <span className={styles.modeCta}>See the limits</span>
             </Link>
           </div>
         </section>
@@ -240,7 +240,7 @@ export default function LandingPage() {
               <h2 id="featured-heading">Patches of sky to explore</h2>
             </div>
             <Link href="/objects/?view=patches" className={styles.more}>
-              See all →
+              See all
             </Link>
           </div>
           <FieldGrid limit={3} />
@@ -256,7 +256,7 @@ export default function LandingPage() {
             which explanations we can and can&apos;t rule out.
           </p>
           <p>
-            <Link href="/limits/">See where Planet X could still be hiding, and how we test ourselves →</Link>
+            <Link href="/limits/">See where Planet X could still be hiding, and how we test ourselves</Link>
           </p>
         </section>
       </div>

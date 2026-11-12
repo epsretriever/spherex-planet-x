@@ -73,7 +73,7 @@ export default function OrbitScene({ object, clones, planets, epochMjd, objectLa
     const camera = new THREE.PerspectiveCamera(40, 1, reach / 200, reach * 20);
     camera.position.set(0, reach * 1.25, reach * 1.6);
 
-    const accent = cssColor("--accent", "#ff8a4c");
+    const accent = cssColor("--track", "#7cf0c8");
     const muted = cssColor("--text-muted", "#aa9fbd");
     const cool = cssColor("--cool", "#7cc4ff");
     const disposables: { dispose: () => void }[] = [];

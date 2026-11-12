@@ -98,6 +98,15 @@ Injection demo flow: `/simulated` opens with a **SIMULATED** banner. It shows th
 
 ## 3. Design system outline
 
+> **Current visual system (Nov 2026): cyanotype.** This replaces the thermal-infrared direction described below; the tables further down are kept for history, and `frontend/src/app/globals.css` is the source of truth.
+>
+> - **Concept:** a blink comparator, rebuilt. Tombaugh found Pluto in 1930 by blinking two plates; the home page opens on a real SPHEREx pair blinking, with the mover circled and both source files linked.
+> - **Color:** Prussian-blue ground (`--bg #102A4C`, `--well #0B1F3A` behind images), paper-white text and primary buttons (`--text #F2F5F9`, `--on-accent #102A4C`), haze for secondary text (`--text-muted #A9BCD6`, 7.4:1), sodium for focus and caution (`--sodium #FFCF5A`). Movers keep `--track #7CF0C8`; status colors were lightened to read on blue. No decorative gradients.
+> - **Type:** one variable family, Archivo (weight and width axes). Width carries the hierarchy: `--stretch-display` (112–118%) for headlines, 100% for reading, `--stretch-data` (87.5%) with tabular figures for numbers and IDs. Sentence-case labels, no all-caps eyebrows, no trailing arrows on links. Scale after Bringhurst: 12/14/16/18/21/24/36/48/72.
+> - **Shape:** plates are nearly square (`--radius 4px`), no shadows; structure comes from 1px rules.
+> - **Brand:** the mark is one object caught twice, a dashed ring where it was and a solid dot where it is (`src/components/LogoMark.tsx`, `src/app/icon.svg`). Share image and Apple icon: `node scripts/make-share-images.mjs`.
+> - **3D:** the sky map opens on a three.js globe (Milky Way particles, ecliptic, searched patches, pulsing beacons with pillars sized by object count); three.js loads on the reader's first interaction so the page paints first. A compact copy turns on the home page once scrolled into view. All scenes respect reduced motion.
+
 ### Color
 
 Visual direction: **thermal infrared**. Violet-black surfaces like the sky between sources, an ember accent for actions, and an inferno-style spectral ramp (short to long wavelength) used for the top-bar rule, the hero's 102-channel diagram, wavelength labels, the spectrum plot and the recovery grid. Dark only. Status colors are chosen to be colorblind-safe and are always paired with an icon and a text label, never color alone. The tokens live in `frontend/src/app/globals.css`.

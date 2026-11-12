@@ -6,6 +6,9 @@ test("sky map shows searched tiles, totals and the sourced region", async ({ pag
   await page.goto("/sky/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Where we've searched");
   await expect(page.getByText("Synthetic survey for tests.", { exact: false })).toBeVisible();
+  // The 3D globe opens first; the flat map is one choice away.
+  await expect(page.getByLabel("3D globe")).toBeChecked();
+  await page.getByLabel("Flat map").check();
   const map = page.getByRole("group", { name: "All-sky map in equatorial coordinates" });
   await expect(map).toBeVisible();
   // The searched tile links to its field; the waiting one does not.

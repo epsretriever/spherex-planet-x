@@ -52,7 +52,7 @@ export function FieldCard({ field }: { field: FieldSummary }) {
         )}
       </div>
       <span className={styles.cta} aria-hidden="true">
-        Open →
+        Open
       </span>
     </li>
   );

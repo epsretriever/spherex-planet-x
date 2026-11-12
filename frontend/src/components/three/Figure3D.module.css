@@ -7,11 +7,22 @@
   height: clamp(320px, 62vw, 520px);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background:
-    radial-gradient(circle at 50% 50%, rgb(247 209 61 / 0.06), transparent 45%),
-    var(--bg);
+  background: radial-gradient(circle at 50% 50%, var(--surface) 0%, var(--well) 70%);
   overflow: hidden;
   touch-action: none;
+}
+
+/* Before three.js arrives: the empty stage, with a way to ask for it. */
+.waiting {
+  display: grid;
+  place-items: center;
+}
+
+.plain {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  height: 100%;
 }
 
 .tall {
@@ -46,6 +57,7 @@
   left: 0;
   margin: -1.6em 0 0 6px;
   font-family: var(--font-mono);
+  font-stretch: var(--stretch-data);
   font-size: var(--text-xs);
   color: var(--text-muted);
   white-space: nowrap;
@@ -55,7 +67,7 @@
 
 .tag[data-kind="object"],
 .tag[data-kind="accent"] {
-  color: var(--accent);
+  color: var(--track);
   font-weight: 600;
 }
 
@@ -110,6 +122,13 @@
   pointer-events: none;
 }
 
+/* On a phone the standing hint would cover the globe; it shows only when naming a patch. */
+@media (max-width: 600px) {
+  .readout[data-idle="true"] {
+    display: none;
+  }
+}
+
 .readout a {
   pointer-events: auto;
 }
@@ -144,5 +163,6 @@
 .flat text {
   fill: var(--text-muted);
   font-family: var(--font-mono);
+  font-stretch: var(--stretch-data);
   font-size: 11px;
 }

@@ -249,7 +249,7 @@ export function CandidateBrowser() {
             </>
           ))}
         <p className={styles.back}>
-          <Link href="/objects/?view=patches">Or pick a patch of sky and blink it yourself →</Link>
+          <Link href="/objects/?view=patches">Or pick a patch of sky and blink it yourself</Link>
         </p>
       </section>
     </div>

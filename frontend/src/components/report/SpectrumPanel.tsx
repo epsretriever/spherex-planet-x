@@ -67,7 +67,7 @@ export function SpectrumPanel({ spectrum }: { spectrum: Spectrum }) {
           return (
             <g key={`${p.epoch_id}-${i}`}>
               <line x1={sx(p.wavelength_um)} x2={sx(p.wavelength_um)} y1={sy(p.flux_ujy - p.flux_err_ujy)} y2={sy(p.flux_ujy + p.flux_err_ujy)} stroke={c} strokeWidth={1.5} />
-              <circle cx={sx(p.wavelength_um)} cy={sy(p.flux_ujy)} r={4.5} fill={c} stroke="#08060d" strokeWidth={1.5} />
+              <circle cx={sx(p.wavelength_um)} cy={sy(p.flux_ujy)} r={4.5} fill={c} stroke="#0b1f3a" strokeWidth={1.5} />
             </g>
           );
         })}
