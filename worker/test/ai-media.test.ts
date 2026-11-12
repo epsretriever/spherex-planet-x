@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL } from "../src/ai/core";
 import { describe, expect, it } from "vitest";
 import type { AiWriteup, FieldList } from "../src/contract";
 import { GUIDE_PAGES, fallbackLinks, guideNumbers, validLinks } from "../src/ai/guide";
@@ -81,7 +82,7 @@ describe("numbers in translations", () => {
 
 describe("GET /api/candidates/:id/writeup?lang=", () => {
   it("translates a checked write-up and caches the translation", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [TRANSLATE_MODEL]: echoTranslate });
+    const ai = fakeAi({ [DEFAULT_MODEL]: llm(goodWriteup), [TRANSLATE_MODEL]: echoTranslate });
     const c = await client(ai);
     const r = await c.get("/api/candidates/test-field-sim01/writeup?lang=es");
     expect(r.status).toBe(200);
@@ -98,7 +99,7 @@ describe("GET /api/candidates/:id/writeup?lang=", () => {
 
   it("serves English when the translation changes a number", async () => {
     const ai = fakeAi({
-      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup),
+      [DEFAULT_MODEL]: llm(goodWriteup),
       [TRANSLATE_MODEL]: (i) => ({ translated_text: String(i.text).replace(/\b3\b/g, "30") }),
     });
     const c = await client(ai);
@@ -111,13 +112,13 @@ describe("GET /api/candidates/:id/writeup?lang=", () => {
   });
 
   it("serves English when the model reports an error", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [TRANSLATE_MODEL]: () => ({ translated_text: "ERROR: invalid target_lang" }) });
+    const ai = fakeAi({ [DEFAULT_MODEL]: llm(goodWriteup), [TRANSLATE_MODEL]: () => ({ translated_text: "ERROR: invalid target_lang" }) });
     const w = (await (await (await client(ai)).get("/api/candidates/test-field-sim01/writeup?lang=de")).json()) as { lang: string };
     expect(w.lang).toBe("en");
   });
 
   it("rejects unknown languages and leaves English unchanged", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup) });
+    const ai = fakeAi({ [DEFAULT_MODEL]: llm(goodWriteup) });
     const c = await client(ai);
     expect((await c.get("/api/candidates/test-field-sim01/writeup?lang=xx")).status).toBe(400);
     const w = (await (await c.get("/api/candidates/test-field-sim01/writeup?lang=en")).json()) as Record<string, unknown>;
@@ -131,7 +132,7 @@ describe("GET /api/candidates/:id/writeup/speech", () => {
   const wav = btoa("RIFF\u0000\u0000\u0000\u0000WAVEfmt " + "\u0000".repeat(80));
 
   it("lists one clip URL per paragraph, and each clip is audio made on demand and cached", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [SPEECH_MODEL]: () => ({ audio: wav }) });
+    const ai = fakeAi({ [DEFAULT_MODEL]: llm(goodWriteup), [SPEECH_MODEL]: () => ({ audio: wav }) });
     const c = await client(ai);
     const r = await c.get("/api/candidates/test-field-sim01/writeup/speech");
     expect(r.status).toBe(200);
@@ -152,7 +153,7 @@ describe("GET /api/candidates/:id/writeup/speech", () => {
 
   it("reads the checked translation aloud in its language", async () => {
     const ai = fakeAi({
-      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup),
+      [DEFAULT_MODEL]: llm(goodWriteup),
       [TRANSLATE_MODEL]: echoTranslate,
       [SPEECH_MODEL]: () => ({ audio: wav }),
     });
@@ -166,7 +167,7 @@ describe("GET /api/candidates/:id/writeup/speech", () => {
   });
 
   it("400s for languages MeloTTS can't speak and 503s when the model fails", async () => {
-    const ai = fakeAi({ "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm(goodWriteup), [SPEECH_MODEL]: () => new Error("capacity") });
+    const ai = fakeAi({ [DEFAULT_MODEL]: llm(goodWriteup), [SPEECH_MODEL]: () => new Error("capacity") });
     const c = await client(ai);
     expect((await c.get("/api/candidates/test-field-sim01/writeup/speech?lang=hi")).status).toBe(400);
     const r = await c.get("/api/candidates/test-field-sim01/writeup/speech/0");
@@ -190,7 +191,7 @@ describe("splitting and audio sniffing", () => {
 describe("translation keeps every sentence", () => {
   it("translates each sentence on its own", async () => {
     const ai = fakeAi({
-      "@cf/meta/llama-3.3-70b-instruct-fp8-fast": llm({ ...goodWriteup, paragraphs: ["It was seen 3 times. It moves 3 arcseconds per hour.", ...goodWriteup.paragraphs.slice(1)] }),
+      [DEFAULT_MODEL]: llm({ ...goodWriteup, paragraphs: ["It was seen 3 times. It moves 3 arcseconds per hour.", ...goodWriteup.paragraphs.slice(1)] }),
       // Like m2m100 on long inputs: keeps only the first sentence.
       [TRANSLATE_MODEL]: (i) => ({ translated_text: `[es] ${String(i.text).split(". ")[0]}` }),
     });

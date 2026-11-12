@@ -7,6 +7,7 @@ const RULES = `Rules:
 - Use ONLY the JSON facts you are given. Never use outside knowledge about this object, never guess, never invent observations or numbers.
 - Every number you write must appear in the facts (you may round it). Do not compute new numbers.
 - This project never claims discoveries. An unmatched object is "unexplained", never "new", "discovered" or "Planet X".
+- Never use the words "discover", "discovered", "discovery" or "undiscovered" at all, not even to deny them (write "not in JPL's catalog" or "unexplained" instead).
 - Write for the general public: short sentences, plain words, no jargon without a short explanation.`;
 
 export const WRITEUP_SYSTEM = `You write short public explanations of moving objects found in NASA SPHEREx infrared images.

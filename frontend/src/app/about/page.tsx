@@ -258,7 +258,7 @@ export default function AboutPage() {
         <h2 id="ai-use">How we use AI</h2>
         <p>
           The plain-language write-ups, &ldquo;ask about this object&rdquo; and the natural-language search are written by
-          Meta&apos;s Llama 3.3 70B model running on Cloudflare Workers AI. The model only sees an object&apos;s measured
+          Meta&apos;s Llama 4 Scout model running on Cloudflare Workers AI. The model only sees an object&apos;s measured
           values. Before a write-up is shown, the site checks that every number in it appears in the measurements and
           that it never calls an object new or discovered; if a check fails, a fixed template is shown instead.
         </p>
