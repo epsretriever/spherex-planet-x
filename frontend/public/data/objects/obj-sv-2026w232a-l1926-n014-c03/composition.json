@@ -1,0 +1,386 @@
+{
+  "schema_version": "1.2",
+  "pipeline_version": "0.1.0+git.3bd4135",
+  "object_id": "obj-sv-2026w232a-l1926-n014-c03",
+  "generated_utc": "2026-11-13T21:47:13Z",
+  "simulated": false,
+  "indicative_only": true,
+  "status": "classified",
+  "result_plain": "Its colors look most like stony S-type asteroids (rocky, with silicate minerals). Indicative only (low confidence), from 5 SPHEREx bands between 0.98 and 1.30 µm. Next closest: basaltic V-type.",
+  "geometry": {
+    "method": "orbit_clones",
+    "reference_mjd": 61198.376272,
+    "helio_distance_au": 1.296,
+    "observer_distance_au": 0.481,
+    "phase_angle_deg": 44.54,
+    "max_correction_frac": 0.01362,
+    "phase_function": "IAU H-G, G = 0.15",
+    "note_plain": "Each point is scaled to the distances and phase angle at the track's median time, from 100 orbit clones; the clones' spread is added to the errors."
+  },
+  "normalisation": {
+    "window_um": [
+      1.0,
+      1.2
+    ],
+    "method": "template_fit",
+    "n_points": 0
+  },
+  "points": [
+    {
+      "band_index": 11,
+      "wavelength_um": 0.9848,
+      "epoch_id": "e29",
+      "mjd": 61198.172473,
+      "flux_ujy": 372.2,
+      "flux_err_ujy": 53.79,
+      "geometry_factor": 0.98638,
+      "reflectance": 0.7756,
+      "reflectance_err": 0.1284,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 21,
+      "wavelength_um": 1.2148,
+      "epoch_id": "e37",
+      "mjd": 61198.376272,
+      "flux_ujy": 512.5,
+      "flux_err_ujy": 51.46,
+      "geometry_factor": 0.99999,
+      "reflectance": 1.1135,
+      "reflectance_err": 0.143,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 22,
+      "wavelength_um": 1.2437,
+      "epoch_id": "e39",
+      "mjd": 61198.377765,
+      "flux_ujy": 583.45,
+      "flux_err_ujy": 49.76,
+      "geometry_factor": 1.0001,
+      "reflectance": 1.2791,
+      "reflectance_err": 0.1496,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 23,
+      "wavelength_um": 1.2736,
+      "epoch_id": "e41",
+      "mjd": 61198.379257,
+      "flux_ujy": 542.25,
+      "flux_err_ujy": 50.27,
+      "geometry_factor": 1.00021,
+      "reflectance": 1.2001,
+      "reflectance_err": 0.147,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 24,
+      "wavelength_um": 1.3038,
+      "epoch_id": "e43",
+      "mjd": 61198.380749,
+      "flux_ujy": 570.43,
+      "flux_err_ujy": 50.53,
+      "geometry_factor": 1.00032,
+      "reflectance": 1.28,
+      "reflectance_err": 0.1528,
+      "thermal_fraction": null,
+      "use": "taxonomy",
+      "excluded_reason": null
+    },
+    {
+      "band_index": 63,
+      "wavelength_um": 3.4167,
+      "epoch_id": "e32",
+      "mjd": 61198.173965,
+      "flux_ujy": 9053.34,
+      "flux_err_ujy": 92.01,
+      "geometry_factor": 0.98648,
+      "reflectance": null,
+      "reflectance_err": null,
+      "thermal_fraction": 0.928,
+      "use": "none",
+      "excluded_reason": "thermal emission may be more than 10% of the light"
+    },
+    {
+      "band_index": 64,
+      "wavelength_um": 3.5086,
+      "epoch_id": "e34",
+      "mjd": 61198.175458,
+      "flux_ujy": 1617.68,
+      "flux_err_ujy": 46.63,
+      "geometry_factor": 0.98659,
+      "reflectance": null,
+      "reflectance_err": null,
+      "thermal_fraction": 0.9434,
+      "use": "none",
+      "excluded_reason": "thermal emission may be more than 10% of the light"
+    }
+  ],
+  "taxonomy": {
+    "best": {
+      "class_name": "V",
+      "complex": "V",
+      "chi2": 0.778,
+      "dof": 4,
+      "probability": 0.1613
+    },
+    "runner_up": {
+      "class_name": "R",
+      "complex": "R",
+      "chi2": 0.933,
+      "dof": 4,
+      "probability": 0.1493
+    },
+    "top": [
+      {
+        "class_name": "V",
+        "complex": "V",
+        "chi2": 0.778,
+        "dof": 4,
+        "probability": 0.1613
+      },
+      {
+        "class_name": "R",
+        "complex": "R",
+        "chi2": 0.933,
+        "dof": 4,
+        "probability": 0.1493
+      },
+      {
+        "class_name": "O",
+        "complex": "O",
+        "chi2": 1.02,
+        "dof": 4,
+        "probability": 0.1429
+      },
+      {
+        "class_name": "Sv",
+        "complex": "S",
+        "chi2": 2.257,
+        "dof": 4,
+        "probability": 0.077
+      },
+      {
+        "class_name": "A",
+        "complex": "A",
+        "chi2": 2.444,
+        "dof": 4,
+        "probability": 0.0701
+      }
+    ],
+    "complex_probability": {
+      "S": 0.2712,
+      "V": 0.1613,
+      "R": 0.1493,
+      "O": 0.1429,
+      "A": 0.0701,
+      "Q": 0.0491,
+      "X": 0.0468,
+      "D": 0.038,
+      "C": 0.0371,
+      "T": 0.0129,
+      "K": 0.011,
+      "L": 0.0101
+    },
+    "best_complex": "S",
+    "best_complex_plain": "stony S-type asteroids (rocky, with silicate minerals)",
+    "runner_up_complex": "V",
+    "confidence": "low",
+    "confidence_plain": "Low: other asteroid types fit these colors almost as well, so treat this as a weak hint.",
+    "n_bands": 5,
+    "wavelength_span_um": 0.319,
+    "reduced_chi2": 0.194,
+    "slope_per_um": 1.601,
+    "slope_err_per_um": 0.5275,
+    "slope_range_um": [
+      0.9848,
+      1.3038
+    ],
+    "systematic_floor_frac": 0.08,
+    "template": {
+      "class_name": "V",
+      "wavelength_um": [
+        0.7,
+        0.75,
+        0.8,
+        0.85,
+        0.9,
+        0.95,
+        1.0,
+        1.05,
+        1.1,
+        1.15,
+        1.2,
+        1.25,
+        1.3,
+        1.35,
+        1.4,
+        1.45,
+        1.5,
+        1.55,
+        1.6,
+        1.65,
+        1.7,
+        1.75,
+        1.8,
+        1.85,
+        1.9,
+        1.95,
+        2.0,
+        2.05,
+        2.1,
+        2.15,
+        2.2,
+        2.25,
+        2.3,
+        2.35,
+        2.4,
+        2.45
+      ],
+      "reflectance": [
+        0.9834,
+        0.977,
+        0.8601,
+        0.7124,
+        0.6199,
+        0.6256,
+        0.7392,
+        0.9064,
+        1.0443,
+        1.1295,
+        1.1806,
+        1.2244,
+        1.2666,
+        1.2942,
+        1.2991,
+        1.2837,
+        1.2423,
+        1.1814,
+        1.1076,
+        1.0338,
+        0.964,
+        0.9056,
+        0.8585,
+        0.826,
+        0.8066,
+        0.8001,
+        0.809,
+        0.835,
+        0.8747,
+        0.9266,
+        0.9834,
+        1.0402,
+        1.0938,
+        1.1457,
+        1.196,
+        1.239
+      ],
+      "sigma": [
+        0.0413,
+        0.0398,
+        0.0351,
+        0.031,
+        0.0287,
+        0.0298,
+        0.0351,
+        0.0427,
+        0.0498,
+        0.0546,
+        0.0571,
+        0.0594,
+        0.0611,
+        0.0619,
+        0.0608,
+        0.0583,
+        0.0559,
+        0.053,
+        0.0497,
+        0.0467,
+        0.0436,
+        0.0413,
+        0.0395,
+        0.0382,
+        0.0374,
+        0.0377,
+        0.0383,
+        0.0399,
+        0.0417,
+        0.0445,
+        0.0472,
+        0.0504,
+        0.0536,
+        0.0563,
+        0.06,
+        0.067
+      ]
+    }
+  },
+  "hydration": {
+    "status": "not_covered",
+    "band_um": [
+      2.7,
+      3.1
+    ],
+    "continuum_um": [
+      1.6,
+      2.68
+    ],
+    "band_depth": null,
+    "band_depth_err": null,
+    "snr": null,
+    "n_band_points": 0,
+    "n_continuum_points": 0,
+    "continuum": null,
+    "verdict": "not_measured",
+    "verdict_plain": "Not measured: SPHEREx did not see this object at 2.7-3.1 µm with enough nearby points to define the continuum."
+  },
+  "thermal": {
+    "helio_distance_min_au": 1.188,
+    "flagged": true,
+    "model": "Standard Thermal Model (eta 0.756, emissivity 0.9), dark surface (p_V 0.05) at the closest clone distance; points over 10% thermal are not used",
+    "note_plain": "At 1.19 AU from the Sun (closest of its orbit clones) a dark surface would be warm enough that above about 3.4 µm part of the light is its own heat, not reflected sunlight. Those points are left out."
+  },
+  "caveats": [
+    "Indicative, not definitive: a type read from a few SPHEREx colors is a hint. Confirming it needs a dedicated spectrum from a telescope.",
+    "SPHEREx starts at 0.75 µm, so it misses the visible colors that separate many subclasses. Only the broad type (S, C, X and so on) is meaningful here.",
+    "The sightings are hours apart and the asteroid rotates, so brightness changes from its shape are mixed into its colors. Every point carries an extra 8% error for this.",
+    "Spectra look redder at larger phase angles (phase reddening). That effect is not corrected.",
+    "At 1.19 AU from the Sun (closest of its orbit clones) a dark surface would be warm enough that above about 3.4 µm part of the light is its own heat, not reflected sunlight. Those points are left out."
+  ],
+  "references": [
+    {
+      "label": "Bus-DeMeo taxonomy",
+      "citation": "DeMeo, Binzel, Slivan & Bus (2009), Icarus 202, 160-180: class mean spectra",
+      "url": "https://doi.org/10.1016/j.icarus.2009.02.005"
+    },
+    {
+      "label": "Solar spectrum",
+      "citation": "ASTM E490-00a (2014), Standard Solar Constant and Zero Air Mass Solar Spectral Irradiance Tables",
+      "url": "https://doi.org/10.1520/E0490"
+    },
+    {
+      "label": "Phase function",
+      "citation": "Bowell et al. (1989), Asteroids II, 524-556: the H-G magnitude system",
+      "url": "https://ui.adsabs.harvard.edu/abs/1989aste.conf..524B"
+    },
+    {
+      "label": "Thermal model",
+      "citation": "Lebofsky et al. (1986), Icarus 68, 239-251: the Standard Thermal Model",
+      "url": "https://doi.org/10.1016/0019-1035(86)90021-7"
+    },
+    {
+      "label": "3-micron band",
+      "citation": "Rivkin et al. (2015), Asteroids IV, 65-87: hydrated minerals on asteroids",
+      "url": "https://doi.org/10.2458/azu_uapress_9780816532131-ch004"
+    }
+  ]
+}
