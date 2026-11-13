@@ -1,0 +1,42 @@
+/* Fixed behind the whole page: the scene turns with scrolling rather than scrolling away. */
+.canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.canvas[data-ready="1"] {
+  opacity: 1;
+}
+
+/* Keeps body text readable: the scene stays vivid at the right edge and fades behind the column. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(16 42 76 / 0.62) 0%, rgb(16 42 76 / 0.5) 45%, rgb(16 42 76 / 0.18) 75%, rgb(16 42 76 / 0) 92%);
+}
+
+@media (max-width: 700px) {
+  .scrim {
+    background: rgb(16 42 76 / 0.5);
+  }
+}
+
+.canvas[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    transition: none;
+  }
+}

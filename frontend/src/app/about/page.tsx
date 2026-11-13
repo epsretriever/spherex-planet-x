@@ -87,8 +87,6 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
   },
 ];
 
-const REPO = "https://github.com/epsretriever/spherex-planet-x";
-
 const rate = (r: number) => `${r}″/hr`;
 
 function Limitations() {
@@ -295,11 +293,7 @@ export default function AboutPage() {
           <li>Bodhi: NASA data research, image analysis, scientific validation, backend and AI</li>
         </ul>
         <p>
-          Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;. Everything is open source (MIT):{" "}
-          <a href={REPO} target="_blank" rel="noopener noreferrer">
-            github.com/epsretriever/spherex-planet-x
-          </a>
-          , including the pipeline, the published data and the survey runs.
+          Built for the NASA Space Apps Challenge 2026, &ldquo;Planet X and SPHEREx&rdquo;. Everything is open source (MIT), including the pipeline, the published data and the survey runs.
         </p>
       </section>
     </div>
