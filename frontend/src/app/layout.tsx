@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { CosmicBackdrop } from "@/components/backdrop/CosmicBackdrop";
 import { Footer } from "@/components/Footer";
 import { Guide } from "@/components/guide/Guide";
 import { TopBar } from "@/components/TopBar";
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className={styles.skip}>
           Skip to content
         </a>
+        <CosmicBackdrop />
         <TopBar />
         <main id="main" className={styles.main}>
           {children}
