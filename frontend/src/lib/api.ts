@@ -11,7 +11,9 @@ import {
   type CompositionValidation,
   type FieldDetail,
   type FieldList,
+  type CrossCheckSummary,
   type GuideAnswer,
+  type Health,
   type InjectionStudy,
   type InjectionStudyIndex,
   type ObjectDetail,
@@ -274,6 +276,23 @@ export async function getSurvey(signal?: AbortSignal): Promise<Survey> {
   const body = await getJson<Survey>(USE_FIXTURES ? `${FIXTURE_BASE}/survey.json` : "/api/survey", signal);
   expectArray(body, "tiles", "Survey");
   return checkVersion(body, "survey");
+}
+
+/**
+ * Survey-wide totals of the catalog cross-check, from /api/survey or, failing that, /api/health.
+ * Null when neither publishes them (and always in fixture mode).
+ */
+export async function getCrossCheck(signal?: AbortSignal): Promise<CrossCheckSummary | null> {
+  if (USE_FIXTURES) return null;
+  for (const url of ["/api/survey", "/api/health"]) {
+    try {
+      const body = await getJson<Pick<Survey, "cross_check"> | Health>(url, signal);
+      if (body?.cross_check) return body.cross_check;
+    } catch (err) {
+      if ((err as Error).name === "AbortError") throw err;
+    }
+  }
+  return null;
 }
 
 /* ---- AI (contract v1.1). There is no AI in fixture mode: these report not_found. ---- */

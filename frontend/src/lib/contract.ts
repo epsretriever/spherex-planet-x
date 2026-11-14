@@ -193,6 +193,8 @@ export interface CandidateSummary extends MlSummary {
   known_object_checked?: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** The independent catalogs that agree on the identification; absent until cross-checks are published. */
+  known_object_catalogs_agreeing?: string[];
   /** Pipeline commit that built it (survey runs add data incrementally). */
   pipeline_version?: string | null;
 }
@@ -259,11 +261,29 @@ export interface KnownObjectEpoch {
   separation_arcsec: number;
 }
 
+/** One independent catalog's answer for an object's identification. */
+export type CrossCheckStatus = "agrees" | "different_object" | "nothing_found" | "failed" | "not_checked_yet";
+
+export interface CrossCheck {
+  /** "JPL SBIdent", "JPL Horizons", "IMCCE SkyBoT". */
+  catalog: string;
+  status: CrossCheckStatus;
+  /** The object this catalog places here, in its own spelling. */
+  designation?: string | null;
+  /** Largest distance between this catalog's prediction and our measured position. */
+  separation_arcsec?: number | null;
+  checked_utc?: string | null;
+}
+
 export interface KnownObject {
   checked: boolean;
   not_checked_reason?: string | null;
   matched: boolean;
-  catalogs_checked: ("JPL SBIdent" | "JPL Horizons")[];
+  catalogs_checked: string[];
+  /** One entry per catalog asked; absent until cross-checks are published. */
+  cross_checks?: CrossCheck[];
+  agreeing_catalogs?: number;
+  checked_catalogs?: number;
   search_radius_arcsec: number | null;
   designation?: string | null;
   predicted_vmag?: number | null;
@@ -483,6 +503,8 @@ export interface ObjectSummary extends MlSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  /** The independent catalogs that agree on the identification; absent until cross-checks are published. */
+  known_object_catalogs_agreeing?: string[];
   /** Pipeline commit that built it (survey runs add data incrementally). */
   pipeline_version?: string | null;
   /** Other object IDs with the same JPL designation, merged into this entry. */
@@ -613,6 +635,21 @@ export interface PlanetNineRegion {
   cells: { ra_deg: number; dec_deg: number; fraction: number }[];
 }
 
+/** How far the rolling re-check of known objects against the independent catalogs has got. */
+export interface CrossCheckSummary {
+  known_total: number;
+  cross_checked: number;
+  agreeing_2plus: number;
+  disagreements: number;
+  next_full_pass_estimate_utc?: string | null;
+}
+
+/** GET /api/health (only the part this app reads). */
+export interface Health {
+  status: string;
+  cross_check?: CrossCheckSummary | null;
+}
+
 export interface Survey extends Versioned {
   generated_utc: string;
   name: string;
@@ -650,6 +687,7 @@ export interface Survey extends Versioned {
     n_new_objects: number;
   } | null;
   planet_nine?: PlanetNineRegion | null;
+  cross_check?: CrossCheckSummary | null;
 }
 
 export type AiSubjectKind = "candidate" | "object";
@@ -734,6 +772,8 @@ export interface CandidateFilter {
   field_id: string[];
   min_score: number | null;
   include_injected: boolean;
+  /** Browser-only: keep objects that at least this many independent catalogs agree on. */
+  min_catalogs?: number | null;
   sort: "score" | "rate" | "newest" | "unusual";
 }
 
