@@ -63,7 +63,8 @@ export function skybotDesignation(numField: unknown, name: unknown): string {
  */
 export function parseSkybot(body: unknown): SkybotObject[] | null {
   if (typeof body === "string") {
-    if (/no solar system object/i.test(body)) return [];
+    // SkyBoT answers an empty field with HTTP 204 and no body (seen from GitHub Actions).
+    if (body.trim() === "" || /no solar system object/i.test(body)) return [];
     try {
       body = JSON.parse(body);
     } catch {
@@ -203,6 +204,7 @@ async function skybotQuery(deps: Deps, d: Det): Promise<SkybotObject[]> {
     const timeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
     throw new UpstreamError(SKYBOT, timeout ? "timeout" : "unreachable");
   }
+  if (res.status === 204) return []; // no known object in the cone
   if (!res.ok) throw new UpstreamError(SKYBOT, res.status);
   const objects = parseSkybot(await res.text());
   if (objects === null) throw new UpstreamError(SKYBOT, "invalid_response");

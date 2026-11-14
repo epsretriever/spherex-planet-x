@@ -68,6 +68,7 @@ describe("SkyBoT request and parser", () => {
     expect(o!.dg_au).toBe(2.61);
     expect(o!.vmag).toBe(15.7);
     expect(parseSkybot("[]")).toEqual([]);
+    expect(parseSkybot("")).toEqual([]); // HTTP 204: nothing in the cone
     expect(parseSkybot("No solar system object was found in the requested FOV")).toEqual([]);
     expect(parseSkybot("<html>error</html>")).toBeNull();
     expect(parseSkybot(JSON.stringify([{ Num: "", Name: "2019 AB12", "RA (hms)": "1 0 0", "DEC (dms)": "+1 0 0" }]))![0]!.designation).toBe("2019 AB12");

@@ -158,6 +158,7 @@ def test_skybot_url_parser_and_names():
     assert o.designation == "764 Gedania" and o.dg_au == 2.61
     assert abs(o.ra_deg - 243.38689) < 1e-4 and abs(o.dec_deg + 20.57920) < 1e-4
     assert T.parse_skybot("[]") == []
+    assert T.parse_skybot("") == []
     assert T.parse_skybot("No solar system object was found in the requested FOV") == []
     assert T.parse_skybot("<html>") is None
     assert T.same_object("764 Gedania (A913 SF)", "764 Gedania")

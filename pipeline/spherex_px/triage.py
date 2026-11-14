@@ -544,7 +544,8 @@ def parse_skybot(body) -> list[SkybotObject] | None:
     import json
 
     if isinstance(body, str):
-        if "no solar system object" in body.lower():
+        # SkyBoT answers an empty field with HTTP 204 and no body.
+        if not body.strip() or "no solar system object" in body.lower():
             return []
         try:
             body = json.loads(body)
@@ -669,6 +670,8 @@ def _skybot_get(url: str) -> list[SkybotObject]:
             time.sleep(wait)
         _last_request[0] = time.monotonic()
     resp = request("GET", url)
+    if resp.status_code == 204:
+        return []  # no known object in the cone
     if resp.status_code != 200:
         raise UpstreamError(f"HTTP {resp.status_code}")
     objs = parse_skybot(resp.text)
@@ -689,9 +692,13 @@ def skybot_check(c: S.CandidateDetail, now: str) -> dict:
     return decide_skybot(visits, now)
 
 
-def skybot_validation(out_dir: Path, n_known: int = 20) -> str:
+def skybot_validation(
+    out_dir: Path, n_known: int = 20, workers: int = 4, deadline_min: float = 32.0
+) -> str:
     """Compare SkyBoT with JPL on a spread of JPL-identified candidates, and ask SkyBoT about
-    every candidate JPL has not answered for. Returns a Markdown report of real results."""
+    every candidate JPL has not answered for. Returns a Markdown report of real results.
+    SkyBoT takes several seconds per call, so candidates run in parallel and any not started
+    by the deadline are reported as not asked."""
     now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     cands = [
         S.CandidateDetail.model_validate_json(p.read_text())
@@ -710,9 +717,19 @@ def skybot_validation(out_dir: Path, n_known: int = 20) -> str:
         "| candidate | JPL | SkyBoT | sep ″ | visits | result |",
         "|---|---|---|---|---|---|",
     ]
-    agree, seps, disagreements, failed = 0, [], [], 0
-    for c in sample:
-        r = skybot_check(c, now)
+    t_end = time.monotonic() + deadline_min * 60
+
+    def ask(c):
+        return skybot_check(c, now) if time.monotonic() < t_end else None
+
+    with ThreadPoolExecutor(workers) as ex:
+        known_res = list(ex.map(ask, sample))
+        unans_res = list(ex.map(ask, unanswered))
+    agree, seps, disagreements, failed, skipped = 0, [], [], 0, 0
+    for c, r in zip(sample, known_res, strict=True):
+        if r is None:
+            skipped += 1
+            continue
         jpl = c.known_object.designation or ""
         if r["outcome"] == "failed":
             failed += 1
@@ -727,11 +744,12 @@ def skybot_validation(out_dir: Path, n_known: int = 20) -> str:
         lines.append(
             f"| {c.candidate_id} | {jpl} | {r['designation'] or ''} | {r['separation_arcsec'] or ''} | {r['n_visits']} | {verdict} |"
         )
-    answered = len(sample) - failed
-    resolved, nothing, no_answer = [], 0, 0
-    for c in unanswered:
-        r = skybot_check(c, now)
-        if r["outcome"] == "match":
+    answered = len(sample) - failed - skipped
+    resolved, nothing, no_answer, not_asked = [], 0, 0, 0
+    for c, r in zip(unanswered, unans_res, strict=True):
+        if r is None:
+            not_asked += 1
+        elif r["outcome"] == "match":
             resolved.append(f"{c.candidate_id}: {r['designation']} ({r['separation_arcsec']}″, {r['n_visits']} visits)")
         elif r["outcome"] == "none":
             nothing += 1
@@ -739,12 +757,14 @@ def skybot_validation(out_dir: Path, n_known: int = 20) -> str:
             no_answer += 1
     lines += [
         "",
-        f"**Known sample:** {len(sample)} checked, SkyBoT answered {answered}; agrees with JPL on {agree} of {answered}"
+        f"**Known sample:** {len(sample) - skipped} asked, SkyBoT answered {answered}; agrees with JPL on {agree} of {answered}"
         + (f"; median separation {statistics.median(seps):.2f}″ (largest {max(seps):.2f}″)" if seps else "")
         + f"; disagreements {len(disagreements)}.",
         *[f"- {d}" for d in disagreements],
         "",
-        f"**Not answered by JPL:** {len(unanswered)} asked; SkyBoT identifies {len(resolved)}, finds nothing for {nothing}, did not answer for {no_answer}.",
+        f"**Not answered by JPL:** {len(unanswered)} asked; SkyBoT identifies {len(resolved)}, finds nothing for {nothing}, did not answer for {no_answer}"
+        + (f"; {not_asked} not asked before the deadline" if not_asked else "")
+        + ".",
         *[f"- {r}" for r in resolved],
     ]
     return "\n".join(lines) + "\n"

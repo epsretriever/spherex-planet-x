@@ -52,7 +52,7 @@ export const UPSTREAMS: readonly Upstream[] = [
     probe:
       `${IMCCE_SKYBOT}?-ep=2025-08-15T06:13:59Z&-ra=243.386885&-dec=-20.5792041&-rs=30` +
       "&-mime=json&-output=basic&-observer=500&-filter=0&-objFilter=111&-from=Driftnet",
-    accept: (b) => b.trimStart().startsWith("[") || /no solar system object/i.test(b),
+    accept: (b) => b.trimStart().startsWith("[") || b.trimStart().startsWith("{") || /no solar system object/i.test(b),
   },
   {
     name: "SPHEREx S3 (nasa-irsa-spherex)",
