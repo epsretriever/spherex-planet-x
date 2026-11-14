@@ -176,7 +176,9 @@ def _skybot_validate(args: argparse.Namespace) -> int:
     from .build import DEFAULT_OUT
     from .triage import skybot_validation
 
-    report = skybot_validation(Path(args.out) if args.out else DEFAULT_OUT, n_known=args.known)
+    report = skybot_validation(
+        Path(args.out) if args.out else DEFAULT_OUT, n_known=args.known, live_api=args.live_api
+    )
     print(report)
     if args.summary:
         with open(args.summary, "a") as fh:
@@ -339,6 +341,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     sv.add_argument("--out")
     sv.add_argument("--known", type=int, default=20)
+    sv.add_argument("--live-api", help="read JPL's stored answers from this Worker (e.g. the production URL)")
     sv.add_argument("--summary", help="append the Markdown report to this file")
     sv.set_defaults(func=_skybot_validate)
     sl = sub.add_parser(

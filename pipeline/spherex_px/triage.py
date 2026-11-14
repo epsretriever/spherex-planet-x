@@ -692,8 +692,31 @@ def skybot_check(c: S.CandidateDetail, now: str) -> dict:
     return decide_skybot(visits, now)
 
 
+def _live_jpl_states(api: str) -> dict[str, tuple[bool, bool, str | None]]:
+    """candidate_id -> (checked, matched, designation) from the live Worker's candidate list."""
+    out: dict[str, tuple[bool, bool, str | None]] = {}
+    offset = 0
+    while offset is not None:
+        resp = request("GET", f"{api.rstrip('/')}/api/candidates?limit=200&offset={offset}")
+        if resp.status_code != 200:
+            raise UpstreamError(f"live API HTTP {resp.status_code}")
+        body = resp.json()
+        for r in body.get("candidates", []):
+            out[r["candidate_id"]] = (
+                bool(r["known_object_checked"]),
+                bool(r["known_object_matched"]),
+                r.get("known_object_designation"),
+            )
+        offset = body.get("next_offset")
+    return out
+
+
 def skybot_validation(
-    out_dir: Path, n_known: int = 20, workers: int = 4, deadline_min: float = 32.0
+    out_dir: Path,
+    n_known: int = 20,
+    workers: int = 4,
+    deadline_min: float = 32.0,
+    live_api: str | None = None,
 ) -> str:
     """Compare SkyBoT with JPL on a spread of JPL-identified candidates, and ask SkyBoT about
     every candidate JPL has not answered for. Returns a Markdown report of real results.
@@ -705,6 +728,13 @@ def skybot_validation(
         for p in sorted((out_dir / "candidates").glob("*.json"))
     ]
     real = [c for c in cands if c.classification != S.Classification.injected]
+    # JPL's answers live in the Worker's store (D1), not in the published files: read them from
+    # the live API, falling back to the files' own (pipeline) answers.
+    live = _live_jpl_states(live_api) if live_api else {}
+    for c in real:
+        st = live.get(c.candidate_id)
+        if st is not None:
+            c.known_object.checked, c.known_object.matched, c.known_object.designation = st
     known = [c for c in real if c.known_object.checked and c.known_object.matched]
     step = max(1, len(known) // max(1, n_known))
     sample = known[::step][:n_known]
@@ -712,7 +742,8 @@ def skybot_validation(
     lines = [
         "## IMCCE SkyBoT validation",
         "",
-        f"Run {now}. {len(real)} candidates: {len(known)} JPL-identified, {len(unanswered)} JPL has not answered for.",
+        f"Run {now}. {len(real)} candidates ({len(live)} with JPL answers read from {live_api or 'the files only'}): "
+        f"{len(known)} JPL-identified, {len(unanswered)} JPL has not answered for.",
         "",
         "| candidate | JPL | SkyBoT | sep ″ | visits | result |",
         "|---|---|---|---|---|---|",
