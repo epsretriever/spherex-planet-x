@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "pipeline_version": "0.1.0+git.ea6c078",
-  "build_run_id": "gh-43502449938-1",
+  "build_run_id": "gh-43572164382-1",
   "object_id": "obj-sv-2025w174b-l1542-s001-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -578,7 +578,7 @@
   },
   "known_object": {
     "checked": false,
-    "not_checked_reason": "JPL Horizons did not answer for 39558 Kishine (1992 KC), the closest known object (about 70″ away in JPL's quick search).",
+    "not_checked_reason": "JPL Horizons did not answer for 39558 Kishine (1992 KC), the closest known object (about 69″ away in JPL's quick search).",
     "matched": false,
     "catalogs_checked": [],
     "search_radius_arcsec": 15.0,
@@ -587,7 +587,7 @@
     "per_epoch": [],
     "nearest": null,
     "observer": null,
-    "query_utc": "2026-11-07T15:20:32Z",
+    "query_utc": "2026-11-14T09:06:52Z",
     "enrichment": "pipeline",
     "jpl_links": null
   },
@@ -601,45 +601,45 @@
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
   "anomaly": {
-    "score": 0.402,
-    "rank": 162,
-    "n_ranked": 658,
+    "score": 0.404,
+    "rank": 166,
+    "n_ranked": 680,
     "reason_plain": "Moving at 20° to the ecliptic, steeper than most objects we have tracked",
     "features": [
       {
         "name": "log_rate",
         "label": "motion rate",
         "value": 1.1658,
-        "median": 1.4543,
-        "z": -1.3
+        "median": 1.4484,
+        "z": -1.23
       },
       {
         "name": "cross_ecliptic",
         "label": "motion across the ecliptic",
         "value": 0.3386,
-        "median": 0.115,
-        "z": 1.9
+        "median": 0.1185,
+        "z": 1.82
       },
       {
         "name": "abs_ecl_lat",
         "label": "distance from the ecliptic",
         "value": 0.084,
-        "median": 0.906,
-        "z": -1.1
+        "median": 0.905,
+        "z": -1.09
       },
       {
         "name": "log_helio_au",
         "label": "distance from the Sun",
         "value": 0.2772,
-        "median": 0.3898,
-        "z": -1.3
+        "median": 0.3918,
+        "z": -1.34
       },
       {
         "name": "colour",
         "label": "infrared colour (0.75-2.5 µm)",
         "value": 0.1758,
-        "median": -0.3841,
-        "z": 0.89
+        "median": -0.3675,
+        "z": 0.88
       }
     ],
     "method": "isolation_forest_v1",

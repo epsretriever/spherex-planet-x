@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "pipeline_version": "0.1.0+git.ea6c078",
-  "build_run_id": "gh-43502449938-1",
+  "build_run_id": "gh-43572164382-1",
   "object_id": "obj-sv-2025w174b-l1578-s004-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -1341,7 +1341,7 @@
   },
   "known_object": {
     "checked": false,
-    "not_checked_reason": "JPL SBIdent did not answer for 3 of 3 visits (GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=-3971.947%2C5804.582%2C28.617&obs-time=2025-04-26_17%3A33%3A28&fov-ra-center=10-36-42.21&fov-dec-center=08-15-36.8&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false failed after 5 attempts: GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=-3971.947%2C5804.582%2C28.617&obs-time=2025-04-26_17%3A33%3A28&fov-ra-center=10-36-42.21&fov-dec-center=08-15-36.8&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false -> HTTP 429).",
+    "not_checked_reason": "JPL Horizons did not answer for 14436 Morishita (1992 FC2), the closest known object (about 74″ away in JPL's quick search).",
     "matched": false,
     "catalogs_checked": [],
     "search_radius_arcsec": 15.0,
@@ -1350,7 +1350,7 @@
     "per_epoch": [],
     "nearest": null,
     "observer": null,
-    "query_utc": "2026-11-03T03:27:56Z",
+    "query_utc": "2026-11-14T09:06:52Z",
     "enrichment": "pipeline",
     "jpl_links": null
   },
@@ -1364,45 +1364,45 @@
     "definition": "Rule-based ranking score in [0, 1]: motion_consistency x snr x (1 - artifact_likelihood). It orders candidates for review. It is not a probability."
   },
   "anomaly": {
-    "score": 0.202,
-    "rank": 340,
-    "n_ranked": 658,
-    "reason_plain": "Infrared colour (spectral slope +0.28) redder than most objects we have tracked",
+    "score": 0.195,
+    "rank": 358,
+    "n_ranked": 680,
+    "reason_plain": "About 1.2× closer to the Sun than the median of the objects we have tracked",
     "features": [
       {
         "name": "log_rate",
         "label": "motion rate",
         "value": 1.238,
-        "median": 1.4543,
-        "z": -0.97
+        "median": 1.4484,
+        "z": -0.91
       },
       {
         "name": "cross_ecliptic",
         "label": "motion across the ecliptic",
         "value": 0.1347,
-        "median": 0.115,
-        "z": 0.17
+        "median": 0.1185,
+        "z": 0.13
       },
       {
         "name": "abs_ecl_lat",
         "label": "distance from the ecliptic",
         "value": 0.4659,
-        "median": 0.906,
-        "z": -0.59
+        "median": 0.905,
+        "z": -0.58
       },
       {
         "name": "log_helio_au",
         "label": "distance from the Sun",
         "value": 0.2995,
-        "median": 0.3898,
-        "z": -1.04
+        "median": 0.3918,
+        "z": -1.08
       },
       {
         "name": "colour",
         "label": "infrared colour (0.75-2.5 µm)",
         "value": 0.284,
-        "median": -0.3841,
-        "z": 1.06
+        "median": -0.3675,
+        "z": 1.05
       }
     ],
     "method": "isolation_forest_v1",

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.2",
   "pipeline_version": "0.1.0+git.ea6c078",
-  "build_run_id": "gh-43502449938-1",
+  "build_run_id": "gh-43572164382-1",
   "object_id": "obj-sv-2025w174b-l3141-n017-c01",
   "classification": "unmatched",
   "label_plain": "Unexplained",
@@ -653,7 +653,7 @@
   },
   "known_object": {
     "checked": false,
-    "not_checked_reason": "JPL SBIdent did not answer for 3 of 3 visits (GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=3970.661%2C-5731.462%2C-940.307&obs-time=2025-04-26_00%3A24%3A19&fov-ra-center=21-05-09.76&fov-dec-center=M14-50-42.2&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false failed after 5 attempts: GET https://ssd-api.jpl.nasa.gov/sb_ident.api?xobs=3970.661%2C-5731.462%2C-940.307&obs-time=2025-04-26_00%3A24%3A19&fov-ra-center=21-05-09.76&fov-dec-center=M14-50-42.2&fov-ra-hwidth=0.1&fov-dec-hwidth=0.1&two-pass=false -> HTTP 429).",
+    "not_checked_reason": "JPL Horizons did not answer for 514 Armida (A903 QC), the closest known object (about 14″ away in JPL's quick search).",
     "matched": false,
     "catalogs_checked": [],
     "search_radius_arcsec": 15.0,
@@ -662,7 +662,7 @@
     "per_epoch": [],
     "nearest": null,
     "observer": null,
-    "query_utc": "2026-11-03T03:27:56Z",
+    "query_utc": "2026-11-14T09:06:52Z",
     "enrichment": "pipeline",
     "jpl_links": null
   },
@@ -677,44 +677,44 @@
   },
   "anomaly": {
     "score": 0.087,
-    "rank": 563,
-    "n_ranked": 658,
+    "rank": 569,
+    "n_ranked": 680,
     "reason_plain": "1.8° from the ecliptic, farther from it than most objects we have tracked",
     "features": [
       {
         "name": "log_rate",
         "label": "motion rate",
         "value": 1.5444,
-        "median": 1.4543,
-        "z": 0.41
+        "median": 1.4484,
+        "z": 0.42
       },
       {
         "name": "cross_ecliptic",
         "label": "motion across the ecliptic",
         "value": 0.0801,
-        "median": 0.115,
-        "z": -0.3
+        "median": 0.1185,
+        "z": -0.32
       },
       {
         "name": "abs_ecl_lat",
         "label": "distance from the ecliptic",
         "value": 1.755,
-        "median": 0.906,
-        "z": 1.14
+        "median": 0.905,
+        "z": 1.12
       },
       {
         "name": "log_helio_au",
         "label": "distance from the Sun",
         "value": 0.3849,
-        "median": 0.3898,
-        "z": -0.06
+        "median": 0.3918,
+        "z": -0.08
       },
       {
         "name": "colour",
         "label": "infrared colour (0.75-2.5 µm)",
         "value": -0.5295,
-        "median": -0.3841,
-        "z": -0.23
+        "median": -0.3675,
+        "z": -0.26
       }
     ],
     "method": "isolation_forest_v1",
