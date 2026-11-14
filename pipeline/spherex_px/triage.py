@@ -494,6 +494,262 @@ def check_candidate(c: S.CandidateDetail, now: str) -> S.KnownObject:
     )
 
 
+# ----------------------------------------------------------------------------- IMCCE SkyBoT
+
+SKYBOT = "IMCCE SkyBoT"
+SKYBOT_URL = "https://ssp.imcce.fr/webservices/skybot/api/conesearch.php"
+SKYBOT_RADIUS_ARCSEC = 120
+SKYBOT_VISITS = 3
+
+
+def skybot_url(time_utc: str, ra: float, dec: float, radius: float = SKYBOT_RADIUS_ARCSEC) -> str:
+    """Geocentric SkyBoT cone search (the Worker's request: worker/src/skybot.ts)."""
+    t = datetime.fromisoformat(time_utc.replace("Z", "+00:00"))
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=UTC)
+    q = {
+        "-ep": t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+        "-ra": repr(float(ra)),
+        "-dec": repr(float(dec)),
+        "-rs": str(radius),
+        "-mime": "json",
+        "-output": "basic",
+        "-observer": "500",
+        "-filter": "0",
+        "-objFilter": "111",
+        "-from": "Driftnet",
+    }
+    return f"{SKYBOT_URL}?{urllib.parse.urlencode(q)}"
+
+
+@dataclass
+class SkybotObject:
+    designation: str
+    ra_deg: float
+    dec_deg: float
+    dg_au: float | None
+    vmag: float | None
+
+
+def _num(v) -> float | None:
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if math.isfinite(x) else None
+
+
+def parse_skybot(body) -> list[SkybotObject] | None:
+    """Objects in a SkyBoT JSON answer; [] for an empty field; None when it is not an answer."""
+    import json
+
+    if isinstance(body, str):
+        if "no solar system object" in body.lower():
+            return []
+        try:
+            body = json.loads(body)
+        except ValueError:
+            return None
+    if isinstance(body, dict):
+        if isinstance(body.get("data"), list):
+            body = body["data"]
+        else:
+            return [] if "no solar system object" in json.dumps(body).lower() else None
+    if not isinstance(body, list):
+        return None
+    out = []
+    for row in body:
+        if not isinstance(row, dict):
+            continue
+
+        def key(prefix: str, row=row):
+            return next((row[k] for k in row if k.lower().startswith(prefix)), None)
+
+        ra, dec = _parse_ra(key("ra")), _parse_dec(key("dec"))
+        num, name = str(row.get("Num") or "").strip(), str(row.get("Name") or "").strip()
+        des = f"{num} {name}".strip() if num and num not in ("-", "0") else name
+        if ra is None or dec is None or not des:
+            continue
+        out.append(SkybotObject(des, ra, dec, _num(key("dg")), _num(key("vmag"))))
+    return out
+
+
+def ident_keys(designation: str) -> set[str]:
+    """'764 Gedania (A913 SF)' -> {n:764, d:gedania, d:a913 sf}."""
+    import re
+
+    def norm(x: str) -> str:
+        return re.sub(r"\s+", " ", x.strip()).lower()
+
+    keys = set()
+    rest = designation.strip()
+    for m in re.findall(r"\(([^()]*)\)", rest):
+        if m.strip():
+            keys.add(f"n:{m.strip()}" if m.strip().isdigit() else f"d:{norm(m)}")
+    rest = re.sub(r"\([^()]*\)", " ", rest).strip()
+    if re.fullmatch(r"\d{4} [A-Z]{2}\d*", rest) or re.fullmatch(r"[A-Z]\d{3} [A-Z]{2}\d*", rest):
+        keys.add(f"d:{norm(rest)}")
+        return keys
+    m = re.fullmatch(r"(\d+[PDI]?)(?:[\s/]+(.*))?", rest)
+    if m:
+        keys.add(f"n:{m.group(1).lower()}")
+        if m.group(2) and m.group(2).strip():
+            keys.add(f"d:{norm(m.group(2))}")
+    elif rest:
+        keys.add(f"d:{norm(rest)}")
+    return keys
+
+
+def same_object(a: str, b: str) -> bool:
+    ka, kb = ident_keys(a), ident_keys(b)
+    na, nb = {k for k in ka if k[0] == "n"}, {k for k in kb if k[0] == "n"}
+    if na and nb:
+        return bool(na & nb)
+    return bool(ka & kb)
+
+
+def skybot_separation(d: S.Detection, o: SkybotObject) -> float:
+    """Distance from a detection to a SkyBoT object as SPHEREx would see it."""
+    ra, dec = (
+        topocentric(o.ra_deg, o.dec_deg, o.dg_au, d.spacecraft_geocentric_km)
+        if o.dg_au and o.dg_au > 0
+        else (o.ra_deg, o.dec_deg)
+    )
+    return sep_arcsec(d.ra_deg, d.dec_deg, ra, dec)
+
+
+def decide_skybot(visits: list[tuple[S.Detection, list[SkybotObject] | None]], now: str) -> dict:
+    """The Worker's rule (decideSkybot): one object within 15" at every answered visit."""
+    answered = [(d, objs) for d, objs in visits if objs is not None]
+    base = dict(
+        designation=None, separation_arcsec=None, vmag=None, n_visits=len(answered), checked_utc=now
+    )
+    if not visits or len(answered) < min(2, len(visits)):
+        return {
+            **base,
+            "outcome": "failed",
+            "detail": f"IMCCE SkyBoT answered for {len(answered)} of {len(visits)} visits.",
+        }
+    seen: dict[str, dict] = {}
+    for d, objs in answered:
+        for o in objs:
+            st = seen.setdefault(o.designation, {"seps": [], "vmag": o.vmag})
+            st["seps"].append(skybot_separation(d, o))
+    ranked = sorted(
+        ({"designation": k, "vmag": v["vmag"], "n": len(v["seps"]), "max": max(v["seps"])} for k, v in seen.items()),
+        key=lambda r: (-r["n"], r["max"]),
+    )
+    best = next(
+        (r for r in ranked if r["n"] == len(answered) and r["max"] <= MATCH_RADIUS_ARCSEC), None
+    )
+    if best:
+        return {
+            **base,
+            "outcome": "match",
+            "designation": best["designation"],
+            "separation_arcsec": round(best["max"], 2),
+            "vmag": best["vmag"],
+            "detail": None,
+        }
+    near = ranked[0] if ranked else None
+    return {
+        **base,
+        "outcome": "none",
+        "detail": f"Nearest: {near['designation']}, {near['max']:.2f}″ away at its farthest "
+        f"({near['n']} of {len(answered)} visits)."
+        if near
+        else None,
+    }
+
+
+def _skybot_get(url: str) -> list[SkybotObject]:
+    with _pace_lock:
+        wait = _last_request[0] + JPL_MIN_INTERVAL_S - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last_request[0] = time.monotonic()
+    resp = request("GET", url)
+    if resp.status_code != 200:
+        raise UpstreamError(f"HTTP {resp.status_code}")
+    objs = parse_skybot(resp.text)
+    if objs is None:
+        raise UpstreamError(f"not a SkyBoT answer: {resp.text[:120]!r}")
+    return objs
+
+
+def skybot_check(c: S.CandidateDetail, now: str) -> dict:
+    """Ask IMCCE SkyBoT about a candidate: one cone search per visit, at most SKYBOT_VISITS."""
+    visits = []
+    for d in sbident_sample(c.detections, SKYBOT_VISITS):
+        try:
+            visits.append((d, _skybot_get(skybot_url(d.time_utc, d.ra_deg, d.dec_deg))))
+        except UpstreamError as err:
+            log.warning("%s: SkyBoT %s", c.candidate_id, err)
+            visits.append((d, None))
+    return decide_skybot(visits, now)
+
+
+def skybot_validation(out_dir: Path, n_known: int = 20) -> str:
+    """Compare SkyBoT with JPL on a spread of JPL-identified candidates, and ask SkyBoT about
+    every candidate JPL has not answered for. Returns a Markdown report of real results."""
+    now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    cands = [
+        S.CandidateDetail.model_validate_json(p.read_text())
+        for p in sorted((out_dir / "candidates").glob("*.json"))
+    ]
+    real = [c for c in cands if c.classification != S.Classification.injected]
+    known = [c for c in real if c.known_object.checked and c.known_object.matched]
+    step = max(1, len(known) // max(1, n_known))
+    sample = known[::step][:n_known]
+    unanswered = [c for c in real if not c.known_object.checked]
+    lines = [
+        "## IMCCE SkyBoT validation",
+        "",
+        f"Run {now}. {len(real)} candidates: {len(known)} JPL-identified, {len(unanswered)} JPL has not answered for.",
+        "",
+        "| candidate | JPL | SkyBoT | sep ″ | visits | result |",
+        "|---|---|---|---|---|---|",
+    ]
+    agree, seps, disagreements, failed = 0, [], [], 0
+    for c in sample:
+        r = skybot_check(c, now)
+        jpl = c.known_object.designation or ""
+        if r["outcome"] == "failed":
+            failed += 1
+            verdict = "no answer"
+        elif r["outcome"] == "match" and same_object(jpl, r["designation"]):
+            agree += 1
+            seps.append(r["separation_arcsec"])
+            verdict = "agrees"
+        else:
+            verdict = "different object" if r["outcome"] == "match" else "nothing found"
+            disagreements.append(f"{c.candidate_id}: JPL {jpl}; SkyBoT {r['designation'] or r['detail'] or 'nothing'}")
+        lines.append(
+            f"| {c.candidate_id} | {jpl} | {r['designation'] or ''} | {r['separation_arcsec'] or ''} | {r['n_visits']} | {verdict} |"
+        )
+    answered = len(sample) - failed
+    resolved, nothing, no_answer = [], 0, 0
+    for c in unanswered:
+        r = skybot_check(c, now)
+        if r["outcome"] == "match":
+            resolved.append(f"{c.candidate_id}: {r['designation']} ({r['separation_arcsec']}″, {r['n_visits']} visits)")
+        elif r["outcome"] == "none":
+            nothing += 1
+        else:
+            no_answer += 1
+    lines += [
+        "",
+        f"**Known sample:** {len(sample)} checked, SkyBoT answered {answered}; agrees with JPL on {agree} of {answered}"
+        + (f"; median separation {statistics.median(seps):.2f}″ (largest {max(seps):.2f}″)" if seps else "")
+        + f"; disagreements {len(disagreements)}.",
+        *[f"- {d}" for d in disagreements],
+        "",
+        f"**Not answered by JPL:** {len(unanswered)} asked; SkyBoT identifies {len(resolved)}, finds nothing for {nothing}, did not answer for {no_answer}.",
+        *[f"- {r}" for r in resolved],
+    ]
+    return "\n".join(lines) + "\n"
+
+
 # ----------------------------------------------------------------------------- records
 
 

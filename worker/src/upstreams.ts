@@ -2,6 +2,7 @@
 export const IRSA_TAP_SYNC = "https://irsa.ipac.caltech.edu/TAP/sync";
 export const JPL_SBIDENT = "https://ssd-api.jpl.nasa.gov/sb_ident.api";
 export const JPL_HORIZONS = "https://ssd.jpl.nasa.gov/api/horizons.api";
+export const IMCCE_SKYBOT = "https://ssp.imcce.fr/webservices/skybot/api/conesearch.php";
 export const SPHEREX_S3 = "https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com";
 
 /**
@@ -43,6 +44,15 @@ export const UPSTREAMS: readonly Upstream[] = [
     url: JPL_HORIZONS,
     probe: `${JPL_HORIZONS}?format=json&COMMAND='499'&OBJ_DATA='NO'&MAKE_EPHEM='NO'`,
     accept: isJsonWith("signature"),
+  },
+  {
+    // A 30-arcsecond cone at a fixed SPHEREx epoch where (764) Gedania was observed.
+    name: "IMCCE SkyBoT",
+    url: IMCCE_SKYBOT,
+    probe:
+      `${IMCCE_SKYBOT}?-ep=2025-08-15T06:13:59Z&-ra=243.386885&-dec=-20.5792041&-rs=30` +
+      "&-mime=json&-output=basic&-observer=500&-filter=0&-objFilter=111&-from=Driftnet",
+    accept: (b) => b.trimStart().startsWith("[") || /no solar system object/i.test(b),
   },
   {
     name: "SPHEREx S3 (nasa-irsa-spherex)",

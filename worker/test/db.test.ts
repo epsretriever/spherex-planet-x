@@ -31,6 +31,7 @@ describe("D1 schema", () => {
       .filter((n) => n !== "sqlite_sequence");
     expect(tables).toEqual([
       "ai_usage",
+      "cross_checks",
       "enrichment",
       "locks",
       "model_versions",
@@ -41,7 +42,7 @@ describe("D1 schema", () => {
       "vetting_items",
       "votes",
     ]);
-    expect((db.prepare("SELECT id FROM schema_migrations").all() as { id: string }[]).map((r) => r.id)).toEqual(["0001_init", "0002_enrichment"]);
+    expect((db.prepare("SELECT id FROM schema_migrations").all() as { id: string }[]).map((r) => r.id)).toEqual(["0001_init", "0002_enrichment", "0003_cross_checks"]);
     const now = "2026-10-30T00:00:00Z";
     expect(() =>
       db.prepare("INSERT INTO sky_requests (request_id, ra_deg, dec_deg, client_hash, created_utc, updated_utc) VALUES (?,?,?,?,?,?)").run("r1", 400, 0, "h", now, now),

@@ -170,6 +170,20 @@ def _triage(args: argparse.Namespace) -> int:
     return 0
 
 
+def _skybot_validate(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from .build import DEFAULT_OUT
+    from .triage import skybot_validation
+
+    report = skybot_validation(Path(args.out) if args.out else DEFAULT_OUT, n_known=args.known)
+    print(report)
+    if args.summary:
+        with open(args.summary, "a") as fh:
+            fh.write(report)
+    return 0
+
+
 def _injection_study(args: argparse.Namespace) -> int:
     from pathlib import Path
 
@@ -318,6 +332,15 @@ def main(argv: list[str] | None = None) -> int:
     tr.add_argument("--recheck", action="store_true", help="also re-check unmatched candidates")
     tr.add_argument("--summary", help="append a one-line summary to this file")
     tr.set_defaults(func=_triage)
+    sv = sub.add_parser(
+        "skybot-validate",
+        help="compare IMCCE SkyBoT with JPL on a sample of identified candidates and ask it "
+        "about the ones JPL has not answered for (report only; nothing is written)",
+    )
+    sv.add_argument("--out")
+    sv.add_argument("--known", type=int, default=20)
+    sv.add_argument("--summary", help="append the Markdown report to this file")
+    sv.set_defaults(func=_skybot_validate)
     sl = sub.add_parser(
         "survey-ledger", help="record a survey run: footprint of searched tiles and run ledger"
     )

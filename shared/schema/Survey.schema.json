@@ -1,5 +1,52 @@
 {
   "$defs": {
+    "CrossCheckProgress": {
+      "additionalProperties": false,
+      "description": "How far the slow multi-catalog rotation has got. Counts are candidates.",
+      "properties": {
+        "known_total": {
+          "description": "Candidates identified as a known object",
+          "title": "Known Total",
+          "type": "integer"
+        },
+        "cross_checked": {
+          "description": "Known candidates that both JPL and IMCCE SkyBoT have answered for",
+          "title": "Cross Checked",
+          "type": "integer"
+        },
+        "agreeing_2plus": {
+          "description": "Known candidates whose identification two or more catalogs give",
+          "title": "Agreeing 2Plus",
+          "type": "integer"
+        },
+        "disagreements": {
+          "description": "Candidates with known_object.catalogs_disagree",
+          "title": "Disagreements",
+          "type": "integer"
+        },
+        "next_full_pass_estimate_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "When every known candidate will have a current cross-check at the rotation's pace; null when it cannot be estimated",
+          "title": "Next Full Pass Estimate Utc"
+        }
+      },
+      "required": [
+        "known_total",
+        "cross_checked",
+        "agreeing_2plus",
+        "disagreements",
+        "next_full_pass_estimate_utc"
+      ],
+      "title": "CrossCheckProgress",
+      "type": "object"
+    },
     "PlanetNineCell": {
       "additionalProperties": false,
       "properties": {
@@ -562,6 +609,18 @@
       ],
       "default": null,
       "description": "Published Planet Nine search region (added by the Worker)"
+    },
+    "cross_check": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CrossCheckProgress"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Multi-catalog cross-check progress (added by the Worker from stored results)"
     }
   },
   "required": [

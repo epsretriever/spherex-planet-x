@@ -31,6 +31,11 @@ export function facts(s: Subject): Record<string, unknown> {
       nearest: k.nearest,
       not_checked_reason: k.not_checked_reason,
       per_epoch: k.per_epoch.map((p) => pick(p, ["epoch_id", "separation_arcsec"])),
+      // One entry per catalog (JPL, IMCCE SkyBoT): whether each independently gives this identification.
+      cross_checks: (k.cross_checks ?? []).map((x) => pick(x, ["catalog", "status", "designation", "separation_arcsec", "checked_utc"])),
+      agreeing_catalogs: k.agreeing_catalogs ?? 0,
+      checked_catalogs: k.checked_catalogs ?? 0,
+      catalogs_disagree: k.catalogs_disagree ?? false,
     },
     scores: pick(s.scores, ["motion_consistency", "snr", "artifact_likelihood", "overall", "quality_level"]),
     detections: s.detections.map((d) =>
@@ -57,7 +62,9 @@ export const GLOSSARY: Record<string, string> = {
   parallax: "Apparent shift of a nearby object as the observer moves; larger shifts mean closer objects.",
   AU: "Astronomical unit, the average Earth-Sun distance (about 150 million km).",
   "JPL SBIdent": "NASA JPL service that lists known asteroids and comets predicted in a patch of sky at a time.",
-  "known object": "An asteroid or comet already in JPL's catalog.",
+  "IMCCE SkyBoT": "Paris Observatory (IMCCE) service that lists known solar-system objects in a patch of sky at a time; independent of JPL.",
+  "cross-check": "Asking a second, independent catalog about the same sighting. Two catalogs giving the same identification is stronger than one; a disagreement is shown, not hidden.",
+  "known object": "An asteroid or comet already in a catalog we checked (JPL, IMCCE SkyBoT).",
   "Unexplained": "Not matched to any catalogued object; it may still be an artifact, an error or an uncatalogued real object.",
   "linear variable filter": "SPHEREx's filter whose color changes across the detector, so each image of a spot is at a different wavelength.",
 };

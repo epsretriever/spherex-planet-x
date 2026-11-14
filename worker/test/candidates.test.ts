@@ -261,7 +261,7 @@ describe("JPL results from the survey pipeline (spherex-px triage)", () => {
   it("serves a pipeline match as final, without asking JPL", async () => {
     const client = makeClient({ files: pfiles, upstream: jpl(2) });
     const res = await client.get(`/api/candidates/${known.candidate_id}`);
-    expect(res.headers.get("cache-control")).toBe("public, max-age=3600");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=300");
     const c = await json(res);
     expect(c.classification).toBe("known_object");
     expect(c.known_object).toMatchObject({ matched: true, enrichment: "pipeline" });

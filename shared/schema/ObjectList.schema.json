@@ -172,6 +172,25 @@
           ],
           "title": "Known Object Designation"
         },
+        "known_object_catalogs_agreeing": {
+          "default": [],
+          "description": "Catalogs that independently give this identification (cross_checks with status 'agrees'), e.g. ['JPL', 'IMCCE SkyBoT']",
+          "items": {
+            "enum": [
+              "JPL",
+              "IMCCE SkyBoT"
+            ],
+            "type": "string"
+          },
+          "title": "Known Object Catalogs Agreeing",
+          "type": "array"
+        },
+        "known_object_catalogs_disagree": {
+          "default": false,
+          "description": "known_object.catalogs_disagree of the full record",
+          "title": "Known Object Catalogs Disagree",
+          "type": "boolean"
+        },
         "anomaly_score": {
           "anyOf": [
             {

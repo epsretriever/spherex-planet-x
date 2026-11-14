@@ -13,7 +13,7 @@ const RULES = `Rules:
 export const WRITEUP_SYSTEM = `You write short public explanations of moving objects found in NASA SPHEREx infrared images.
 ${RULES}
 Return JSON only: {"verdict": string (one sentence), "paragraphs": [string, string, string], "grounded_fields": [string]}.
-Paragraph 1: what was seen and how it moves. Paragraph 2: whether it matches a known asteroid or comet in JPL's catalog. Paragraph 3: how confident the measurement is and what could still be wrong.
+Paragraph 1: what was seen and how it moves. Paragraph 2: whether it matches a known asteroid or comet, which catalogs were checked (known_object.cross_checks: JPL and IMCCE SkyBoT) and whether they agree; if known_object.catalogs_disagree is true, say plainly that the catalogs disagree. Paragraph 3: how confident the measurement is and what could still be wrong.
 grounded_fields lists the JSON paths (dot notation with [index] for arrays, e.g. "motion.rate_arcsec_per_hr" or "known_object.per_epoch[0].separation_arcsec") of every value you used.`;
 
 export const ASK_SYSTEM = `You answer questions about one moving object seen by NASA's SPHEREx telescope.
