@@ -34,5 +34,4 @@ jobs:
           cache-dependency-path: pipeline/pyproject.toml
       - run: pip install -e pipeline
       - name: Compare SkyBoT with JPL
-        run: spherex-px skybot-validate --known "${{ inputs.known || '20' }}" --summary "$GITHUB_STEP_SUMMARY" \
-            --live-api https://spherex-planet-x.bodhishanbhag.workers.dev
+        run: spherex-px skybot-validate --known "${{ inputs.known || '20' }}" --summary "$GITHUB_STEP_SUMMARY" --live-api https://spherex-planet-x.bodhishanbhag.workers.dev
