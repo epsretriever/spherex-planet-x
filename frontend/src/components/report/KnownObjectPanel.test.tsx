@@ -32,7 +32,7 @@ describe("KnownObjectPanel", () => {
     expect(rows[1]).toHaveTextContent("Agrees");
     expect(rows[1]).toHaveTextContent("2.1″");
     expect(within(rows[1]!).getByRole("link", { name: /ssoCard/ })).toHaveAttribute("href", "https://ssp.imcce.fr/forms/ssocard/Eros");
-    expect(screen.getByText(/within 15″ of where we measured it at every sighting/)).toBeInTheDocument();
+    expect(screen.getByText(/within 15″ of our position at every sighting/)).toBeInTheDocument();
   });
 
   it("says honestly when only JPL has answered", () => {

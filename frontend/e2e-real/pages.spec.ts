@@ -145,7 +145,8 @@ test("evidence report", async ({ page }, info) => {
   }
   // One page now holds what were two (the evidence report and the object page: visits, orbit, distance).
   // The budget grew by 200 px for the report's action row (copy link, compare, ADES export).
-  if (info.project.name === "phone-360") expect(height, "report height on a phone").toBeLessThan(13_200);
+  // And by 300 px for the catalog check: one row per independent catalog, and the 15″ rule.
+  if (info.project.name === "phone-360") expect(height, "report height on a phone").toBeLessThan(13_500);
 });
 
 test("report section nav stays pinned while scrolling", async ({ page }) => {

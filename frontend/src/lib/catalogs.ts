@@ -56,6 +56,10 @@ export const MATCH_RADIUS_ARCSEC = 15;
 export const MATCH_RULE =
   "A catalog agrees when its predicted position for the object lies within 15″ of where we measured it at every sighting, after correcting for parallax: SPHEREx orbits Earth, so a nearby asteroid appears slightly shifted from where a catalog computed for Earth's center would put it.";
 
+/** The same rule in one short line, for the report panel. */
+export const MATCH_RULE_SHORT =
+  "A catalog agrees when it puts the object within 15″ of our position at every sighting, corrected for SPHEREx's parallax.";
+
 export function catalogFamily(name: string): CatalogFamily | null {
   const n = name.toLowerCase();
   if (/jpl|sbident|horizons/.test(n)) return "jpl";

@@ -1,7 +1,7 @@
 import type { Detection, KnownObject } from "@/lib/contract";
 import { fmt, formatUtcDateTime, formatUtcShortDate } from "@/lib/format";
 import Link from "next/link";
-import { MATCH_RULE, STATUS_LABEL, catalogVerdict, crossCheckRows } from "@/lib/catalogs";
+import { MATCH_RULE_SHORT, STATUS_LABEL, catalogVerdict, crossCheckRows } from "@/lib/catalogs";
 import { jplLinks } from "@/lib/jpl";
 import { Panel } from "./Panel";
 import styles from "./report.module.css";
@@ -162,7 +162,7 @@ export function KnownObjectPanel({
         </ul>
       )}
       <p className={styles.note} style={{ marginTop: "var(--space-3)" }}>
-        {MATCH_RULE} <Link href="/about/#catalogs">How we identify known objects</Link>
+        {MATCH_RULE_SHORT} <Link href="/about/#catalogs">How we identify known objects</Link>
       </p>
       <dl className={styles.facts} style={{ marginTop: "var(--space-4)" }}>
         <div>
