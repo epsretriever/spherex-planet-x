@@ -9,7 +9,7 @@ import styles from "./ObjectsHub.module.css";
 
 export type HubView = "all" | "leads" | "known" | "patches";
 
-/** Which tab a query string opens. "Known (JPL)" is the list filtered to known objects only. */
+/** Which tab a query string opens. "Known objects" is the list filtered to known objects only. */
 export function hubView(params: URLSearchParams): HubView {
   const view = params.get("view");
   if (view === "leads" || view === "patches") return view;
@@ -28,13 +28,13 @@ const TABS: { id: HubView; label: string; href: string; purpose: string }[] = [
     id: "leads",
     label: "Unexplained leads",
     href: "/objects/?view=leads",
-    purpose: "The objects JPL's catalogs can't explain, ranked by the strength of the evidence, with what would confirm each one.",
+    purpose: "The objects no asteroid catalog can explain, ranked by the strength of the evidence, with what would confirm each one.",
   },
   {
     id: "known",
-    label: "Known (JPL)",
+    label: "Known objects",
     href: "/objects/?class=known_object",
-    purpose: "Objects JPL identified as catalogued asteroids or comets, with links to their JPL orbit and ephemeris pages.",
+    purpose: "Objects identified as catalogued asteroids or comets, checked against several independent catalogs, with links to their orbit and ephemeris pages.",
   },
   {
     id: "patches",

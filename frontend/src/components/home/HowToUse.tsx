@@ -15,13 +15,13 @@ const STEPS = [
   },
   {
     title: "Read the evidence",
-    body: "Every object has one report: is it a known asteroid, and could it be a glitch?",
+    body: "Every object has one report. Each is checked against several independent asteroid catalogs: is it known, and could it be a glitch?",
     href: "/objects/",
     cta: "Browse objects",
   },
   {
     title: "See what's still unexplained",
-    body: "The objects JPL hasn't identified yet, ranked, and where in the sky we haven't looked yet.",
+    body: "The objects no catalog has identified yet, ranked, and where in the sky we haven't looked yet.",
     href: "/objects/?view=leads",
     cta: "Unexplained leads",
   },

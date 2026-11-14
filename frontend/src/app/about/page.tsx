@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { pageMeta } from "@/lib/meta";
 import Link from "next/link";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
+import { CatalogMethod } from "@/components/catalogs/CatalogMethod";
 import { GLOSSARY } from "@/components/Term";
 import { CLASSIFICATIONS, CLASSIFICATION_ORDER } from "@/lib/labels";
 import { blindSpeeds, summarizeLimits } from "@/lib/limits";
@@ -27,15 +28,15 @@ const PIPELINE: { where: string; note: string; steps: { title: string; body: str
       { title: "Remove the fixed sky", body: "Drop sources that stay put across visits: stars and galaxies." },
       { title: "Link and fit", body: "Link sightings across visits into tracks with one steady motion, including SPHEREx's own parallax. Three or more visits make a track; two make an unconfirmed pair." },
       { title: "Vet and score", body: "Artifact checks (flagged pixels, shape, edges, static sources, brightness across wavelengths) and a rule-based score." },
-      { title: "JPL triage", body: "Ask JPL SBIdent which known bodies were near each visit, as seen from SPHEREx, then refine with Horizons. Within 15″ at every visit is a match." },
-      { title: "Orbit and publish", body: "Fit a preliminary orbit and prediction for what JPL can't explain, then commit the JSON to the repository." },
+      { title: "Catalog check", body: "Ask JPL SBIdent which known bodies were near each visit, as seen from SPHEREx, and refine with Horizons; then ask IMCCE SkyBoT independently. Within 15″ at every visit is a match." },
+      { title: "Orbit and publish", body: "Fit a preliminary orbit and prediction for what the catalogs can't explain, then commit the JSON to the repository." },
     ],
   },
   {
     where: "Cloudflare Worker",
     note: "worker/, the /api the site reads",
     steps: [
-      { title: "Serve and re-check", body: "Serves the published data and re-checks unexplained and unchecked objects against JPL on a schedule." },
+      { title: "Serve and re-check", body: "Serves the published data and re-checks every object against the catalogs on a rolling schedule: unexplained ones about daily, known ones about monthly." },
     ],
   },
   {
@@ -67,6 +68,12 @@ const SOURCES: { name: string; use: string; href: string; cite?: string }[] = [
     use: "Precise predicted positions for the closest known objects; ephemeris links for identified objects.",
     href: "https://ssd.jpl.nasa.gov/horizons/",
     cite: "Giorgini et al. 1996, “JPL's On-Line Solar System Data Service”, BAAS 28, 1158.",
+  },
+  {
+    name: "IMCCE SkyBoT (Sky Body Tracker)",
+    use: "An independent second answer to the same question: which known solar system objects were in each patch at each time.",
+    href: "https://ssp.imcce.fr/webservices/skybot/",
+    cite: "Berthier et al. 2006, “SkyBoT, a new VO service to identify Solar System objects”, ASP Conf. Ser. 351, 367.",
   },
   {
     name: "Bus-DeMeo asteroid taxonomy (class mean spectra)",
@@ -131,7 +138,7 @@ function Limitations() {
         </li>
       )}
       <li>
-        <strong>Unexplained is not new.</strong> JPL&apos;s check looks within 15″ of predicted positions; an object with a poorly known
+        <strong>Unexplained is not new.</strong> The catalog check looks within 15″ of predicted positions; an object with a poorly known
         orbit, or a very recent discovery, can be missed. Our orbits usually come from about a day of data, so their predictions are very uncertain.
       </li>
       <li>
@@ -155,7 +162,7 @@ export default function AboutPage() {
       <p className={styles.lede}>
         SPHEREx is a NASA space telescope that maps the entire sky in 102 infrared colors, from 0.75 to 5 microns. It revisits each part
         of the sky, so objects that move between visits, like asteroids, comets and distant solar system bodies, show up as dots that
-        change position. We search its public images for them, check each against JPL&apos;s catalogs, and publish the evidence.
+        change position. We search its public images for them, check each against independent catalogs of known objects, and publish the evidence.
       </p>
 
       <section aria-labelledby="pipeline">
@@ -182,6 +189,11 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section aria-labelledby="catalogs">
+        <h2 id="catalogs">How we identify known objects</h2>
+        <CatalogMethod />
       </section>
 
       <section aria-labelledby="limitations">
@@ -268,7 +280,7 @@ export default function AboutPage() {
           plain text or the browser&apos;s own voice when it isn&apos;t available.
         </p>
         <p>
-          Detection, linking, orbit fits and the JPL catalog checks are ordinary code, not AI. We also used AI coding
+          Detection, linking, orbit fits and the catalog checks are ordinary code, not AI. We also used AI coding
           assistants (Anthropic&apos;s Claude) to help write and review the code. The team chose the methods and checked
           the scientific results, including the validation runs on the Limits page.
         </p>

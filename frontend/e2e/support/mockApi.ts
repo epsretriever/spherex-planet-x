@@ -228,7 +228,18 @@ function detail(o: Obj): CandidateDetail {
       checked: true,
       not_checked_reason: null,
       matched,
-      catalogs_checked: ["JPL SBIdent", "JPL Horizons"],
+      catalogs_checked: matched ? ["JPL SBIdent", "JPL Horizons", "IMCCE SkyBoT"] : ["JPL SBIdent", "JPL Horizons"],
+      // The matched object carries cross-checks; the unmatched one is served without them, as older records are.
+      ...(matched
+        ? {
+            cross_checks: [
+              { catalog: "JPL SBIdent", status: "agrees" as const, designation: "(99999) Synthetic", separation_arcsec: 1.2, checked_utc: "2026-01-01T00:00:00Z" },
+              { catalog: "IMCCE SkyBoT", status: "agrees" as const, designation: "Synthetic", separation_arcsec: 1.6, checked_utc: "2026-01-02T00:00:00Z" },
+            ],
+            agreeing_catalogs: 2,
+            checked_catalogs: 2,
+          }
+        : {}),
       search_radius_arcsec: 30,
       designation: matched ? "(99999) Synthetic" : null,
       predicted_vmag: matched ? 17.9 : null,
@@ -322,6 +333,7 @@ const summaries: CandidateSummary[] = OBJECTS.map((o) => ({
   overall_score: o.cls === "unmatched" ? 0.45 : 0.78,
   quality_level: o.cls === "unmatched" ? "medium" : "high",
   known_object_matched: o.cls === "known_object",
+  ...(o.cls === "known_object" ? { known_object_catalogs_agreeing: ["JPL SBIdent", "IMCCE SkyBoT"] } : {}),
   known_object_designation: o.cls === "known_object" ? "(99999) Synthetic" : null,
   anomaly_score: o.cls === "unmatched" ? 0.92 : o.cls === "known_object" ? 0.2 : null,
   anomaly_reason: o.cls === "unmatched" ? "Synthetic reason: moving 7× slower than typical objects at this position." : o.cls === "known_object" ? "Synthetic reason: typical main-belt motion." : null,
@@ -560,6 +572,7 @@ const objectList: ObjectList = {
     quality_level: "medium",
     known_object_checked: true,
     known_object_matched: o.cls === "known_object",
+    ...(o.cls === "known_object" ? { known_object_catalogs_agreeing: ["JPL SBIdent", "IMCCE SkyBoT"] } : {}),
     known_object_designation: o.cls === "known_object" ? "(99999) Synthetic" : null,
   })),
 };

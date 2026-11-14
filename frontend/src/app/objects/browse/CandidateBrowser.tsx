@@ -19,6 +19,7 @@ import {
   filterFromParams,
   filterToParams,
   hasAnomalyScores,
+  hasCatalogAgreement,
   needsDistance,
   sortAvailable,
   type SortKey,
@@ -90,6 +91,7 @@ export function CandidateBrowser() {
     return m;
   }, [sorted]);
   const hasAnomaly = state.status === "ok" && hasAnomalyScores(state.data.candidates);
+  const hasCatalogs = state.status === "ok" && hasCatalogAgreement(state.data.candidates);
   const sorts = (Object.keys(SORT_LABELS) as SortKey[]).filter((k) => sortAvailable(k, hasAnomaly));
   const chips = filterChips(filter, fieldName, hasAnomaly);
   const loading = state.status === "loading" || distancePending;
@@ -167,6 +169,12 @@ export function CandidateBrowser() {
               ))}
             </select>
           </label>
+          {(hasCatalogs || filter.min_catalogs) && (
+            <label className={styles.check}>
+              <input type="checkbox" checked={!!filter.min_catalogs} onChange={(e) => apply({ ...filter, min_catalogs: e.target.checked ? 2 : null })} />
+              Confirmed by 2+ independent catalogs
+            </label>
+          )}
           <label className={styles.check}>
             <input type="checkbox" checked={filter.include_injected} onChange={(e) => apply({ ...filter, include_injected: e.target.checked })} />
             Show SIMULATED test objects

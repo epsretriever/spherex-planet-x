@@ -7,6 +7,7 @@ import { EmptyState, ErrorState } from "@/components/DataState";
 import { StudySkeleton } from "@/components/Skeletons";
 import { M50Chart } from "@/components/M50Chart";
 import { CompositionValidationPanel } from "@/components/composition/CompositionValidationPanel";
+import { CatalogMethod } from "@/components/catalogs/CatalogMethod";
 import { Panel } from "@/components/report/Panel";
 import { RecoveryGrid } from "@/components/RecoveryGrid";
 import { findInjectionStudyId, getInjectionStudy } from "@/lib/api";
@@ -183,6 +184,10 @@ function Study({ s }: { s: LimitsStudy }) {
       <WhenVisible minHeight={420}>
         <CompositionValidationPanel />
       </WhenVisible>
+
+      <Panel id="catalogs" title="How we identify known objects" kicker="Catalog check">
+        <CatalogMethod short />
+      </Panel>
 
       <Panel id="method" title="How the test works" kicker="Method">
         <p className={styles.criteria}>

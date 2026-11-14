@@ -49,12 +49,12 @@ export function tourSteps({ survey, objects, leads, study }: TourData): TourStep
       href: top ? candidateHref(top.candidate_id) : "/objects/",
       title: "Every object gets an evidence report",
       caption: top
-        ? `${top.name}: ${top.n_detections} detections, the faintest at signal-to-noise ${top.min_snr?.toFixed(1) ?? "n/a"}, positions fitting one motion to ${top.fit_rms_arcsec?.toFixed(1) ?? "n/a"}″. Below: the JPL check, the artifact tests, and what could still make it wrong.`
-        : "Each report shows the measured positions, the motion fit, signal quality, the JPL check, and the ways it could be wrong.",
+        ? `${top.name}: ${top.n_detections} detections, the faintest at signal-to-noise ${top.min_snr?.toFixed(1) ?? "n/a"}, positions fitting one motion to ${top.fit_rms_arcsec?.toFixed(1) ?? "n/a"}″. Below: the catalog check, the artifact tests, and what could still make it wrong.`
+        : "Each report shows the measured positions, the motion fit, signal quality, the catalog check, and the ways it could be wrong.",
     },
     {
       href: "/objects/?view=leads",
-      title: "Not yet identified by JPL",
+      title: "Not yet identified by any catalog",
       caption: objects
         ? `JPL identifies ${int(known)} of the ${int(real.length)} objects as known asteroids or comets. ${int(unidentifiedIds.size)} remain unexplained${ranked.length ? `; ${strong} are strong leads, and the best scores ${top!.confidence.score}/100` : ""}. Unexplained is not new: each comes with a follow-up file for a telescope.`
         : "The objects JPL hasn't matched to a known asteroid or comet, ranked by the strength of the evidence, each with what would confirm it.",

@@ -10,7 +10,7 @@ export function Footer() {
           <a href="https://irsa.ipac.caltech.edu/" target="_blank" rel="noopener noreferrer">
             NASA/IPAC Infrared Science Archive
           </a>
-          . Small-body predictions: JPL Solar System Dynamics.
+          . Known-object checks: JPL Solar System Dynamics and IMCCE SkyBoT.
         </p>
         <p className="muted">
           We do not claim to have discovered Planet X. Objects we can&apos;t match may be image artifacts, measurement

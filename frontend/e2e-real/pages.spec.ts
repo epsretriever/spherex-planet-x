@@ -135,7 +135,7 @@ test("evidence report", async ({ page }, info) => {
   const h1 = await page.getByRole("heading", { level: 1 }).textContent();
   expect(h1, "report titled by object").not.toMatch(/^(Unexplained|Known asteroid|Known comet)$/);
   await expect(page.getByText(new RegExp(`(Object|Pipeline) ID\\s*(obj-)?${ids.candidate}`))).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: /JPL/ }).first()).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /JPL|catalog/i }).first()).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Report sections" })).toBeVisible();
   // Long lists start collapsed so the page stays scannable on a phone.
   const showAll = page.getByRole("button", { name: /^Show all \d+ sightings$/ });
