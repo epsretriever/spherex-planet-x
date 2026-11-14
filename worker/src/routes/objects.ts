@@ -9,6 +9,7 @@ import type {
   ObjectList,
   ObjectPrediction,
   ObjectSummary,
+  KnownObject,
   PlanetNineRegion,
   Survey,
 } from "../contract";
@@ -18,7 +19,8 @@ import { ApiError, badRequest } from "../errors";
 import { ID_RE, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
 import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
-import { reviewPriority } from "./candidates";
+import { candidateCrossCheckProgress, crossCheckSummary, reviewPriority } from "./candidates";
+import { readSkybotResult, readSkybotResults, withCrossChecks } from "../crosscheck";
 import { buildExplanation, labelPlain, summaryPlain, summaryPlainFrom } from "../text";
 
 export const objects = new Hono<AppEnv>();
@@ -39,12 +41,10 @@ export async function enrichedObjects(env: Env, deps: Deps): Promise<{ list: Obj
     deps,
     real.map((s) => refOf(s, s.pipeline_version ?? list.pipeline_version)),
   );
-  const out = list.objects.map((s): ObjectSummary => {
-    if (s.classification === "injected" || s.candidate_ids.length === 0 || final(s)) return s;
-    const rec = recs.get(s.candidate_ids[0]!);
-    if (!rec) return s;
-    const k = rec.enrichment.known_object;
-    const classification: Classification = rec.enrichment.matched ? "known_object" : s.classification;
+  const sky = await readSkybotResults(deps);
+  const retext = (s: ObjectSummary, e: { known_object: KnownObject; matched: boolean }): ObjectSummary => {
+    const k = e.known_object;
+    const classification: Classification = e.matched ? "known_object" : s.classification;
     return {
       ...s,
       classification,
@@ -60,6 +60,11 @@ export async function enrichedObjects(env: Env, deps: Deps): Promise<{ list: Obj
       known_object_matched: k.matched,
       known_object_designation: k.designation,
     };
+  };
+  const out = list.objects.map((s): ObjectSummary => {
+    if (s.classification === "injected" || s.candidate_ids.length === 0) return s;
+    const rec = final(s) ? undefined : recs.get(s.candidate_ids[0]!);
+    return crossCheckSummary(rec ? retext(s, rec.enrichment) : s, sky.get(s.candidate_ids[0]!), retext);
   });
   return { list, objects: out };
 }
@@ -180,6 +185,12 @@ export async function loadObject(
       pending = true;
     }
   }
+  if (obj.classification !== "injected" && obj.candidate_ids.length > 0) {
+    // Combine with the stored IMCCE SkyBoT answer for the same candidate.
+    const x = withCrossChecks(known, await readSkybotResult(deps, obj.candidate_ids[0]!));
+    known = x.known_object;
+    matched = x.matched;
+  }
   const classification: Classification = matched && obj.classification !== "injected" ? "known_object" : obj.classification;
   const next: ObjectDetail = { ...obj, classification, known_object: known };
   if (next.orbit && comparison) next.orbit = { ...next.orbit, jpl_comparison: comparison };
@@ -250,8 +261,10 @@ survey.get("/", async (c) => {
   );
   // The Planet Nine region is published on its own (spherex-px planet-nine) and added here.
   const planetNine = survey.planet_nine ?? (await readStaticJson<PlanetNineRegion>(c.env, "survey/planet_nine.json").catch(() => null));
+  const crossCheck = await candidateCrossCheckProgress(c.env, c.get("deps")).catch(() => null);
   const body: Survey = {
     ...survey,
+    ...(crossCheck ? { cross_check: crossCheck } : {}),
     totals: { ...survey.totals, n_known_objects: designations.size },
     ...(planetNine ? { planet_nine: planetNine } : {}),
   };

@@ -6,6 +6,7 @@ import { readStaticJson } from "../static-data";
 import { UPSTREAM_TIMEOUT_MS } from "../upstream";
 import { UPSTREAMS, type Upstream } from "../upstreams";
 import { SCHEMA_VERSION, USER_AGENT, workerVersion } from "../version";
+import { candidateCrossCheckProgress } from "./candidates";
 
 export const health = new Hono<AppEnv>();
 
@@ -79,10 +80,11 @@ export async function probe(deps: Deps, u: Upstream): Promise<UpstreamStatusEntr
 
 health.get("/", async (c) => {
   const deps = c.get("deps");
-  const [upstream, fields, candidates] = await Promise.all([
+  const [upstream, fields, candidates, crossCheck] = await Promise.all([
     Promise.all(UPSTREAMS.map((u) => probe(deps, u))),
     readStaticJson<FieldList>(c.env, "fields.json").catch(() => null),
     readStaticJson<CandidateList>(c.env, "candidates.json").catch(() => null),
+    candidateCrossCheckProgress(c.env, deps).catch(() => null),
   ]);
   const body: Health = {
     schema_version: SCHEMA_VERSION,
@@ -93,6 +95,7 @@ health.get("/", async (c) => {
     fields_loaded: fields?.fields.length ?? 0,
     candidates_loaded: candidates?.candidates.length ?? 0,
     upstream,
+    cross_check: crossCheck,
   };
   c.header("Cache-Control", "no-store");
   return c.json(body);

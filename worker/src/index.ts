@@ -8,7 +8,7 @@ const app = createApp();
 
 export default {
   fetch: app.fetch,
-  /** Cron Trigger: keep JPL known-object results fresh (see scheduled.ts). */
+  /** Cron Trigger: keep JPL and IMCCE SkyBoT results fresh (see scheduled.ts). */
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
     const report = await refreshStale(env, defaultDeps(env, ctx));
     console.log(`scheduled enrichment: ${JSON.stringify(report)}`);

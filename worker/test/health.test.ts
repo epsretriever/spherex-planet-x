@@ -20,6 +20,7 @@ const healthy: FetchHandler = (url) => {
   if (url.hostname === "ssd-api.jpl.nasa.gov" || url.hostname === "ssd.jpl.nasa.gov") {
     return Response.json({ signature: { source: "NASA/JPL", version: "1.0" } });
   }
+  if (url.hostname === "ssp.imcce.fr") return Response.json([{ Num: 764, Name: "Gedania" }]);
   return new Response("<ListBucketResult></ListBucketResult>");
 };
 

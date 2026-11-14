@@ -361,11 +361,42 @@ class JplLinks(Model):
     horizons_url: str
 
 
+CatalogName = Literal["JPL SBIdent", "JPL Horizons", "IMCCE SkyBoT"]
+CrossCheckCatalog = Literal["JPL", "IMCCE SkyBoT"]
+CrossCheckStatus = Literal[
+    "agrees", "different_object", "nothing_found", "failed", "not_checked_yet"
+]
+
+
+class CrossCheck(Model):
+    """One catalog's answer about a candidate. JPL (SBIdent + Horizons) and IMCCE SkyBoT compute
+    positions independently, so an identification both give is much harder to get wrong."""
+
+    catalog: CrossCheckCatalog
+    status: CrossCheckStatus = Field(
+        description="agrees: this catalog gives the identification in known_object.designation; "
+        "different_object: it identifies another object at this position; nothing_found: it "
+        "answered and has no object there; failed: it did "
+        "not answer (retried); not_checked_yet: not asked yet"
+    )
+    designation: str | None = Field(
+        default=None, description="The object this catalog reports, in its own naming"
+    )
+    separation_arcsec: float | None = Field(
+        default=None,
+        description="Largest distance between a detection and this catalog's prediction over "
+        "the visits checked; null when nothing was found",
+    )
+    checked_utc: str | None = Field(default=None, description="When this catalog last answered")
+    n_visits: int | None = Field(default=None, description="Visits compared with this catalog")
+    detail: str | None = None
+
+
 class KnownObject(Model):
     checked: bool
     not_checked_reason: str | None = None
     matched: bool
-    catalogs_checked: list[Literal["JPL SBIdent", "JPL Horizons"]] = Field(
+    catalogs_checked: list[CatalogName] = Field(
         description="Only services actually queried for this candidate"
     )
     search_radius_arcsec: float | None
@@ -388,6 +419,24 @@ class KnownObject(Model):
         default=None,
         description="JPL pages for the matched object's orbit (Small-Body Database) and "
         "ephemerides (Horizons); null unless matched",
+    )
+    cross_checks: list[CrossCheck] = Field(
+        default=[],
+        description="One entry per catalog (JPL, IMCCE SkyBoT), filled by "
+        "the Worker from stored results; empty in the pipeline's static files",
+    )
+    agreeing_catalogs: int = Field(
+        default=0, description="cross_checks entries with status 'agrees'"
+    )
+    checked_catalogs: int = Field(
+        default=0,
+        description="cross_checks entries whose catalog answered (agrees, different_object or "
+        "nothing_found)",
+    )
+    catalogs_disagree: bool = Field(
+        default=False,
+        description="True when one catalog identifies the object and another that answered "
+        "identifies a different object or finds nothing",
     )
 
 
@@ -497,6 +546,14 @@ class CandidateSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    known_object_catalogs_agreeing: list[CrossCheckCatalog] = Field(
+        default=[],
+        description="Catalogs that independently give this identification (cross_checks with "
+        "status 'agrees'), e.g. ['JPL', 'IMCCE SkyBoT']",
+    )
+    known_object_catalogs_disagree: bool = Field(
+        default=False, description="known_object.catalogs_disagree of the full record"
+    )
 
 
 class CandidateList(Envelope):
@@ -691,6 +748,23 @@ class UpstreamStatus(Model):
     cached: bool = Field(description="Result reused from a probe in the last 10 minutes")
 
 
+class CrossCheckProgress(Model):
+    """How far the slow multi-catalog rotation has got. Counts are candidates."""
+
+    known_total: int = Field(description="Candidates identified as a known object")
+    cross_checked: int = Field(
+        description="Known candidates that both JPL and IMCCE SkyBoT have answered for"
+    )
+    agreeing_2plus: int = Field(
+        description="Known candidates whose identification two or more catalogs give"
+    )
+    disagreements: int = Field(description="Candidates with known_object.catalogs_disagree")
+    next_full_pass_estimate_utc: str | None = Field(
+        description="When every known candidate will have a current cross-check at the "
+        "rotation's pace; null when it cannot be estimated"
+    )
+
+
 class Health(Envelope):
     build_run_id: str | None = Field(description="build_run_id of the static data being served")
     status: Literal["ok", "degraded"]
@@ -698,6 +772,9 @@ class Health(Envelope):
     fields_loaded: int
     candidates_loaded: int
     upstream: list[UpstreamStatus]
+    cross_check: CrossCheckProgress | None = Field(
+        default=None, description="Multi-catalog cross-check progress (stored results only)"
+    )
 
 
 class CoverageEpoch(Model):
@@ -954,6 +1031,14 @@ class ObjectSummary(Model):
     known_object_checked: bool
     known_object_matched: bool
     known_object_designation: str | None
+    known_object_catalogs_agreeing: list[CrossCheckCatalog] = Field(
+        default=[],
+        description="Catalogs that independently give this identification (cross_checks with "
+        "status 'agrees'), e.g. ['JPL', 'IMCCE SkyBoT']",
+    )
+    known_object_catalogs_disagree: bool = Field(
+        default=False, description="known_object.catalogs_disagree of the full record"
+    )
     anomaly_score: float | None = None
     anomaly_rank: int | None = None
     anomaly_reason: str | None = None
@@ -1157,6 +1242,10 @@ class Survey(Envelope):
     runs: list[SurveyRun] = Field(default=[], description="Most recent runs first (up to 20)")
     planet_nine: PlanetNineRegion | None = Field(
         default=None, description="Published Planet Nine search region (added by the Worker)"
+    )
+    cross_check: CrossCheckProgress | None = Field(
+        default=None,
+        description="Multi-catalog cross-check progress (added by the Worker from stored results)",
     )
 
 

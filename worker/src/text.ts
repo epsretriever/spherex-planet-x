@@ -95,15 +95,53 @@ function knownParts(k: KnownObject): Part[] {
       if (p.separation_arcsec > k.per_epoch[iMax]!.separation_arcsec) iMax = i;
     });
     const sep = k.per_epoch[iMax]?.separation_arcsec;
-    return [
-      {
+    const checks = k.cross_checks ?? [];
+    const iSky = checks.findIndex((c) => c.catalog === "IMCCE SkyBoT");
+    const sky = checks[iSky];
+    const iJpl = checks.findIndex((c) => c.catalog === "JPL");
+    const jpl = checks[iJpl];
+    const skyPath = `known_object.cross_checks[${iSky}]`;
+    const parts: Part[] = [];
+    const jplGives = !jpl || jpl.status === "agrees";
+    if (jplGives) {
+      parts.push({
         text:
           sep === undefined
             ? `Its positions match JPL's prediction for ${k.designation}.`
             : `Its positions match JPL's prediction for ${k.designation} to within ${fmt(sep, 1)} arcseconds at every epoch.`,
         fields: ["known_object.designation", ...(sep === undefined ? [] : [`known_object.per_epoch[${iMax}].separation_arcsec`])],
-      },
-    ];
+      });
+    } else if (sky?.status === "agrees") {
+      parts.push({
+        text:
+          sky.separation_arcsec === null
+            ? `Its positions match IMCCE SkyBoT's prediction for ${k.designation}.`
+            : `Its positions match IMCCE SkyBoT's prediction for ${k.designation} to within ${fmt(sky.separation_arcsec, 1)} arcseconds at every visit checked.`,
+        fields: ["known_object.designation", ...(sky.separation_arcsec === null ? [] : [`${skyPath}.separation_arcsec`])],
+      });
+      if (jpl.status === "nothing_found") {
+        parts.push({ text: "Catalogs disagree: JPL found no known object at this position.", fields: [`known_object.cross_checks[${iJpl}].status`] });
+      }
+    }
+    if (jplGives && sky) {
+      if (sky.status === "agrees") {
+        parts.push({
+          text:
+            sky.separation_arcsec === null
+              ? "IMCCE SkyBoT, an independent catalog, gives the same identification."
+              : `IMCCE SkyBoT, an independent catalog, gives the same identification (within ${fmt(sky.separation_arcsec, 1)} arcseconds).`,
+          fields: [`${skyPath}.status`, ...(sky.separation_arcsec === null ? [] : [`${skyPath}.separation_arcsec`])],
+        });
+      } else if (sky.status === "different_object" && sky.designation) {
+        parts.push({
+          text: `Catalogs disagree: IMCCE SkyBoT identifies it as ${sky.designation} instead.`,
+          fields: [`${skyPath}.designation`],
+        });
+      } else if (sky.status === "nothing_found") {
+        parts.push({ text: "Catalogs disagree: IMCCE SkyBoT found no known object at this position.", fields: [`${skyPath}.status`] });
+      }
+    }
+    return parts;
   }
   const parts: Part[] = [
     {
@@ -201,7 +239,11 @@ export function summaryPlainFrom(x: SummaryInput): string {
   else if (!k.checked && k.enrichment === "pending") tail = "JPL's catalog of known asteroids and comets is being checked now.";
   else if (checkFailed(k)) tail = "JPL's catalog of known asteroids and comets couldn't be reached; the check is retried automatically.";
   else if (!k.checked) tail = "Not yet checked against JPL's catalog of known asteroids and comets.";
-  else if (k.matched && k.designation) tail = `It matches the known ${isComet(k.designation) ? "comet" : "asteroid"} ${k.designation}.`;
+  else if (k.matched && k.designation) {
+    tail = `It matches the known ${isComet(k.designation) ? "comet" : "asteroid"} ${k.designation}.`;
+    if (k.catalogs_disagree) tail += " Catalogs disagree about this identification.";
+    else if ((k.agreeing_catalogs ?? 0) >= 2) tail += " JPL and IMCCE SkyBoT both give this identification.";
+  }
   else if (x.classification === "likely_artifact") tail = "It failed a quality check and is most likely an artifact.";
   else if (x.classification === "unconfirmed_pair") tail = "Only two sightings, so the motion is unconfirmed.";
   else tail = "It does not match any known object we checked.";
@@ -233,7 +275,7 @@ export function catalogErrorSources(c: CandidateDetail): ErrorSource[] {
       : !k.checked
         ? (k.not_checked_reason ?? "Not checked against JPL yet.")
         : k.matched
-          ? `Matches ${k.designation} (JPL).`
+          ? `Matches ${k.designation} (${(k.cross_checks ?? []).filter((x) => x.status === "agrees").map((x) => x.catalog).join(" and ") || "JPL"})${k.catalogs_disagree ? "; catalogs disagree" : ""}.`
           : `No match in ${k.catalogs_checked.join(" and ")} within ${k.search_radius_arcsec} arcsec.`,
     from_checks: ["known_object_match"],
   });

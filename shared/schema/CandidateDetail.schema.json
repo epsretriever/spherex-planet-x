@@ -52,6 +52,102 @@
       "title": "Classification",
       "type": "string"
     },
+    "CrossCheck": {
+      "additionalProperties": false,
+      "description": "One catalog's answer about a candidate. JPL (SBIdent + Horizons) and IMCCE SkyBoT compute\npositions independently, so an identification both give is much harder to get wrong.",
+      "properties": {
+        "catalog": {
+          "enum": [
+            "JPL",
+            "IMCCE SkyBoT"
+          ],
+          "title": "Catalog",
+          "type": "string"
+        },
+        "status": {
+          "description": "agrees: this catalog gives the identification in known_object.designation; different_object: it identifies another object at this position; nothing_found: it answered and has no object there; failed: it did not answer (retried); not_checked_yet: not asked yet",
+          "enum": [
+            "agrees",
+            "different_object",
+            "nothing_found",
+            "failed",
+            "not_checked_yet"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "designation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The object this catalog reports, in its own naming",
+          "title": "Designation"
+        },
+        "separation_arcsec": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Largest distance between a detection and this catalog's prediction over the visits checked; null when nothing was found",
+          "title": "Separation Arcsec"
+        },
+        "checked_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When this catalog last answered",
+          "title": "Checked Utc"
+        },
+        "n_visits": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Visits compared with this catalog",
+          "title": "N Visits"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "catalog",
+        "status"
+      ],
+      "title": "CrossCheck",
+      "type": "object"
+    },
     "Detection": {
       "additionalProperties": false,
       "properties": {
@@ -547,7 +643,8 @@
           "items": {
             "enum": [
               "JPL SBIdent",
-              "JPL Horizons"
+              "JPL Horizons",
+              "IMCCE SkyBoT"
             ],
             "type": "string"
           },
@@ -658,6 +755,33 @@
           ],
           "default": null,
           "description": "JPL pages for the matched object's orbit (Small-Body Database) and ephemerides (Horizons); null unless matched"
+        },
+        "cross_checks": {
+          "default": [],
+          "description": "One entry per catalog (JPL, IMCCE SkyBoT), filled by the Worker from stored results; empty in the pipeline's static files",
+          "items": {
+            "$ref": "#/$defs/CrossCheck"
+          },
+          "title": "Cross Checks",
+          "type": "array"
+        },
+        "agreeing_catalogs": {
+          "default": 0,
+          "description": "cross_checks entries with status 'agrees'",
+          "title": "Agreeing Catalogs",
+          "type": "integer"
+        },
+        "checked_catalogs": {
+          "default": 0,
+          "description": "cross_checks entries whose catalog answered (agrees, different_object or nothing_found)",
+          "title": "Checked Catalogs",
+          "type": "integer"
+        },
+        "catalogs_disagree": {
+          "default": false,
+          "description": "True when one catalog identifies the object and another that answered identifies a different object or finds nothing",
+          "title": "Catalogs Disagree",
+          "type": "boolean"
         }
       },
       "required": [

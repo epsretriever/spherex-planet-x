@@ -135,7 +135,11 @@ describe("objects", () => {
 
   it("serves the survey", async () => {
     const { get } = makeClient({ files });
-    expect(await json(await get("/api/survey"))).toEqual({ ...survey, totals: { ...survey.totals, n_known_objects: 0 } });
+    expect(await json(await get("/api/survey"))).toEqual({
+      ...survey,
+      totals: { ...survey.totals, n_known_objects: 0 },
+      cross_check: { known_total: 0, cross_checked: 0, agreeing_2plus: 0, disagreements: 0, next_full_pass_estimate_utc: null },
+    });
   });
 
   it("adds the published Planet Nine region to the survey", async () => {

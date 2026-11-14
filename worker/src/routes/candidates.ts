@@ -1,13 +1,23 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../app";
 import type { Deps, Env } from "../env";
-import { CLASSIFICATIONS, type CandidateDetail, type CandidateList, type CandidateSummary, type Classification } from "../contract";
+import {
+  CLASSIFICATIONS,
+  type CandidateDetail,
+  type CandidateList,
+  type CandidateSummary,
+  type Classification,
+  type CrossCheckProgress,
+  type KnownObject,
+} from "../contract";
+import { agreeingCatalogs, crossCheckProgress, knownFromSummary, readSkybotResult, readSkybotResults, withCrossChecks } from "../crosscheck";
+import type { CatalogResult } from "../skybot";
 import { type Enrichment, notCheckedKnownObject } from "../enrich";
 import { badRequest } from "../errors";
-import { ID_RE, orbitOfCandidate, requireStaticJson } from "../static-data";
+import { ID_RE, orbitOfCandidate, readStaticJson, requireStaticJson } from "../static-data";
 import { pageParams, paginate } from "../paging";
 import { isFinalMatch, newestRecord, pipelineRecord, readRecord, readRecordsFor, refreshRecord } from "../store";
-import { applyKnownObject, labelPlain, summaryPlainFrom } from "../text";
+import { applyKnownObject as applyKnown, labelPlain, summaryPlainFrom } from "../text";
 
 export const candidates = new Hono<AppEnv>();
 
@@ -45,9 +55,12 @@ candidates.get("/", async (c) => {
         .catch((err) => console.error(`background JPL lookup for ${missing.candidate_id}:`, err)),
     );
   }
+  // Stored IMCCE SkyBoT answers (one more query; still no upstream calls from the list view).
+  const sky = await readSkybotResults(deps);
   const enriched = list.candidates.map((s) => {
-    const rec = s.classification === "injected" ? undefined : recs.get(s.candidate_id);
-    return rec ? applyToSummary(s, rec.enrichment) : s;
+    if (s.classification === "injected") return s;
+    const rec = recs.get(s.candidate_id);
+    return crossCheckSummary(rec ? applyToSummary(s, rec.enrichment) : s, sky.get(s.candidate_id), applyToSummary);
   });
   // Unexplained first, then weak detections, then known objects; best score first within each.
   enriched.sort((a, b) => reviewPriority(a) - reviewPriority(b) || b.overall_score - a.overall_score);
@@ -91,13 +104,19 @@ export async function loadCandidate(
   const cand = await requireStaticJson<CandidateDetail>(env, `candidates/${id}.json`, `candidate '${id}'`);
   const now = deps.now().toISOString();
   if (cand.classification === "injected") {
-    return { detail: applyKnownObject(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
+    return { detail: applyKnown(cand, cand.known_object, false, now), cacheControl: "public, max-age=300", pending: false };
   }
+  // The stored IMCCE SkyBoT answer is combined with JPL's, whichever way JPL's was obtained.
+  const sky = await readSkybotResult(deps, id);
+  const applyKnownObject = (c: CandidateDetail, k: KnownObject, _matched: boolean, t: string) => {
+    const x = withCrossChecks(k, sky);
+    return applyKnown(c, x.known_object, x.matched, t);
+  };
   if (isFinalMatch(cand.known_object)) {
-    // Identified by the survey pipeline: final, cached for good.
+    // Identified by the survey pipeline; SkyBoT cross-checks it in the cron's slow rotation.
     return {
       detail: applyKnownObject(cand, cand.known_object, true, now),
-      cacheControl: "public, max-age=3600",
+      cacheControl: "public, max-age=300",
       pending: false,
     };
   }
@@ -122,6 +141,44 @@ export async function loadCandidate(
     enrichment: "pending" as const,
   };
   return { detail: applyKnownObject(cand, pending, false, now), cacheControl: "no-store", pending: true };
+}
+
+/**
+ * Add the stored SkyBoT answer to a list row (after JPL's was folded in). The row's text is
+ * rewritten only when SkyBoT changes what it says: an identification JPL did not give, a first
+ * completed check, or a disagreement.
+ */
+export function crossCheckSummary<
+  S extends {
+    known_object_checked: boolean;
+    known_object_matched: boolean;
+    known_object_designation: string | null;
+    known_object_catalogs_agreeing?: string[];
+  },
+>(s: S, sky: CatalogResult | null | undefined, retext: (s: S, e: Enrichment) => S): S {
+  const x = withCrossChecks(knownFromSummary(s), sky);
+  const k = x.known_object;
+  const changed = k.checked !== s.known_object_checked || k.matched !== s.known_object_matched || !!k.catalogs_disagree;
+  return {
+    ...(changed ? retext(s, x) : s),
+    known_object_catalogs_agreeing: agreeingCatalogs(k),
+    known_object_catalogs_disagree: !!k.catalogs_disagree,
+  };
+}
+
+/** Cross-check progress over every real candidate, from stored results only (three reads). */
+export async function candidateCrossCheckProgress(env: Env, deps: Deps): Promise<CrossCheckProgress | null> {
+  const list = await readStaticJson<CandidateList>(env, "candidates.json");
+  if (!list) return null;
+  const real = list.candidates.filter((s) => s.classification !== "injected");
+  const recs = await readRecordsFor(
+    deps,
+    real.filter((s) => !finalInList(s)).map((s) => ({ candidate_id: s.candidate_id, pipeline_version: s.pipeline_version ?? list.pipeline_version })),
+  );
+  const sky = await readSkybotResults(deps);
+  const answers = real.map((s) => sky.get(s.candidate_id));
+  const blocks = real.map((s, i) => withCrossChecks(recs.get(s.candidate_id)?.enrichment.known_object ?? knownFromSummary(s), answers[i]).known_object);
+  return crossCheckProgress(blocks, answers, deps.now());
 }
 
 /** A summary whose static file already carries a final (pipeline) JPL match. */

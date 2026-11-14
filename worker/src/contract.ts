@@ -155,7 +155,29 @@ export interface Motion {
   distance_au_estimate: { best: number; lo: number; hi: number } | null;
 }
 
-export type CatalogName = "JPL SBIdent" | "JPL Horizons";
+export type CatalogName = "JPL SBIdent" | "JPL Horizons" | "IMCCE SkyBoT";
+export type CrossCheckCatalog = "JPL" | "IMCCE SkyBoT";
+export type CrossCheckStatus = "agrees" | "different_object" | "nothing_found" | "failed" | "not_checked_yet";
+
+/** One catalog's answer about a candidate (JPL and IMCCE SkyBoT are independent of each other). */
+export interface CrossCheck {
+  catalog: CrossCheckCatalog;
+  status: CrossCheckStatus;
+  designation: string | null;
+  /** Largest detection-to-prediction distance over the visits checked. */
+  separation_arcsec: number | null;
+  checked_utc: string | null;
+  n_visits?: number | null;
+  detail?: string | null;
+}
+
+export interface CrossCheckProgress {
+  known_total: number;
+  cross_checked: number;
+  agreeing_2plus: number;
+  disagreements: number;
+  next_full_pass_estimate_utc: string | null;
+}
 
 export interface KnownObject {
   checked: boolean;
@@ -181,6 +203,11 @@ export interface KnownObject {
   enrichment: "static" | "pipeline" | "live" | "cached" | "pending";
   /** JPL pages for the matched object's orbit (SBDB) and ephemerides (Horizons); null unless matched. */
   jpl_links?: JplLinks | null;
+  /** One entry per catalog, from stored results (filled by the Worker). */
+  cross_checks?: CrossCheck[];
+  agreeing_catalogs?: number;
+  checked_catalogs?: number;
+  catalogs_disagree?: boolean;
 }
 
 export interface JplLinks {
@@ -267,6 +294,8 @@ export interface CandidateSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  known_object_catalogs_agreeing?: CrossCheckCatalog[];
+  known_object_catalogs_disagree?: boolean;
 }
 
 export interface CandidateList extends Envelope, Page {
@@ -295,6 +324,7 @@ export interface Health extends Envelope {
   fields_loaded: number;
   candidates_loaded: number;
   upstream: UpstreamStatusEntry[];
+  cross_check?: CrossCheckProgress | null;
 }
 
 export interface CoverageEpoch {
@@ -464,6 +494,8 @@ export interface ObjectSummary {
   known_object_checked: boolean;
   known_object_matched: boolean;
   known_object_designation: string | null;
+  known_object_catalogs_agreeing?: CrossCheckCatalog[];
+  known_object_catalogs_disagree?: boolean;
   /** Anomaly ranking (see ObjectDetail.anomaly); null with fewer than 10 ranked objects or for pairs/artifacts. */
   anomaly_score?: number | null;
   anomaly_rank?: number | null;
@@ -614,6 +646,7 @@ export interface Survey extends Envelope {
   /** Most recent runs first (up to 20). */
   runs?: SurveyRun[];
   planet_nine?: PlanetNineRegion | null;
+  cross_check?: CrossCheckProgress | null;
 }
 
 export type AiSubjectKind = "candidate" | "object";

@@ -145,3 +145,35 @@ def test_triage_makes_known_objects_minimal_and_keeps_unexplained(cand, tmp_path
     rep2 = T.triage(out, workers=1)
     assert rep2.checked == 0 and rep2.skipped == 2
     json.loads((out / "candidates" / f"{known.candidate_id}.json").read_text())
+
+
+def test_skybot_url_parser_and_names():
+    q = urllib.parse.parse_qs(urllib.parse.urlparse(T.skybot_url("2025-08-15T06:13:59.871Z", 243.386885, -20.5792041)).query)
+    assert q["-ep"] == ["2025-08-15T06:13:59.871Z"]
+    assert q["-ra"] == ["243.386885"] and q["-dec"] == ["-20.5792041"]
+    assert q["-rs"] == ["120"] and q["-observer"] == ["500"] and q["-mime"] == ["json"]
+    row = {"Num": 764, "Name": "Gedania", "RA (hms)": "16 13 32.8525", "DEC (dms)": "-20 34 45.134",
+           "VMag (mag)": 15.7, "dg (ua)": 2.61}
+    (o,) = T.parse_skybot(json.dumps([row]))
+    assert o.designation == "764 Gedania" and o.dg_au == 2.61
+    assert abs(o.ra_deg - 243.38689) < 1e-4 and abs(o.dec_deg + 20.57920) < 1e-4
+    assert T.parse_skybot("[]") == []
+    assert T.parse_skybot("") == []
+    assert T.parse_skybot("No solar system object was found in the requested FOV") == []
+    assert T.parse_skybot("<html>") is None
+    assert T.same_object("764 Gedania (A913 SF)", "764 Gedania")
+    assert T.same_object("(2019 AB12)", "2019 AB12")
+    assert not T.same_object("764 Gedania (A913 SF)", "765 Mattiaca")
+    assert T.ident_keys("2019 AB12") == {"d:2019 ab12"}
+
+
+def test_skybot_match_uses_the_parallax_correction(cand):
+    sc = [0.0, 7000.0, 0.0]
+    ra, dec = T.topocentric(10.0, 1.0, 0.05, sc)
+    d = cand.detections[0].model_copy(update={"ra_deg": ra, "dec_deg": dec, "spacecraft_geocentric_km": sc})
+    near = T.SkybotObject("99942 Apophis", 10.0, 1.0, 0.05, 16.0)
+    assert T.sep_arcsec(ra, dec, 10.0, 1.0) > 100
+    assert T.skybot_separation(d, near) < 0.01
+    assert T.decide_skybot([(d, [near]), (d, [near])], "now")["outcome"] == "match"
+    assert T.decide_skybot([(d, [near]), (d, [])], "now")["outcome"] == "none"
+    assert T.decide_skybot([(d, [near]), (d, None)], "now")["outcome"] == "failed"
