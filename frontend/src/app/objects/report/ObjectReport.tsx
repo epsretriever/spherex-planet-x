@@ -11,7 +11,8 @@ import objectStyles from "@/components/object/Object.module.css";
 import { VisitsPanel } from "@/components/object/VisitsPanel";
 import { OrbitPanel } from "@/components/orbit/OrbitPanel";
 import { candidateHref, objectHref } from "@/lib/routes";
-import { JplLinksRow } from "@/components/JplLinks";
+import { CatalogLinksRow } from "@/components/CatalogLinks";
+import { catalogVerdict, crossCheckRows } from "@/lib/catalogs";
 import { ClassificationBadge } from "@/components/ClassificationBadge";
 import { QualityMeter } from "@/components/QualityMeter";
 import { ErrorState } from "@/components/DataState";
@@ -159,7 +160,7 @@ const SECTIONS = [
   ["ask", "Ask"],
   ["measurements", "Measurements"],
   ["motion", "Motion"],
-  ["known", "Known object"],
+  ["known", "Catalog check"],
   ["neo", "Orbit odds"],
   ["errors", "Error sources"],
   ["quality", "Quality"],
@@ -223,13 +224,15 @@ function Report({ c, o, name, nameFor }: { c: CandidateDetail; o: ObjectDetail |
       )}
 
       <header className={styles.header}>
-        <PageGuide>One object&apos;s full report: the images, the measurements, the JPL check and what could make it wrong.</PageGuide>
+        <PageGuide>One object&apos;s full report: the images, the measurements, the catalog check and what could make it wrong.</PageGuide>
         <div className={styles.headerTop}>
           <ClassificationBadge value={c.classification} size="lg" />
           <JplStatus known={c.known_object} />
         </div>
         <h1 className={styles.title}>{name.title}</h1>
-        <JplLinksRow matched={c.known_object.matched} designation={c.known_object.designation} published={c.known_object.jpl_links} />
+        <CatalogLinksRow matched={c.known_object.matched} designation={c.known_object.designation} published={c.known_object.jpl_links}
+          agreeing={crossCheckRows(c.known_object)?.filter((r) => r.status === "agrees").map((r) => r.catalog)}
+        />
         <p className={`mono ${styles.id}`}>
           <span className="visually-hidden">{o ? "Object ID " : "Pipeline ID "}</span>
           {o ? o.object_id : name.id}
@@ -443,8 +446,21 @@ export function JplStatus({ known }: { known: CandidateDetail["known_object"] })
     tone = "warn";
     text = "JPL check didn't complete";
   } else {
-    tone = "ok";
-    text = `${known.matched ? "Matched in JPL" : "No JPL match"}${ago ? ` · checked ${ago}` : ""}`;
+    const rows = crossCheckRows(known);
+    const verdict = rows ? catalogVerdict(rows, known.designation) : null;
+    tone = verdict && verdict.tone !== "ok" && known.matched ? "warn" : "ok";
+    const what = !verdict
+      ? known.matched
+        ? "Matched in JPL"
+        : "No JPL match"
+      : verdict.kind === "confirmed"
+        ? `Confirmed by ${verdict.agreeing.length} catalogs`
+        : verdict.kind === "disagree"
+          ? "Catalogs disagree"
+          : verdict.agreeing.length
+            ? `Matched in ${verdict.agreeing[0]} only so far`
+            : "No catalog match";
+    text = `${what}${ago ? ` · checked ${ago}` : ""}`;
   }
   return (
     <span role="status" aria-live="polite">

@@ -23,7 +23,7 @@ export function compareRows(objects: ObjectDetail[]): CompareRow[] {
   return [
     row("Status", (o) => CLASSIFICATIONS[o.classification]?.label ?? o.label_plain),
     row(
-      "JPL catalog check",
+      "Catalog check",
       (o) =>
         o.classification === "injected"
           ? "Not checked (simulated)"

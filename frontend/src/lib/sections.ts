@@ -19,7 +19,7 @@ export const SECTIONS: Section[] = [
   {
     href: "/objects/",
     label: "Objects",
-    blurb: "Every moving object: search, unexplained leads, known (JPL), and patches of sky to blink",
+    blurb: "Every moving object: search, unexplained leads, known objects, and patches of sky to blink",
     match: "/objects",
     also: ["/explore"],
   },

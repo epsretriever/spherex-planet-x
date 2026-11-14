@@ -20,7 +20,7 @@ test("home explains what the project does and how, with real survey numbers", as
   await expect(page).toHaveURL(/#how$/);
   const how = page.getByRole("region", { name: "From raw images to an evidence report" });
   await expect(how.getByRole("listitem")).toHaveCount(6);
-  await expect(how.getByRole("heading", { name: "Check against JPL" })).toBeVisible();
+  await expect(how.getByRole("heading", { name: "Check against the catalogs" })).toBeVisible();
 
   await expect(page.getByRole("link", { name: /Where we've searched/ })).toHaveAttribute("href", /\/sky\/?$/);
   await expect(page.getByRole("link", { name: /What we could miss/ })).toHaveAttribute("href", /\/limits\/?$/);

@@ -1,4 +1,5 @@
 import type { CandidateFilter, CandidateSummary, Classification, DistanceClass } from "./contract";
+import { agreeingCount } from "./catalogs";
 import { CLASSIFICATIONS, isClassification } from "./labels";
 import { byReviewPriority } from "./review";
 
@@ -8,7 +9,7 @@ import { byReviewPriority } from "./review";
  * filtered list can be shared:
  *
  *   class=unmatched&class=…  field=…&field=…  rmin=  rmax=  dist=tno&dist=…
- *   min=0.3  sim=1  sort=rate
+ *   min=0.3  sim=1  cat=2  sort=rate
  */
 
 export type SortKey = CandidateFilter["sort"];
@@ -42,6 +43,7 @@ export const EMPTY_FILTER: CandidateFilter = {
   field_id: [],
   min_score: null,
   include_injected: false,
+  min_catalogs: null,
   sort: "score",
 };
 
@@ -64,11 +66,12 @@ export function filterFromParams(params: URLSearchParams): CandidateFilter {
     field_id: unique(params.getAll("field").filter(Boolean)),
     min_score: min !== null && min > 0 ? Math.min(1, min) : null,
     include_injected: params.get("sim") === "1",
+    min_catalogs: params.get("cat") === "2" ? 2 : null,
     sort: isSort(sort) ? sort : "score",
   };
 }
 
-const FILTER_KEYS = ["class", "rmin", "rmax", "dist", "field", "min", "sim", "sort"];
+const FILTER_KEYS = ["class", "rmin", "rmax", "dist", "field", "min", "sim", "cat", "sort"];
 
 /** Writes the filter into a copy of `params`, keeping unrelated parameters. */
 export function filterToParams(f: CandidateFilter, params = new URLSearchParams()): URLSearchParams {
@@ -81,6 +84,7 @@ export function filterToParams(f: CandidateFilter, params = new URLSearchParams(
   for (const d of f.distance_class) p.append("dist", d);
   if (f.min_score !== null && f.min_score > 0) p.set("min", String(f.min_score));
   if (f.include_injected) p.set("sim", "1");
+  if (f.min_catalogs) p.set("cat", String(f.min_catalogs));
   if (f.sort !== "score") p.set("sort", f.sort);
   return p;
 }
@@ -106,6 +110,7 @@ export function normalizeFilter(f: Partial<CandidateFilter> | null | undefined):
     field_id: arr<string>(f?.field_id, (x): x is string => x.length > 0),
     min_score: score !== null && score > 0 ? Math.min(1, score) : null,
     include_injected: f?.include_injected === true,
+    min_catalogs: typeof f?.min_catalogs === "number" && f.min_catalogs >= 2 ? 2 : null,
     sort,
   };
 }
@@ -128,6 +133,7 @@ export function applyFilter(
     } else if (classes && !classes.has(c.classification)) return false;
     if (fields && !fields.has(c.field_id)) return false;
     if (f.min_score !== null && c.overall_score < f.min_score) return false;
+    if (f.min_catalogs && (agreeingCount(c.known_object_catalogs_agreeing) ?? 0) < f.min_catalogs) return false;
     const rate = c.rate_arcsec_per_hr;
     if (f.rate_min_arcsec_per_hr !== null && (rate === null || rate < f.rate_min_arcsec_per_hr)) return false;
     if (f.rate_max_arcsec_per_hr !== null && (rate === null || rate > f.rate_max_arcsec_per_hr)) return false;
@@ -158,6 +164,9 @@ function comparator(sort: SortKey) {
       return byScore;
   }
 }
+
+/** Whether any candidate in the list says which catalogs agree on it. */
+export const hasCatalogAgreement = (list: CandidateSummary[]) => list.some((c) => Array.isArray(c.known_object_catalogs_agreeing));
 
 /** Whether any candidate in the list carries an anomaly score. */
 export const hasAnomalyScores = (list: CandidateSummary[]) => list.some((c) => typeof c.anomaly_score === "number");
@@ -195,6 +204,9 @@ export function filterChips(f: CandidateFilter, fieldName: (id: string) => strin
   }
   if (f.min_score !== null) {
     chips.push({ key: "min", label: `Score ≥ ${f.min_score}`, without: { ...f, min_score: null } });
+  }
+  if (f.min_catalogs) {
+    chips.push({ key: "cat", label: `Confirmed by ${f.min_catalogs}+ catalogs`, without: { ...f, min_catalogs: null } });
   }
   if (f.include_injected) {
     chips.push({ key: "sim", label: "Including SIMULATED", without: { ...f, include_injected: false } });

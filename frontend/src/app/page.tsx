@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FieldGrid } from "@/components/FieldGrid";
 import { SpacetimeFabric } from "@/components/home/SpacetimeFabric";
 import { HomeSky } from "@/components/home/HomeSky";
+import { CatalogCounter } from "@/components/catalogs/CatalogCounter";
 import { HowToUse } from "@/components/home/HowToUse";
 import { TourButton } from "@/components/tour/Tour";
 import { SpectralStrip } from "@/components/SpectralStrip";
@@ -21,7 +22,7 @@ const CAPABILITIES = [
   {
     kicker: "Verify",
     title: "Every track checked against known objects",
-    body: "Each track is compared with JPL's catalog of known asteroids and comets for the exact time and place of each image. Matches are labelled as known; anything left over is reported as unexplained, never as a discovery.",
+    body: "Each track is compared with several independent catalogs of known asteroids and comets (NASA JPL and IMCCE SkyBoT) for the exact time and place of each image. Matches are labelled as known; anything left over is reported as unexplained, never as a discovery.",
   },
   {
     kicker: "Explain",
@@ -48,8 +49,8 @@ const PIPELINE = [
     body: "Sightings from different exposures are linked into tracks that move at a steady rate and direction, and the motion is fitted, including the shift from SPHEREx's own movement around Earth.",
   },
   {
-    title: "Check against JPL",
-    body: "The pipeline asks JPL's small-body services (SBIdent, then Horizons) which known asteroids and comets were at each position at each time, as seen from SPHEREx. Matches are labelled known; tracks JPL can't explain stay Unexplained and are re-checked on a schedule.",
+    title: "Check against the catalogs",
+    body: "The pipeline asks JPL's small-body services (SBIdent, then Horizons) which known asteroids and comets were at each position at each time, as seen from SPHEREx. IMCCE's SkyBoT is then asked the same question independently. Matches are labelled known; tracks no catalog can explain stay Unexplained, and every object is re-checked on a rolling schedule.",
   },
   {
     title: "Score and publish",
@@ -95,7 +96,7 @@ export default function LandingPage() {
           <p className={styles.lede}>
             Driftnet searches real images from NASA&apos;s SPHEREx space telescope for objects that move between
             observations: asteroids, comets and distant bodies in the outer solar system. Every one is tracked, checked against
-            JPL&apos;s catalog of known objects, and published with the evidence for and against it.
+            several independent catalogs of known objects, and published with the evidence for and against it.
           </p>
           <div className={styles.actions}>
             <Link href="/objects/" className="button button-primary">
@@ -119,6 +120,7 @@ export default function LandingPage() {
               ))}
             </dl>
           )}
+          <CatalogCounter />
           {survey && <p className={styles.asOf}>Survey data as of {formatUtcDate(survey.generated_utc)}.</p>}
         </div>
       </section>
@@ -156,7 +158,7 @@ export default function LandingPage() {
               <h2 id="how-heading">From raw images to an evidence report</h2>
               <p className={styles.sectionLede}>
                 A Python pipeline in GitHub Actions searches new patches of sky several times a day and checks every new track against
-                JPL&apos;s catalogs before it is published. Tracks JPL couldn&apos;t explain are re-checked on a schedule, so labels can
+                independent asteroid catalogs before it is published. Every object is re-checked on a rolling schedule, so labels can
                 change as catalogs grow.
               </p>
               <div className={`card ${styles.instrument}`}>
@@ -196,9 +198,9 @@ export default function LandingPage() {
           <div className={styles.modes}>
             <Link href="/objects/?view=leads" className={`card ${styles.mode}`}>
               <span className="eyebrow">Unexplained leads</span>
-              <h3>Not yet identified by JPL</h3>
+              <h3>Not yet identified by any catalog</h3>
               <p>
-                The objects JPL hasn&apos;t matched to a known asteroid or comet (some are still being checked, some may be glitches), ranked by the strength of the evidence, each with a blink, the case for
+                The objects the catalogs haven&apos;t matched to a known asteroid or comet (some are still being checked, some may be glitches), ranked by the strength of the evidence, each with a blink, the case for
                 and against, and where to point a telescope to confirm it.
               </p>
               <span className={styles.modeCta}>See the leads</span>
@@ -213,7 +215,7 @@ export default function LandingPage() {
               <span className="eyebrow">Objects</span>
               <h3>Weigh the evidence</h3>
               <p>
-                Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the JPL
+                Every moving object in one searchable list. Each has one report: its images, positions, speed, signal quality, the catalog
                 check, the explanations we can and can&apos;t rule out, and, once fitted, its orbit and distance.
               </p>
               <span className={styles.modeCta}>Browse objects</span>

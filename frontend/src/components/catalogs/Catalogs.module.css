@@ -1,0 +1,131 @@
+/* Agreement chips: "✓ JPL · SkyBoT" */
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  padding: 2px 10px 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--status-known) 55%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--status-known) 10%, transparent);
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.chips[data-count="1"] {
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.tick {
+  color: var(--ok);
+  font-weight: 800;
+}
+
+.chips[data-count="1"] .tick {
+  color: var(--text-muted);
+}
+
+.chip {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.sep {
+  color: var(--text-muted);
+}
+
+/* Live survey-wide counter */
+.counter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.counter strong {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.counter > span + span::before {
+  content: "·";
+  margin-right: var(--space-3);
+  color: var(--border-strong);
+}
+
+.counterBox {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.counterLabel {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* "How we identify known objects" */
+.method p {
+  max-width: 72ch;
+}
+
+.dbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dbs li {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.dbs h3 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.dbWho {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.dbs p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.points {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 72ch;
+}
+
+.points li {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--border-strong);
+}

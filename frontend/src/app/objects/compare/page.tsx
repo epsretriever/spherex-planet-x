@@ -7,7 +7,7 @@ import { CompareView } from "./CompareView";
 
 export const metadata: Metadata = pageMeta(
   "Compare two objects",
-  "Set two moving objects from SPHEREx images side by side: their measured motion, distance, orbit and JPL catalog check, with both orbits in one 3D view.",
+  "Set two moving objects from SPHEREx images side by side: their measured motion, distance, orbit and catalog check, with both orbits in one 3D view.",
   "/objects/compare/",
 );
 

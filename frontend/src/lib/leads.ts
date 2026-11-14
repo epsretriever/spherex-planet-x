@@ -196,7 +196,7 @@ export function whyNot(lead: Lead): string[] {
   if (lead.fit_rms_arcsec != null && lead.fit_rms_arcsec > 2) out.push(`Its positions scatter ${round1(lead.fit_rms_arcsec)}″ about the fitted motion, so some sightings may belong to something else.`);
   if (lead.jpl_note) out.push(lead.jpl_note);
   out.push(
-    "Unexplained is not new: JPL's check only looks within 15″ of each known object's predicted position, so a catalogued asteroid with a poorly known orbit, or a very recent discovery, could still be the answer.",
+    "Unexplained is not new: the catalog check only looks within 15″ of each known object's predicted position, so a catalogued asteroid with a poorly known orbit, or a very recent discovery, could still be the answer.",
   );
   if (lead.not_ruled_out.length) out.push(`Not yet ruled out: ${lowerList(lead.not_ruled_out)}.`);
   return out;

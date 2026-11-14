@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { JplLinksRow } from "./JplLinks";
+import { CatalogLinksRow } from "./CatalogLinks";
 import { assetUrl } from "@/lib/api";
 import type { CandidateSummary, ObjectSummary } from "@/lib/contract";
 import { DISTANCE_CLASSES, ORBIT_STATUS } from "@/lib/objects";
@@ -47,7 +47,7 @@ export function CandidateCard({
           </Link>
         </h2>
         <p className={styles.summary}>{c.summary_plain}</p>
-        <JplLinksRow matched={c.known_object_matched} designation={c.known_object_designation} />
+        <CatalogLinksRow matched={c.known_object_matched} designation={c.known_object_designation} agreeing={c.known_object_catalogs_agreeing} />
         {reason && (
           <p className={styles.reason}>
             <span aria-hidden="true">✦</span> <span className="visually-hidden">Why it&apos;s unusual: </span>
